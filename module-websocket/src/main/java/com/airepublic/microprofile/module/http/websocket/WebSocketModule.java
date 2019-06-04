@@ -45,6 +45,8 @@ public class WebSocketModule extends HttpModule {
 
     @Override
     public void initModule(final Config config, final ServerContext serverContext) throws IOException {
+        super.initModule(config, serverContext);
+
         final Set<Class<?>> endpointClasses = findWebSocketClasses();
         webSocketContainer = WsSci.onStartup(endpointClasses);
         serverContext.setAttribute("websocket.container", webSocketContainer);

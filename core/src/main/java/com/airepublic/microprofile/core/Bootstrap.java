@@ -33,10 +33,7 @@ public class Bootstrap implements IConfigConstants {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                try {
-                    javaServer.stop();
-                } catch (final IOException e) {
-                }
+                javaServer.stop();
             }
         });
 

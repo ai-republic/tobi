@@ -7,19 +7,16 @@ import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,20 +26,18 @@ public class ServerSession implements Runnable {
     private ServerContext serverContext;
     private Selector selector;
     private SelectionKey key;
-    private SSLEngine sslEngine;
     private AbstractIOHandler ioHandler;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Queue<ByteBuffer> in = new ConcurrentLinkedQueue<>();
     private final Queue<Pair<ByteBuffer[], CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
-    private final SSLContext sslContext;
-    private final boolean isSecure;
     private final SocketChannel channel;
+    private final IServerModule module;
+    private final Map<String, Object> attributes = new HashMap<>();
 
 
-    public ServerSession(final SocketChannel channel, final boolean isSecure, final SSLContext sslContext, final ServerContext serverContext) throws IOException {
+    public ServerSession(final IServerModule module, final SocketChannel channel, final ServerContext serverContext) throws IOException {
+        this.module = module;
         this.serverContext = serverContext;
-        this.isSecure = isSecure;
-        this.sslContext = sslContext;
         this.channel = channel;
     }
 
@@ -67,21 +62,6 @@ public class ServerSession implements Runnable {
     }
 
 
-    public SSLEngine getSslEngine() {
-        return sslEngine;
-    }
-
-
-    void setSslEngine(final SSLEngine sslEngine) {
-        this.sslEngine = sslEngine;
-    }
-
-
-    public boolean isSecure() {
-        return isSecure;
-    }
-
-
     public AbstractIOHandler getIoHandler() {
         return ioHandler;
     }
@@ -92,8 +72,23 @@ public class ServerSession implements Runnable {
     }
 
 
+    public SocketChannel getChannel() {
+        return channel;
+    }
+
+
     public boolean isClosed() {
         return closed.get();
+    }
+
+
+    public void setAttribute(final String key, final Object value) {
+        attributes.put(key, value);
+    }
+
+
+    public Object getAttribute(final String key) {
+        return attributes.get(key);
     }
 
 
@@ -101,21 +96,7 @@ public class ServerSession implements Runnable {
     public void run() {
         try {
             channel.configureBlocking(false);
-
-            if (isSecure) {
-                try {
-                    sslEngine = sslContext.createSSLEngine();
-                    sslEngine.setUseClientMode(false);
-                    sslEngine.beginHandshake();
-
-                    if (!SslSupport.doHandshake(channel, sslEngine)) {
-                        channel.close();
-                        LOG.info("Connection closed due to handshake failure.");
-                    }
-                } catch (final Exception e) {
-                    throw new IOException("Could not perform SSL handshake!", e);
-                }
-            }
+            module.onAccept(this);
 
             channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
             channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -194,7 +175,7 @@ public class ServerSession implements Runnable {
 
         try {
             ChannelAction action = ChannelAction.KEEP_OPEN;
-            ByteBuffer buffer = ByteBuffer.allocate(SslSupport.getPacketBufferSize());
+            ByteBuffer buffer = ByteBuffer.allocate(module.getReadBufferSize());
             final SocketChannel channel = getChannel();
 
             final int len = channel.read(buffer);
@@ -206,30 +187,7 @@ public class ServerSession implements Runnable {
                 return;
             }
 
-            if (isSecure()) {
-                ByteBuffer unwrapBuffer = ByteBuffer.allocate(buffer.capacity());
-                final SSLEngineResult result = getSslEngine().unwrap(buffer, unwrapBuffer);
-
-                switch (result.getStatus()) {
-                    case OK:
-                        unwrapBuffer.flip();
-                        buffer = unwrapBuffer;
-                    break;
-                    case BUFFER_OVERFLOW:
-                        unwrapBuffer = SslSupport.enlargeApplicationBuffer(getSslEngine(), unwrapBuffer);
-                    break;
-                    case BUFFER_UNDERFLOW:
-                        buffer = SslSupport.handleBufferUnderflow(getSslEngine(), buffer);
-                    break;
-                    case CLOSED:
-                        LOG.debug("Client wants to close connection...");
-                        SslSupport.closeConnection(channel, getSslEngine());
-                        LOG.debug("Goodbye client!");
-                        return;
-                    default:
-                        throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
-                }
-            }
+            buffer = module.unwrap(this, buffer);
 
             AbstractIOHandler handler = getIoHandler();
 
@@ -289,38 +247,9 @@ public class ServerSession implements Runnable {
                 if (pair.getValue1() != null) {
                     try {
                         final SocketChannel channel = getChannel();
-                        final ByteBuffer[] buffers = pair.getValue1();
+                        ByteBuffer[] buffers = pair.getValue1();
 
-                        if (isSecure()) {
-
-                            for (int i = 0; i < buffers.length; i++) {
-                                final ByteBuffer buffer = buffers[i];
-                                boolean retry = false;
-
-                                do {
-                                    ByteBuffer wrappedBuffer = ByteBuffer.allocate(SslSupport.getPacketBufferSize());
-                                    final SSLEngineResult result = getSslEngine().wrap(buffer, wrappedBuffer);
-                                    retry = false;
-
-                                    switch (result.getStatus()) {
-                                        case OK:
-                                            wrappedBuffer.flip();
-                                            buffers[i] = wrappedBuffer;
-                                        break;
-                                        case BUFFER_OVERFLOW:
-                                            wrappedBuffer = SslSupport.enlargePacketBuffer(getSslEngine(), wrappedBuffer);
-                                            retry = true;
-                                        break;
-                                        case BUFFER_UNDERFLOW:
-                                            throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
-                                        case CLOSED:
-                                            handleAction(ChannelAction.CLOSE_ALL);
-                                        default:
-                                            throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
-                                    }
-                                } while (retry);
-                            }
-                        }
+                        buffers = module.wrap(this, buffers);
 
                         final long length = channel.write(buffers);
 
@@ -346,7 +275,6 @@ public class ServerSession implements Runnable {
 
 
     Pair<DetermineStatus, AbstractIOHandler> determineHandler(final ByteBuffer buffer) throws IOException {
-        final Class<? extends AbstractIOHandler> handlerClass = null;
         boolean needMoreData = false;
 
         for (final IServerModule module : serverContext.getModules()) {
@@ -373,15 +301,6 @@ public class ServerSession implements Runnable {
         if (!isClosed()) {
             key.cancel();
 
-            if (getSslEngine() != null) {
-                try {
-                    SslSupport.closeConnection(getChannel(), getSslEngine());
-                    sslEngine.closeInbound();
-                    sslEngine.closeOutbound();
-                } catch (final IOException e) {
-                }
-            }
-
             try {
                 key.channel().close();
             } catch (final IOException e) {
@@ -398,15 +317,9 @@ public class ServerSession implements Runnable {
             key = null;
             out.clear();
             in.clear();
-            sslEngine = null;
 
             closed.set(true);
         }
-    }
-
-
-    SocketChannel getChannel() {
-        return channel;// (SocketChannel) getKey().channel();
     }
 
 

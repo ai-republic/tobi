@@ -28,14 +28,10 @@ public class RestEasyModule extends HttpModule {
     }
 
 
-    /**
-     * Initializes the JAX-RS server and configures all JAX-RS applications and resources.
-     * 
-     * @param defaultContextPath the configured or default context-path
-     * @return the pre-configured {@link HttpContext}
-     */
     @Override
     public void initModule(final Config config, final ServerContext serverContext) throws IOException {
+        super.initModule(config, serverContext);
+
         LOG.info("Configuring JAX-RS server...");
         final String defaultContextPath = config.getOptionalValue(CONTEXT_PATH, String.class).orElse(DEFAULT_JAXRS_CONTEXT_PATH);
 

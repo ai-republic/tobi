@@ -11,29 +11,45 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Singleton;
 
+import org.eclipse.microprofile.config.Config;
+
 @Singleton
 public class ServerContext {
+    public final static String HOST = "host";
+    private final static String DEFAULT_HOST = "localhost";
+    public final static String WORKER_COUNT = "workerCount";
+    private final static int DEFAULT_WORKER_COUNT = 10;
+
+    private Config config;
     private String host;
-    private int port;
-    private int sslPort;
     private int workerCount;
-    private String keystorePassword;
-    private String truststorePassword;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final Queue<ServerSession> openSessions = new ConcurrentLinkedQueue<>();
     private SeContainer cdiContainer;
     private final Set<IServerModule> modules = new HashSet<>();
 
 
-    public static ServerContext create(final String host, final int port, final int sslPort) {
-        return new ServerContext(host, port, sslPort);
+    public final static ServerContext create(final Config config) {
+        final ServerContext context = new ServerContext(config);
+
+        return context;
     }
 
 
-    private ServerContext(final String host, final int defaultPort, final int defaultSslPort) {
-        this.host = host;
-        port = defaultPort;
-        sslPort = defaultSslPort;
+    private ServerContext(final Config config) {
+        setConfig(config);
+        setHost(config.getOptionalValue(HOST, String.class).orElse(DEFAULT_HOST));
+        setWorkerCount(config.getOptionalValue(WORKER_COUNT, Integer.class).orElse(DEFAULT_WORKER_COUNT));
+    }
+
+
+    public final Config getConfig() {
+        return config;
+    }
+
+
+    private final void setConfig(final Config config) {
+        this.config = config;
     }
 
 
@@ -83,28 +99,6 @@ public class ServerContext {
     }
 
 
-    public int getPort() {
-        return port;
-    }
-
-
-    ServerContext setPort(final int port) {
-        this.port = port;
-        return this;
-    }
-
-
-    public int getSslPort() {
-        return sslPort;
-    }
-
-
-    ServerContext setSslPort(final int sslPort) {
-        this.sslPort = sslPort;
-        return this;
-    }
-
-
     public int getWorkerCount() {
         return workerCount;
     }
@@ -113,78 +107,6 @@ public class ServerContext {
     ServerContext setWorkerCount(final int workerCount) {
         this.workerCount = workerCount;
         return this;
-    }
-
-
-    String getKeystorePassword() {
-        return keystorePassword;
-    }
-
-
-    ServerContext setKeystorePassword(final String keystorePassword) {
-        this.keystorePassword = keystorePassword;
-        return this;
-    }
-
-
-    String getTruststorePassword() {
-        return truststorePassword;
-    }
-
-
-    ServerContext setTruststorePassword(final String truststorePassword) {
-        this.truststorePassword = truststorePassword;
-        return this;
-    }
-
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (attributes == null ? 0 : attributes.hashCode());
-        result = prime * result + (host == null ? 0 : host.hashCode());
-        result = prime * result + port;
-        return result;
-    }
-
-
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final ServerContext other = (ServerContext) obj;
-        if (attributes == null) {
-            if (other.attributes != null) {
-                return false;
-            }
-        } else if (!attributes.equals(other.attributes)) {
-            return false;
-        }
-        if (host == null) {
-            if (other.host != null) {
-                return false;
-            }
-        } else if (!host.equals(other.host)) {
-            return false;
-        }
-        if (port != other.port) {
-            return false;
-        }
-        return true;
-    }
-
-
-    @Override
-    public String toString() {
-        return "ServerContext [port=" + port + ", host=" + host + ", attributes=" + attributes + "]";
     }
 
 
