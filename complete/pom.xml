@@ -30,6 +30,12 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>jwt-auth</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>websocket-client</artifactId>
 			<version>9.4.15.v20190215</version>

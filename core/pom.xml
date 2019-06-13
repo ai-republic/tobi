@@ -15,20 +15,7 @@
 	<properties>
 		<encoding>UTF-8</encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<persistence.version>2.2</persistence.version>
 	</properties>
-
-	<dependencyManagement>
-		<dependencies>
-			<!-- Persistence -->
-			<dependency>
-				<groupId>javax.persistence</groupId>
-				<artifactId>javax.persistence-api</artifactId>
-				<version>${persistence.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 
 	<dependencies>
 		<dependency>
@@ -37,11 +24,6 @@
 			<version>${project.version}</version>
 		</dependency>
 
-		<!-- Persistence -->
-		<dependency>
-			<groupId>javax.persistence</groupId>
-			<artifactId>javax.persistence-api</artifactId>
-		</dependency>
 	</dependencies>
 
 

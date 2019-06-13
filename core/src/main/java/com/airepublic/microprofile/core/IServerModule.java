@@ -81,7 +81,7 @@ public interface IServerModule {
      *         or might need more data in the buffer to determine the {@link AbstractIOHandler}
      * @throws IOException if something goes wrong
      */
-    Pair<DetermineStatus, AbstractIOHandler> determineHandlerClass(final ByteBuffer buffer, final ServerSession session) throws IOException;
+    Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException;
 
 
     /**

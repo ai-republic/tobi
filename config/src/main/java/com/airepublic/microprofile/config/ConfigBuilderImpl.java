@@ -28,6 +28,9 @@ public class ConfigBuilderImpl implements ConfigBuilder {
 
     @Override
     public ConfigBuilder addDefaultSources() {
+        config.addConfigSource(new SystemPropertiesConfigSource());
+        config.addConfigSource(new EnvironmentConfigSource());
+        config.addConfigSource(new MicroprofileDefaultConfigSource());
         return this;
     }
 

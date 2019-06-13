@@ -29,22 +29,22 @@ public class HttpIOHandler extends AbstractIOHandler {
 
 
     @Override
-    protected ChannelAction produce() throws IOException {
+    protected void produce() throws IOException {
         final HttpResponse response = getHttpResponse();
 
         getSession().addToWriteBuffer(response.getHeaderBuffer(), response.getBody());
+    }
 
+
+    @Override
+    protected ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
         return ChannelAction.CLOSE_ALL;
     }
 
 
     @Override
-    protected void writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
-    }
-
-
-    @Override
-    protected void writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
+    protected ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
+        return ChannelAction.CLOSE_ALL;
     }
 
 

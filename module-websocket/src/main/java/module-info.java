@@ -7,23 +7,24 @@ import com.airepublic.microprofile.module.http.websocket.server.DefaultServerEnd
 module com.airepublic.microprofile.module.http.websocket {
     exports com.airepublic.microprofile.module.http.websocket;
 
+    exports com.airepublic.microprofile.module.http.websocket.server;
+    exports com.airepublic.microprofile.module.http.websocket.util;
+    exports com.airepublic.microprofile.module.http.websocket.util.buf;
+    exports com.airepublic.microprofile.module.http.websocket.util.collections;
+    exports com.airepublic.microprofile.module.http.websocket.util.threads;
+
+    opens com.airepublic.microprofile.module.http.websocket.pojo;
+    opens com.airepublic.microprofile.module.http.websocket.server;
+    opens com.airepublic.microprofile.module.http.websocket.util.buf;
+    opens com.airepublic.microprofile.module.http.websocket.util.codec.binary;
+    opens com.airepublic.microprofile.module.http.websocket.util.security;
+    opens com.airepublic.microprofile.module.http.websocket.util.threads;
+
     requires com.airepublic.microprofile.core;
     requires com.airepublic.microprofile.config;
     requires com.airepublic.microprofile.module.http;
 
-    requires cdi.api;
-    requires java.annotation;
-    requires javax.inject;
     requires javax.websocket.api;
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
-
-    requires openwebbeans.se;
-    requires openwebbeans.spi;
-    requires openwebbeans.impl;
-    // requires weld.se.core;
-
-    requires java.net.http;
 
     opens com.airepublic.microprofile.module.http.websocket;
 

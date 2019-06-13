@@ -3,25 +3,26 @@ import com.airepublic.microprofile.core.IServerModule;
 module com.airepublic.microprofile.core {
     exports com.airepublic.microprofile.core;
     exports com.airepublic.microprofile.core.pathmatcher;
+    exports com.airepublic.microprofile.core.util;
 
     requires com.airepublic.microprofile.config;
 
-    requires cdi.api;
-    requires java.annotation;
-    requires transitive java.persistence;
-    requires javax.inject;
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
+    requires transitive org.slf4j;
+    requires transitive ch.qos.logback.classic;
 
-    requires openwebbeans.se;
-    requires openwebbeans.spi;
-    requires openwebbeans.impl;
-    // requires weld.se.core;
+    requires jdk.unsupported;
 
-    requires java.net.http;
+    // requires cdi.api;
+    // requires java.annotation;
+    // requires javax.inject;
+    // requires openwebbeans.se;
+    // requires openwebbeans.spi;
+    // requires openwebbeans.impl;
+    requires transitive weld.se.shaded;
+
+    requires transitive java.net.http;
 
     opens com.airepublic.microprofile.core;
 
     uses IServerModule;
-
 }

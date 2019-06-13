@@ -1,4 +1,4 @@
-package com.airepublic.microprofile.core;
+package com.airepublic.microprofile.core.util;
 
 import java.io.IOException;
 import java.net.InetAddress;

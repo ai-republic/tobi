@@ -1,5 +1,6 @@
 package com.airepublic.microprofile.core;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
@@ -15,14 +16,17 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ServerSession implements Runnable {
+public class ServerSession implements Runnable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(ServerSession.class);
+    private static AtomicLong ID_GENERATOR = new AtomicLong();
+    private final long id = ID_GENERATOR.incrementAndGet();
     private ServerContext serverContext;
     private Selector selector;
     private SelectionKey key;
@@ -39,6 +43,11 @@ public class ServerSession implements Runnable {
         this.module = module;
         this.serverContext = serverContext;
         this.channel = channel;
+    }
+
+
+    public final long getId() {
+        return id;
     }
 
 
@@ -94,6 +103,8 @@ public class ServerSession implements Runnable {
 
     @Override
     public void run() {
+        LOG.info("Starting session #" + getId() + " for module " + module.getName());
+
         try {
             channel.configureBlocking(false);
             module.onAccept(this);
@@ -114,27 +125,30 @@ public class ServerSession implements Runnable {
             while (selector.isOpen()) {
                 try {
                     selector.select();
-                    final Set<SelectionKey> selectedKeys = selector.selectedKeys();
-                    final Iterator<SelectionKey> it = selectedKeys.iterator();
 
-                    while (it.hasNext()) {
-                        final SelectionKey key = it.next();
-                        it.remove();
+                    if (selector.isOpen()) {
+                        final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                        final Iterator<SelectionKey> it = selectedKeys.iterator();
 
-                        if (key == null) {
-                            return;
-                        }
+                        while (it.hasNext()) {
+                            final SelectionKey key = it.next();
+                            it.remove();
 
-                        if (key.isValid() && key.isReadable()) {
-                            handleRead();
-                        }
+                            if (key == null) {
+                                return;
+                            }
 
-                        if (key.isValid() && key.isWritable()) {
-                            handleWrite();
-                        }
+                            if (key.isValid() && key.isReadable()) {
+                                handleRead();
+                            }
 
-                        if (!key.isValid()) {
-                            close();
+                            if (key.isValid() && key.isWritable()) {
+                                handleWrite();
+                            }
+
+                            if (!key.isValid()) {
+                                handleAction(ChannelAction.CLOSE_ALL);
+                            }
                         }
                     }
                 } catch (final Exception e) {
@@ -142,8 +156,12 @@ public class ServerSession implements Runnable {
                 }
             }
         } finally {
-            LOG.info("Shutting down server session!");
-            close();
+            LOG.info("Shutting down server session #" + getId() + " for module " + module.getName() + "!");
+            try {
+                handleAction(ChannelAction.CLOSE_ALL);
+            } catch (final IOException e) {
+                // ignore quietly
+            }
         }
     }
 
@@ -189,44 +207,33 @@ public class ServerSession implements Runnable {
 
             buffer = module.unwrap(this, buffer);
 
-            AbstractIOHandler handler = getIoHandler();
-
-            if (handler == null) {
+            // if the IO handler is null, this is the first read
+            if (getIoHandler() == null) {
                 try {
-                    final Pair<DetermineStatus, AbstractIOHandler> pair = determineHandler(buffer);
-
-                    if (pair.getValue1() == DetermineStatus.TRUE && pair.getValue2() != null) {
-                        handler = pair.getValue2();
-                    } else if (pair.getValue1() == DetermineStatus.NEED_MORE_DATA) {
-                        action = ChannelAction.KEEP_OPEN;
-                    }
+                    // need to check which module has registered a handler that can handle the
+                    // initial buffer
+                    action = determineIoHandler(buffer);
                 } catch (final Exception e) {
                     action = ChannelAction.CLOSE_ALL;
-                }
-
-                if (handler != null) {
-                    setIoHandler(handler);
-                } else {
-                    LOG.error("No matching handler found for: " + buffer);
-                    action = ChannelAction.CLOSE_ALL;
-                    return;
                 }
             }
 
-            if (len > 0) {
-                try {
-                    action = handler.consume(buffer);
-                } catch (final Exception e) {
-                    action = handler.onReadError(e);
+            if (getIoHandler() != null) {
+                if (len > 0) {
+                    try {
+                        action = getIoHandler().consume(buffer);
+                    } catch (final Exception e) {
+                        action = getIoHandler().onReadError(e);
+                    }
+                } else {
+                    action = ChannelAction.KEEP_OPEN;
                 }
-            } else {
-                action = ChannelAction.KEEP_OPEN;
             }
 
             handleAction(action);
         } catch (final Exception e) {
             LOG.error("Exception during read processing: ", e);
-            close();
+            handleAction(ChannelAction.CLOSE_ALL);
         }
     }
 
@@ -239,9 +246,10 @@ public class ServerSession implements Runnable {
                 throw new IOException("Handler has not been initialized!");
             }
 
-            final ChannelAction action = handler.produce();
+            handler.produce();
 
             Pair<ByteBuffer[], CompletionHandler<?, ?>> pair = getNextWriteBuffer();
+            ChannelAction action = ChannelAction.KEEP_OPEN;
 
             while (pair != null) {
                 if (pair.getValue1() != null) {
@@ -253,72 +261,85 @@ public class ServerSession implements Runnable {
 
                         final long length = channel.write(buffers);
 
-                        if (pair.getValue2() != null) {
-                            handler.writeSuccessful(pair.getValue2(), length);
-                        }
+                        action = handler.writeSuccessful(pair.getValue2(), length);
                     } catch (final Throwable t) {
-                        if (pair.getValue2() != null) {
-                            handler.writeFailed(pair.getValue2(), t);
-                        }
+                        LOG.error("Error writing buffers for session #" + getId() + " in module " + module.getName() + ": ", t);
+                        action = handler.writeFailed(pair.getValue2(), t);
                     }
+
+                    handleAction(action);
                 }
 
-                pair = getNextWriteBuffer();
+                if (!isClosed()) {
+                    pair = getNextWriteBuffer();
+                } else {
+                    pair = null;
+                }
             }
 
-            handleAction(action);
         } catch (final Exception e) {
-            LOG.error("Exception during write processing: ", e);
+            LOG.error("Exception during write processing for session #" + getId() + " in module " + module.getName() + ": ", e);
             handleAction(ChannelAction.CLOSE_ALL);
         }
     }
 
 
-    Pair<DetermineStatus, AbstractIOHandler> determineHandler(final ByteBuffer buffer) throws IOException {
+    ChannelAction determineIoHandler(final ByteBuffer buffer) throws IOException {
         boolean needMoreData = false;
 
         for (final IServerModule module : serverContext.getModules()) {
-            final Pair<DetermineStatus, AbstractIOHandler> pair = module.determineHandlerClass(buffer, this);
+            final Pair<DetermineStatus, AbstractIOHandler> pair = module.determineIoHandler(buffer, this);
 
             switch (pair.getValue1()) {
-                case TRUE:
-                    return pair;
-
                 case FALSE:
                 break;
 
-                case NEED_MORE_DATA:
+                case TRUE:
+                    if (pair.getValue2() != null) {
+                        setIoHandler(pair.getValue2());
+                        return ChannelAction.KEEP_OPEN;
+                    }
+                break;
+
+                case NEED_MORE_DATA: {
                     needMoreData = true;
+                }
                 break;
             }
         }
 
-        return new Pair<>(needMoreData ? DetermineStatus.NEED_MORE_DATA : DetermineStatus.FALSE, null);
+        return needMoreData ? ChannelAction.KEEP_OPEN : ChannelAction.CLOSE_ALL;
     }
 
 
+    @Override
     public void close() {
-        if (!isClosed()) {
-            key.cancel();
+        synchronized (closed) {
+            if (!isClosed()) {
+                key.cancel();
 
-            try {
-                key.channel().close();
-            } catch (final IOException e) {
+                try {
+                    if (getChannel().isOpen()) {
+                        getChannel().close();
+                    }
+                } catch (final IOException e) {
+                }
+
+                try {
+                    selector.close();
+                } catch (final IOException e) {
+                }
+
+                serverContext.removeServerSession(this);
+                serverContext = null;
+                ioHandler = null;
+                key = null;
+                out.clear();
+                in.clear();
+
+                closed.set(true);
+                selector.wakeup();
             }
-
-            try {
-                selector.close();
-            } catch (final IOException e) {
-            }
-
-            serverContext.removeServerSession(this);
-            serverContext = null;
-            ioHandler = null;
-            key = null;
-            out.clear();
-            in.clear();
-
-            closed.set(true);
         }
     }
 

@@ -1,0 +1,23 @@
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+			<encoder>
+				<pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{35} - %msg%n</pattern>
+			</encoder>
+		</layout>
+    </appender>
+
+    <logger name="com.airepublic" level="info" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <logger name="com.airepublic.microprofile.core.Reflections" level="error" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <root level="warn">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

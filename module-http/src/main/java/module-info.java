@@ -8,18 +8,6 @@ module com.airepublic.microprofile.module.http {
     requires com.airepublic.microprofile.config;
     requires transitive com.airepublic.microprofile.core;
 
-    requires cdi.api;
-    requires java.annotation;
-    requires javax.inject;
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
-
-    requires openwebbeans.se;
-    requires openwebbeans.spi;
-    requires openwebbeans.impl;
-
-    requires java.net.http;
-
     provides IServerModule with HttpModule;
 
     // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.buf;

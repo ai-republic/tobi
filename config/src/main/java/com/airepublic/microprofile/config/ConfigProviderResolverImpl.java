@@ -9,7 +9,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 public class ConfigProviderResolverImpl extends ConfigProviderResolver {
     private final static Map<ClassLoader, Config> CONFIGS = new ConcurrentHashMap<>();
-    private final Config defaultConfig = new ConfigImpl();
+    private final Config defaultConfig = getBuilder().addDefaultSources().addDiscoveredSources().addDiscoveredConverters().build();
 
 
     @Override

@@ -8,12 +8,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.se.SeContainer;
-import javax.inject.Singleton;
 
 import org.eclipse.microprofile.config.Config;
 
-@Singleton
+@ApplicationScoped
 public class ServerContext {
     public final static String HOST = "host";
     private final static String DEFAULT_HOST = "localhost";

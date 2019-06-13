@@ -233,7 +233,7 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public Pair<DetermineStatus, AbstractIOHandler> determineHandlerClass(final ByteBuffer buffer, final ServerSession session) throws IOException {
+    public Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException {
 
         String path = null;
 
@@ -278,6 +278,7 @@ public class HttpModule implements IServerModule {
         try {
             // if no handler was mapped, use default HttpSocketHandler
             if (handlerClass == null) {
+                LOG.info("Module " + getName() + " could not find mapping for: " + path);
                 return new Pair<>(DetermineStatus.FALSE, null);
             } else if (session.getServerContext().getCdiContainer() != null) {
                 handler = session.getServerContext().getCdiContainer().select(handlerClass).get();

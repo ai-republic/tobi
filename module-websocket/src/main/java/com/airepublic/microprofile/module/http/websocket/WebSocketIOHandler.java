@@ -237,23 +237,30 @@ public class WebSocketIOHandler extends AbstractIOHandler {
 
 
     @Override
-    protected ChannelAction produce() throws IOException {
+    protected void produce() throws IOException {
         getSession().addToWriteBuffer(ByteBuffer.wrap(encode("received")));
+    }
+
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
+        if (handler != null) {
+            ((CompletionHandler<Long, Void>) handler).completed(length, null);
+        }
+
         return ChannelAction.KEEP_OPEN;
     }
 
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
-        ((CompletionHandler<Long, Void>) handler).completed(length, null);
-    }
+    protected ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
+        if (handler != null) {
+            ((CompletionHandler<Long, Void>) handler).failed(t, null);
+        }
 
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected void writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
-        ((CompletionHandler<Long, Void>) handler).failed(t, null);
+        return ChannelAction.KEEP_OPEN;
     }
 
 

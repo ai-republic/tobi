@@ -38,7 +38,7 @@ public abstract class AbstractIOHandler {
     protected abstract ChannelAction consume(ByteBuffer buffer) throws IOException;
 
 
-    protected abstract ChannelAction produce() throws IOException;
+    protected abstract void produce() throws IOException;
 
 
     protected abstract ChannelAction onReadError(Exception e);
@@ -47,9 +47,9 @@ public abstract class AbstractIOHandler {
     protected abstract void handleClosedInput() throws IOException;
 
 
-    protected abstract void writeSuccessful(CompletionHandler<?, ?> handler, long length);
+    protected abstract ChannelAction writeSuccessful(CompletionHandler<?, ?> handler, long length);
 
 
-    protected abstract void writeFailed(CompletionHandler<?, ?> handler, Throwable t);
+    protected abstract ChannelAction writeFailed(CompletionHandler<?, ?> handler, Throwable t);
 
 }
