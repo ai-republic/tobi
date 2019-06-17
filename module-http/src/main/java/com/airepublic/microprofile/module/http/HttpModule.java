@@ -127,7 +127,7 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public void addFeaturePlugins(final Set<IServicePlugin> plugins) {
+    public void addServicePlugins(final Set<IServicePlugin> plugins) {
         if (plugins != null) {
             for (final IServicePlugin featurePlugin : plugins) {
                 if (!featurePlugins.contains(featurePlugin)) {

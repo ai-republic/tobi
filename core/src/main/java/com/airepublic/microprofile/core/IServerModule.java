@@ -40,7 +40,7 @@ public interface IServerModule {
      * 
      * @param featurePlugins
      */
-    void addFeaturePlugins(Set<IServicePlugin> featurePlugins);
+    void addServicePlugins(Set<IServicePlugin> featurePlugins);
 
 
     /**

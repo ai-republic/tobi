@@ -7,15 +7,14 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.jboss.weld.context.bound.BoundConversationContext;
-import org.jboss.weld.context.bound.BoundRequest;
+import org.jboss.weld.context.bound.BoundSessionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SessionContainer implements Runnable {
     private final static Logger LOG = LoggerFactory.getLogger(SessionContainer.class);
     @Inject
-    private BoundConversationContext sessionContext;
+    private BoundSessionContext sessionContext;
     private IServerModule module;
     private SocketChannel channel;
     @Inject
@@ -30,7 +29,7 @@ public class SessionContainer implements Runnable {
 
     @Override
     public void run() {
-        final ConversationStorage storage = new ConversationStorage();
+        final Map<String, Object> storage = new HashMap<>();
 
         try {
             sessionContext.associate(storage);
@@ -50,25 +49,4 @@ public class SessionContainer implements Runnable {
             }
         }
     }
-
-    class ConversationStorage implements BoundRequest {
-        private Map<String, Object> sessionMap = new HashMap<>();
-        private final Map<String, Object> requestMap = new HashMap<>();
-
-
-        @Override
-        public Map<String, Object> getSessionMap(final boolean create) {
-            if (create) {
-                sessionMap = new HashMap<>();
-            }
-            return sessionMap;
-        }
-
-
-        @Override
-        public Map<String, Object> getRequestMap() {
-            return requestMap;
-        }
-    }
-
 }

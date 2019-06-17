@@ -69,7 +69,7 @@ public class JavaServer {
                     final IServerModule module = serverContext.getCdiContainer().select(m.getClass()).get();
 
                     // add feature plugins for the supported protocol to the module
-                    module.addFeaturePlugins(featurePlugins.get(module.getProtocol()));
+                    module.addServicePlugins(featurePlugins.get(module.getProtocol()));
 
                     final int[] ports = module.getPortsToOpen();
 
