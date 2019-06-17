@@ -28,6 +28,7 @@
 	<modules>
 		<module>config</module>
 		<module>core</module>
+		<module>module-http-core</module>
 		<module>module-http</module>
 		<module>module-jaxrs</module>
 		<module>module-websocket</module>

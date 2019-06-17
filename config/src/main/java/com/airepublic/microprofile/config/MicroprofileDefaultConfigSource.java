@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the default {@link ConfigSource} to provide properties stored in a resource
- * under META-INF/microprofile-config.properties as config properties.
+ * under /META-INF/microprofile-config.properties as config properties.
  * 
  * @author Torsten Oltmanns
  *
@@ -32,20 +32,22 @@ public class MicroprofileDefaultConfigSource implements ConfigSource {
             final Path file = Paths.get(url.toURI());
             final List<String> lines = Files.readAllLines(file);
             lines.forEach(line -> {
-                final StringTokenizer tokenizer = new StringTokenizer(line);
-                final String key = tokenizer.nextToken("=").strip();
-                String value = tokenizer.nextToken("").strip();
+                if (line.indexOf("=") != -1) {
+                    final StringTokenizer tokenizer = new StringTokenizer(line);
+                    final String key = tokenizer.nextToken("=").strip();
 
-                if (value.length() > 0) {
-                    value = value.substring(1, value.length());
+                    String value = tokenizer.nextToken("").strip();
+
+                    if (value.length() > 0) {
+                        value = value.substring(1, value.length());
+                    }
+
+                    properties.put(key, value);
                 }
-
-                properties.put(key, value);
             });
         } catch (final Exception e) {
-            LOG.warn("Config under META-INF/microprofile-config.properties could not be read!");
+            LOG.warn("Config under /META-INF/microprofile-config.properties could not be read!");
         }
-
     }
 
 
@@ -70,10 +72,5 @@ public class MicroprofileDefaultConfigSource implements ConfigSource {
     @Override
     public String getName() {
         return getClass().getSimpleName();
-    }
-
-
-    public static void main(final String[] args) {
-        System.out.println(new MicroprofileDefaultConfigSource().getProperties());
     }
 }

@@ -2,6 +2,7 @@ package com.airepublic.microprofile.core;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
@@ -20,13 +21,19 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.enterprise.context.ConversationScoped;
+import javax.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ServerSession implements Runnable, Closeable {
+@ConversationScoped
+public class ServerSession implements Runnable, Closeable, Serializable {
+    private static final long serialVersionUID = 1L;
     private static final Logger LOG = LoggerFactory.getLogger(ServerSession.class);
     private static AtomicLong ID_GENERATOR = new AtomicLong();
     private final long id = ID_GENERATOR.incrementAndGet();
+    @Inject
     private ServerContext serverContext;
     private Selector selector;
     private SelectionKey key;
@@ -34,19 +41,18 @@ public class ServerSession implements Runnable, Closeable {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Queue<ByteBuffer> in = new ConcurrentLinkedQueue<>();
     private final Queue<Pair<ByteBuffer[], CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
-    private final SocketChannel channel;
-    private final IServerModule module;
+    private SocketChannel channel;
+    private IServerModule module;
     private final Map<String, Object> attributes = new HashMap<>();
 
 
-    public ServerSession(final IServerModule module, final SocketChannel channel, final ServerContext serverContext) throws IOException {
+    public void init(final IServerModule module, final SocketChannel channel) throws IOException {
         this.module = module;
-        this.serverContext = serverContext;
         this.channel = channel;
     }
 
 
-    public final long getId() {
+    public long getId() {
         return id;
     }
 
@@ -156,7 +162,7 @@ public class ServerSession implements Runnable, Closeable {
                 }
             }
         } finally {
-            LOG.info("Shutting down server session #" + getId() + " for module " + module.getName() + "!");
+            LOG.info("Closing session #" + getId() + " for module " + module.getName() + "!");
             try {
                 handleAction(ChannelAction.CLOSE_ALL);
             } catch (final IOException e) {
@@ -285,30 +291,26 @@ public class ServerSession implements Runnable, Closeable {
 
 
     ChannelAction determineIoHandler(final ByteBuffer buffer) throws IOException {
-        boolean needMoreData = false;
+        final Pair<DetermineStatus, AbstractIOHandler> pair = module.determineIoHandler(buffer, this);
 
-        for (final IServerModule module : serverContext.getModules()) {
-            final Pair<DetermineStatus, AbstractIOHandler> pair = module.determineIoHandler(buffer, this);
+        switch (pair.getValue1()) {
+            case FALSE:
+                return ChannelAction.CLOSE_ALL;
 
-            switch (pair.getValue1()) {
-                case FALSE:
-                break;
-
-                case TRUE:
-                    if (pair.getValue2() != null) {
-                        setIoHandler(pair.getValue2());
-                        return ChannelAction.KEEP_OPEN;
-                    }
-                break;
-
-                case NEED_MORE_DATA: {
-                    needMoreData = true;
+            case TRUE:
+                if (pair.getValue2() != null) {
+                    setIoHandler(pair.getValue2());
+                    return ChannelAction.KEEP_OPEN;
+                } else {
+                    return ChannelAction.CLOSE_ALL;
                 }
-                break;
-            }
-        }
 
-        return needMoreData ? ChannelAction.KEEP_OPEN : ChannelAction.CLOSE_ALL;
+            case NEED_MORE_DATA: {
+                return ChannelAction.KEEP_OPEN;
+            }
+            default:
+                return ChannelAction.CLOSE_ALL;
+        }
     }
 
 

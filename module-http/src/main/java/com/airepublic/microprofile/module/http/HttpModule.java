@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -15,44 +18,53 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 
-import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.airepublic.microprofile.core.AbstractIOHandler;
 import com.airepublic.microprofile.core.BufferUtil;
 import com.airepublic.microprofile.core.DetermineStatus;
+import com.airepublic.microprofile.core.IServicePlugin;
 import com.airepublic.microprofile.core.IServerModule;
 import com.airepublic.microprofile.core.Pair;
 import com.airepublic.microprofile.core.ServerContext;
 import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.module.http.core.IServicePluginHttp;
 
+@ApplicationScoped
 public class HttpModule implements IServerModule {
     private final static Logger LOG = LoggerFactory.getLogger(HttpModule.class);
     public final static String PORT = "http.port";
-    private final static int DEFAULT_PORT = 8080;
     public final static String SSL_PORT = "http.ssl.port";
-    private final static int DEFAULT_SSL_PORT = 8443;
-    public final static String TRUSTSTORE_PASSWORD = "http.truststore.passwordr";
+    public final static String KEYSTORE_FILE = "http.keystore.file";
     public final static String KEYSTORE_PASSWORD = "http.keystore.password";
-    private final static String SSL_ENGINE = "http.sslEngine";
-
-    private final Map<String, Class<? extends AbstractIOHandler>> mappings = new ConcurrentHashMap<>();
-    private Config config;
+    public final static String TRUSTSTORE_FILE = "http.truststore.file";
+    public final static String TRUSTSTORE_PASSWORD = "http.truststore.password";
+    private final static String SESSION_ATTRIBUTE_SSL_ENGINE = "http.sslEngine";
+    private final Set<IServicePlugin> featurePlugins = new HashSet<>();
+    @Inject
+    @ConfigProperty(name = PORT)
     private Integer port;
+    @Inject
+    @ConfigProperty(name = SSL_PORT)
     private Integer sslPort;
+    @Inject
+    @ConfigProperty(name = KEYSTORE_FILE, defaultValue = "D:/keystore.jks")
+    private String keystoreFile;
+    @Inject
+    @ConfigProperty(name = KEYSTORE_PASSWORD, defaultValue = "changeit")
+    private String keystorePassword;
+    @Inject
+    @ConfigProperty(name = TRUSTSTORE_FILE, defaultValue = "D:/cacerts.jks")
+    private String truststoreFile;
+    @Inject
+    @ConfigProperty(name = TRUSTSTORE_PASSWORD, defaultValue = "changeit")
+    private String truststorePassword;
+    @Inject
     private ServerContext serverContext;
     private SSLContext sslContext;
     private int readBufferSize = 16 * 1024;
-
-
-    protected Config getConfig() {
-        if (config == null) {
-            throw new IllegalStateException("Module " + getName() + " is not initialized properly. Config has not been set!");
-        }
-
-        return config;
-    }
 
 
     protected ServerContext getServerContext() {
@@ -66,44 +78,36 @@ public class HttpModule implements IServerModule {
     }
 
 
-    @Override
-    public void initModule(final Config config, final ServerContext serverContext) throws IOException {
-        this.config = config;
-        this.serverContext = serverContext;
-
-        final String keystorePassword = config.getOptionalValue(KEYSTORE_PASSWORD, String.class).orElse("changeit");
-        final String truststorePassword = config.getOptionalValue(TRUSTSTORE_PASSWORD, String.class).orElse("changeit");
-
-        try {
-            sslContext = SSLContext.getInstance("TLSv1.2");
-
+    @PostConstruct
+    public void initModule() {
+        if (sslPort != null) {
             try {
-                final KeyManager[] keyManagers = SslSupport.createKeyManagers("D:/keystore.jks", truststorePassword, keystorePassword);
-                final TrustManager[] trustManagers = SslSupport.createTrustManagers("D:/cacerts.jks", truststorePassword);
+                sslContext = SSLContext.getInstance("TLSv1.2");
 
-                sslContext.init(keyManagers, trustManagers, new SecureRandom());
+                try {
+                    final KeyManager[] keyManagers = SslSupport.createKeyManagers(keystoreFile, truststorePassword, keystorePassword);
+                    final TrustManager[] trustManagers = SslSupport.createTrustManagers(truststoreFile, truststorePassword);
+
+                    sslContext.init(keyManagers, trustManagers, new SecureRandom());
+                } catch (final Exception e) {
+                    throw new IOException("Could not get initialize SSLContext!", e);
+                }
+
+                final SSLSession dummySession = sslContext.createSSLEngine().getSession();
+                SslSupport.setApplicationBufferSize(dummySession.getApplicationBufferSize());
+                SslSupport.setPacketBufferSize(dummySession.getPacketBufferSize());
+                readBufferSize = dummySession.getPacketBufferSize();
+                dummySession.invalidate();
+
             } catch (final Exception e) {
-                throw new IOException("Could not get initialize SSLContext!", e);
+                throw new IllegalStateException("Could not get instance of SSLContext!", e);
             }
-
-            final SSLSession dummySession = sslContext.createSSLEngine().getSession();
-            SslSupport.setApplicationBufferSize(dummySession.getApplicationBufferSize());
-            SslSupport.setPacketBufferSize(dummySession.getPacketBufferSize());
-            readBufferSize = dummySession.getPacketBufferSize();
-            dummySession.invalidate();
-
-        } catch (final Exception e) {
-            throw new IOException("Could not get instance of SSLContext!", e);
         }
-
     }
 
 
     @Override
     public int[] getPortsToOpen() {
-        port = getConfig().getOptionalValue(PORT, Integer.class).orElse(DEFAULT_PORT);
-        sslPort = getConfig().getOptionalValue(SSL_PORT, Integer.class).orElse(DEFAULT_SSL_PORT);
-
         if (port != null && sslPort != null) {
             return new int[] { port, sslPort };
         } else if (port != null) {
@@ -116,8 +120,29 @@ public class HttpModule implements IServerModule {
     }
 
 
+    @Override
+    public String getProtocol() {
+        return "HTTP";
+    }
+
+
+    @Override
+    public void addFeaturePlugins(final Set<IServicePlugin> plugins) {
+        if (plugins != null) {
+            for (final IServicePlugin featurePlugin : plugins) {
+                if (!featurePlugins.contains(featurePlugin)) {
+                    LOG.info("\tAdding feature-plugin: " + featurePlugin.getName());
+                    featurePlugins.add(featurePlugin);
+                } else {
+                    LOG.warn("Feature-plugin " + featurePlugin.getName() + " is already added!");
+                }
+            }
+        }
+    }
+
+
     boolean isSecure(final ServerSession session) throws IOException {
-        return sslPort != null && sslPort.intValue() == ((InetSocketAddress) session.getChannel().getLocalAddress()).getPort();
+        return sslPort != null && session != null && sslPort.intValue() == ((InetSocketAddress) session.getChannel().getLocalAddress()).getPort();
     }
 
 
@@ -135,7 +160,7 @@ public class HttpModule implements IServerModule {
                     LOG.info("Connection closed due to handshake failure.");
                 }
 
-                session.setAttribute(SSL_ENGINE, sslEngine);
+                session.setAttribute(SESSION_ATTRIBUTE_SSL_ENGINE, sslEngine);
             } catch (final Exception e) {
                 throw new IOException("Could not perform SSL handshake!", e);
             }
@@ -148,7 +173,7 @@ public class HttpModule implements IServerModule {
     public ByteBuffer unwrap(final ServerSession session, final ByteBuffer buffer) throws IOException {
         if (isSecure(session)) {
             final ByteBuffer unwrapBuffer = ByteBuffer.allocate(buffer.capacity());
-            final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SSL_ENGINE);
+            final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SESSION_ATTRIBUTE_SSL_ENGINE);
 
             final SSLEngineResult result = sslEngine.unwrap(buffer, unwrapBuffer);
 
@@ -178,7 +203,7 @@ public class HttpModule implements IServerModule {
     @Override
     public ByteBuffer[] wrap(final ServerSession session, final ByteBuffer... buffers) throws IOException {
         if (isSecure(session)) {
-            final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SSL_ENGINE);
+            final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SESSION_ATTRIBUTE_SSL_ENGINE);
             final ByteBuffer[] wrappedBuffers = new ByteBuffer[buffers.length];
 
             for (int i = 0; i < buffers.length; i++) {
@@ -222,19 +247,23 @@ public class HttpModule implements IServerModule {
     }
 
 
-    public void addMapping(final String path, final Class<? extends AbstractIOHandler> ioHandlerClass) {
-        mappings.put(path, ioHandlerClass);
-    }
-
-
     protected Class<? extends AbstractIOHandler> findMapping(final String path) {
-        return mappings.get(path);
+        for (final IServicePlugin plugin : featurePlugins) {
+            if (IServicePluginHttp.class.isAssignableFrom(plugin.getClass())) {
+                final Class<? extends AbstractIOHandler> handlerClass = ((IServicePluginHttp) plugin).findMapping(path);
+
+                if (handlerClass != null) {
+                    return handlerClass;
+                }
+            }
+        }
+
+        return HttpIOHandler.class;
     }
 
 
     @Override
     public Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException {
-
         String path = null;
 
         // mark buffer to reset it after read to leave it untouched for handler

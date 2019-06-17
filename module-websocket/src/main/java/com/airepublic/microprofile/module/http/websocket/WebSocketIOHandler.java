@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 import com.airepublic.microprofile.core.AbstractIOHandler;
 import com.airepublic.microprofile.core.ChannelAction;
 import com.airepublic.microprofile.core.pathmatcher.MappingResult;
-import com.airepublic.microprofile.module.http.AsyncHttpRequestReader;
-import com.airepublic.microprofile.module.http.HttpRequest;
+import com.airepublic.microprofile.module.http.core.AsyncHttpRequestReader;
+import com.airepublic.microprofile.module.http.core.HttpRequest;
 import com.airepublic.microprofile.module.http.websocket.server.UpgradeUtil;
 import com.airepublic.microprofile.module.http.websocket.server.WsFrameServer;
 import com.airepublic.microprofile.module.http.websocket.server.WsHttpUpgradeHandler;
@@ -265,8 +265,8 @@ public class WebSocketIOHandler extends AbstractIOHandler {
 
 
     @Override
-    protected ChannelAction onReadError(final Exception e) {
-        LOG.error("Error not handled!", e);
+    protected ChannelAction onReadError(final Throwable t) {
+        LOG.error("Error not handled!", t);
         return ChannelAction.KEEP_OPEN;
     }
 

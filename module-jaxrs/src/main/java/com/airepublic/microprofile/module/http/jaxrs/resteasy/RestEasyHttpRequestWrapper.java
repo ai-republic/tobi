@@ -21,7 +21,7 @@ import org.jboss.resteasy.spi.ResteasyAsynchronousContext;
 import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.jboss.resteasy.util.PathHelper;
 
-import com.airepublic.microprofile.module.http.HttpRequest;
+import com.airepublic.microprofile.module.http.core.HttpRequest;
 
 public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRequest {
     private final HttpRequest request;

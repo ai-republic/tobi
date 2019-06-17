@@ -1,7 +1,7 @@
 import javax.websocket.server.ServerEndpointConfig;
 
-import com.airepublic.microprofile.core.IServerModule;
-import com.airepublic.microprofile.module.http.websocket.WebSocketModule;
+import com.airepublic.microprofile.core.IServicePlugin;
+import com.airepublic.microprofile.module.http.websocket.WebSocketPlugin;
 import com.airepublic.microprofile.module.http.websocket.server.DefaultServerEndpointConfigurator;
 
 module com.airepublic.microprofile.module.http.websocket {
@@ -22,7 +22,7 @@ module com.airepublic.microprofile.module.http.websocket {
 
     requires com.airepublic.microprofile.core;
     requires com.airepublic.microprofile.config;
-    requires com.airepublic.microprofile.module.http;
+    requires com.airepublic.microprofile.module.http.core;
 
     requires javax.websocket.api;
 
@@ -30,6 +30,6 @@ module com.airepublic.microprofile.module.http.websocket {
 
     provides ServerEndpointConfig.Configurator with DefaultServerEndpointConfigurator;
 
-    provides IServerModule with WebSocketModule;
+    provides IServicePlugin with WebSocketPlugin;
 
 }

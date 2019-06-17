@@ -58,17 +58,6 @@ public class JWTUtil {
     }
 
 
-    public static io.jsonwebtoken.Claims decodeJWT(final byte[] secretKey, final String jwt) {
-
-        // This line will throw an exception if it is not a signed JWS (as expected)
-        final io.jsonwebtoken.Claims claims = Jwts.parser()
-                .setSigningKey(secretKey)
-                .parseClaimsJws(jwt).getBody();
-
-        return claims;
-    }
-
-
     private static Key loadPrivateKey(final Path keyFile) throws IOException {
         String privateKey;
         try {
@@ -128,7 +117,7 @@ public class JWTUtil {
 
         final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.RS512;
         final Key signingKey = new SecretKeySpec(secretKey, signatureAlgorithm.getJcaName());
-        final JsonWebToken jwt2 = createJWT(secretKey, claimSet);
+        final JsonWebToken jwt2 = createJWT(signingKey, claimSet);
         System.out.println("Create JWT: " + jwt2);
         jwt2.getClaimNames().forEach(name -> System.out.println(name + " -> " + jwt2.getClaim(name)));
 

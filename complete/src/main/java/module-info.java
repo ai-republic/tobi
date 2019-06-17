@@ -2,7 +2,7 @@ module com.airepublic.microprofile.complete {
     exports com.airepublic.microprofile.javaserver.boot;
     exports com.airepublic.microprofile.sample;
 
-    requires com.airepublic.microprofile.config;
+    requires transitive com.airepublic.microprofile.config;
     requires com.airepublic.microprofile.jwtauth;
     requires transitive com.airepublic.microprofile.core;
     requires transitive com.airepublic.microprofile.module.http;

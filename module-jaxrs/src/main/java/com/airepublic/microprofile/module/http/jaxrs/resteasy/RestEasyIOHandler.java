@@ -12,11 +12,11 @@ import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.airepublic.microprofile.module.http.HttpResponse;
-import com.airepublic.microprofile.module.http.HttpStatus;
-import com.airepublic.microprofile.module.http.handler.HttpIOHandler;
+import com.airepublic.microprofile.module.http.core.AbstractHttpIOHandler;
+import com.airepublic.microprofile.module.http.core.HttpResponse;
+import com.airepublic.microprofile.module.http.core.HttpStatus;
 
-public class RestEasyIOHandler extends HttpIOHandler {
+public class RestEasyIOHandler extends AbstractHttpIOHandler {
     private final static Logger LOG = LoggerFactory.getLogger(RestEasyIOHandler.class);
     protected SynchronousDispatcher dispatcher;
     protected ResteasyProviderFactory providerFactory;
@@ -55,7 +55,6 @@ public class RestEasyIOHandler extends HttpIOHandler {
     }
 
 
-    @Override
     public HttpResponse getHttpResponse() {
         if (response == null) {
             try {

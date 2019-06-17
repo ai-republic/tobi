@@ -27,29 +27,81 @@ public abstract class AbstractIOHandler {
     }
 
 
+    /**
+     * Called during initialization of this IO handler to initialize the specific implementations.
+     * 
+     * @throws IOException if the deployment fails
+     */
     protected abstract void deploy() throws IOException;
 
 
+    /**
+     * Gets the {@link ServerSession}.
+     * 
+     * @return the {@link ServerSession}
+     */
     public synchronized ServerSession getSession() {
         return session;
     }
 
 
+    /**
+     * Called whenever there is data available from the incoming stream.
+     * 
+     * @param buffer the {@link ByteBuffer} read from the incoming stream
+     * @return the {@link ChannelAction} that should be performed after consuming this
+     *         {@link ByteBuffer}
+     * @throws IOException if an exception occurs during processing the buffer
+     */
     protected abstract ChannelAction consume(ByteBuffer buffer) throws IOException;
 
 
+    /**
+     * Called when the outgoing stream is ready to write data.<br/>
+     * NOTE: outgoing {@link ByteBuffer}s can be queue to the sessions write-buffer-queue.
+     * 
+     * @throws IOException if producing data fails
+     */
     protected abstract void produce() throws IOException;
 
 
-    protected abstract ChannelAction onReadError(Exception e);
+    /**
+     * This method is called by the {@link ServerSession} if there is an exception while reading
+     * from the incoming stream. In this case {@link AbstractIOHandler#consume(ByteBuffer)} will not
+     * be called.
+     * 
+     * @param t the exception that occurred
+     * @return the {@link ChannelAction} that should be performed
+     */
+    protected abstract ChannelAction onReadError(Throwable t);
 
 
+    /**
+     * Called when a {@link ChannelAction#CLOSE_INPUT} has been processed.
+     * 
+     * @throws IOException
+     */
     protected abstract void handleClosedInput() throws IOException;
 
 
+    /**
+     * Called when writing {@link ByteBuffer}s to the outgoing stream was successful.
+     * 
+     * @param handler the {@link CompletionHandler} that should be invoked with
+     *        {@link CompletionHandler#completed(Object, Object)}
+     * @param length the amount of bytes written to the outgoing stream
+     * @return the {@link ChannelAction} that should be performed
+     */
     protected abstract ChannelAction writeSuccessful(CompletionHandler<?, ?> handler, long length);
 
 
+    /**
+     * Called when writing {@link ByteBuffer}s to the outgoing stream failed.
+     * 
+     * @param handler the {@link CompletionHandler} that should be invoked with
+     *        {@link CompletionHandler#failed(Throwable, Object)}
+     * @return the {@link ChannelAction} that should be performed
+     */
     protected abstract ChannelAction writeFailed(CompletionHandler<?, ?> handler, Throwable t);
 
 }

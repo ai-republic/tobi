@@ -8,6 +8,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,6 @@ import java.util.concurrent.ForkJoinPool;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
-import org.eclipse.microprofile.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,26 +29,47 @@ public class JavaServer {
     private Selector selector;
     @Inject
     private ServerContext serverContext;
-    @Inject
-    private Config config;
     private boolean running = false;
     private ForkJoinPool executor;
     private final Map<SelectionKey, IServerModule> moduleForKey = new HashMap<>();
     private final Map<SelectionKey, ServerSocketChannel> serverSocketChannels = new HashMap<>();
 
 
-    void init() throws IOException {
+    void init() {
         try {
             executor = ForkJoinPool.commonPool();
             selector = Selector.open();
             final String host = serverContext.getHost();
             final List<Integer> openPorts = new ArrayList<>();
+
+            // load feature plugins and structure them by protocol
+            final Map<String, Set<IServicePlugin>> featurePlugins = new HashMap<>();
+
+            final ServiceLoader<IServicePlugin> services = ServiceLoader.load(IServicePlugin.class);
+            services.forEach(p -> {
+                final IServicePlugin plugin = serverContext.getCdiContainer().select(p.getClass()).get();
+
+                for (final String protocol : plugin.getSupportedProtocols()) {
+                    Set<IServicePlugin> protocolFeaturePlugins = featurePlugins.get(protocol);
+
+                    if (protocolFeaturePlugins == null) {
+                        protocolFeaturePlugins = new HashSet<>();
+                        featurePlugins.put(protocol, protocolFeaturePlugins);
+                    }
+
+                    protocolFeaturePlugins.add(plugin);
+                }
+            });
+
             final ServiceLoader<IServerModule> serviceLoader = ServiceLoader.load(IServerModule.class);
 
-            serviceLoader.forEach(module -> {
+            serviceLoader.forEach(m -> {
                 try {
-                    LOG.info("Starting " + module.getName() + "...");
-                    module.initModule(config, serverContext);
+                    LOG.info("Starting " + m.getName() + "...");
+                    final IServerModule module = serverContext.getCdiContainer().select(m.getClass()).get();
+
+                    // add feature plugins for the supported protocol to the module
+                    module.addFeaturePlugins(featurePlugins.get(module.getProtocol()));
 
                     final int[] ports = module.getPortsToOpen();
 
@@ -73,7 +94,7 @@ public class JavaServer {
                     }
 
                     serverContext.addModule(module);
-                } catch (final IOException e) {
+                } catch (final Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -142,11 +163,14 @@ public class JavaServer {
             throw new IOException("Failed to accept connection (channel is null)!");
         }
 
-        executor.submit(new ServerSession(moduleForKey.get(connectionKey), channel, serverContext));
+        final SessionStarter sessionStarter = serverContext.getCdiContainer().select(SessionStarter.class).get();
+        sessionStarter.init(moduleForKey.get(connectionKey), channel, serverContext);
+        executor.submit(sessionStarter);
     }
 
 
     boolean shouldConnect(final SelectionKey connectionKey) {
         return true;
     }
+
 }

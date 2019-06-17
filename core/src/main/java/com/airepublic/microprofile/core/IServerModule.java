@@ -2,8 +2,7 @@ package com.airepublic.microprofile.core;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import org.eclipse.microprofile.config.Config;
+import java.util.Set;
 
 /**
  * Service provider interface to provide information about a server module.
@@ -29,14 +28,19 @@ public interface IServerModule {
 
 
     /**
-     * Initializes the server module from the specified {@link Config} and adds any context
-     * information it needs to the {@link ServerContext}.
+     * Gets the provided protocol of this module, i.e. HTTP for HTTP, HTTPS and WebSockets
      * 
-     * @param config the configuration
-     * @param serverContext the {@link ServerContext}
-     * @throws IOException if the initialization fails
+     * @return the protocol
      */
-    void initModule(Config config, ServerContext serverContext) throws IOException;
+    String getProtocol();
+
+
+    /**
+     * Adds {@link IServicePlugin}s which match the protocol to this module.
+     * 
+     * @param featurePlugins
+     */
+    void addFeaturePlugins(Set<IServicePlugin> featurePlugins);
 
 
     /**

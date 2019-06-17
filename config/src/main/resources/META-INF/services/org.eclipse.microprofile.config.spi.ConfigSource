@@ -1,3 +1,0 @@
-com.airepublic.microprofile.config.SystemPropertiesConfigSource
-com.airepublic.microprofile.config.EnvironmentConfigSource
-com.airepublic.microprofile.config.MicroprofileDefaultConfigSource

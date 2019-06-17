@@ -26,6 +26,11 @@
 			<artifactId>core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>module-http-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		
 		<dependency>
 			<groupId>org.wildfly.openssl</groupId>

@@ -14,8 +14,8 @@ module com.airepublic.microprofile.jwtauth {
     // requires openwebbeans.se;
     // requires openwebbeans.spi;
     // requires openwebbeans.impl;
-    requires jdk.unsupported;
-    requires weld.se.shaded;
+    requires transitive jdk.unsupported;
+    requires transitive weld.se.shaded;
 
     requires jjwt;
     requires java.xml.bind;

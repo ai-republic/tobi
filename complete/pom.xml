@@ -20,6 +20,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>module-http</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>module-jaxrs</artifactId>
 			<version>${project.version}</version>
 		</dependency>

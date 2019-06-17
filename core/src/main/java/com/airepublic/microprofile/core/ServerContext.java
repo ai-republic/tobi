@@ -10,47 +10,25 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.se.SeContainer;
+import javax.inject.Inject;
 
-import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class ServerContext {
     public final static String HOST = "host";
-    private final static String DEFAULT_HOST = "localhost";
     public final static String WORKER_COUNT = "workerCount";
-    private final static int DEFAULT_WORKER_COUNT = 10;
-
-    private Config config;
+    private final static String DEFAULT_WORKER_COUNT = "10";
+    @Inject
+    @ConfigProperty(name = HOST, defaultValue = "localhost")
     private String host;
+    @Inject
+    @ConfigProperty(name = WORKER_COUNT, defaultValue = DEFAULT_WORKER_COUNT)
     private int workerCount;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final Queue<ServerSession> openSessions = new ConcurrentLinkedQueue<>();
     private SeContainer cdiContainer;
     private final Set<IServerModule> modules = new HashSet<>();
-
-
-    public final static ServerContext create(final Config config) {
-        final ServerContext context = new ServerContext(config);
-
-        return context;
-    }
-
-
-    private ServerContext(final Config config) {
-        setConfig(config);
-        setHost(config.getOptionalValue(HOST, String.class).orElse(DEFAULT_HOST));
-        setWorkerCount(config.getOptionalValue(WORKER_COUNT, Integer.class).orElse(DEFAULT_WORKER_COUNT));
-    }
-
-
-    public final Config getConfig() {
-        return config;
-    }
-
-
-    private final void setConfig(final Config config) {
-        this.config = config;
-    }
 
 
     public ServerContext setAttribute(final String key, final Object value) {

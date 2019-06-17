@@ -8,7 +8,6 @@ import java.util.Set;
 import javax.enterprise.inject.Produces;
 
 import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,18 +17,7 @@ import com.airepublic.microprofile.jwtauth.JWTUtil;
 
 public class Configuration {
     private final static Logger LOG = LoggerFactory.getLogger(Configuration.class);
-    private static Config config;
     private JsonWebToken jwt;
-
-
-    @Produces
-    public Config produceConfig() {
-        if (config == null) {
-            config = ConfigProviderResolver.instance().getConfig();
-        }
-
-        return config;
-    }
 
 
     @Produces
@@ -52,5 +40,4 @@ public class Configuration {
 
         return jwt;
     }
-
 }

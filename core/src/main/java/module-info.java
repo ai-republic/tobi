@@ -1,11 +1,12 @@
 import com.airepublic.microprofile.core.IServerModule;
+import com.airepublic.microprofile.core.IServicePlugin;
 
 module com.airepublic.microprofile.core {
     exports com.airepublic.microprofile.core;
     exports com.airepublic.microprofile.core.pathmatcher;
     exports com.airepublic.microprofile.core.util;
 
-    requires com.airepublic.microprofile.config;
+    requires transitive com.airepublic.microprofile.config;
 
     requires transitive org.slf4j;
     requires transitive ch.qos.logback.classic;
@@ -25,4 +26,5 @@ module com.airepublic.microprofile.core {
     opens com.airepublic.microprofile.core;
 
     uses IServerModule;
+    uses IServicePlugin;
 }
