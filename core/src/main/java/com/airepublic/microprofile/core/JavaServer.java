@@ -163,9 +163,9 @@ public class JavaServer {
             throw new IOException("Failed to accept connection (channel is null)!");
         }
 
-        final SessionStarter sessionStarter = serverContext.getCdiContainer().select(SessionStarter.class).get();
-        sessionStarter.init(moduleForKey.get(connectionKey), channel, serverContext);
-        executor.submit(sessionStarter);
+        final SessionContainer sessionContainer = serverContext.getCdiContainer().select(SessionContainer.class).get();
+        sessionContainer.init(moduleForKey.get(connectionKey), channel);
+        executor.submit(sessionContainer);
     }
 
 

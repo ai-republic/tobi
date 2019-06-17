@@ -12,19 +12,19 @@ import org.jboss.weld.context.bound.BoundRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SessionStarter implements Runnable {
-    private final static Logger LOG = LoggerFactory.getLogger(SessionStarter.class);
+public class SessionContainer implements Runnable {
+    private final static Logger LOG = LoggerFactory.getLogger(SessionContainer.class);
     @Inject
     private BoundConversationContext sessionContext;
     private IServerModule module;
     private SocketChannel channel;
+    @Inject
     private ServerContext serverContext;
 
 
-    public void init(final IServerModule module, final SocketChannel channel, final ServerContext serverContext) {
+    public void init(final IServerModule module, final SocketChannel channel) {
         this.module = module;
         this.channel = channel;
-        this.serverContext = serverContext;
     }
 
 
@@ -34,7 +34,6 @@ public class SessionStarter implements Runnable {
 
         try {
             sessionContext.associate(storage);
-
             sessionContext.activate();
 
             final ServerSession session = serverContext.getCdiContainer().select(ServerSession.class).get();
@@ -44,15 +43,9 @@ public class SessionStarter implements Runnable {
             LOG.error("Error creating session", e);
         } finally {
             try {
-                /* Invalidate the request (all bean instances will be scheduled for destruction) */
                 sessionContext.invalidate();
-                /*
-                 * Deactivate the request, causing all bean instances to be destroyed (as the
-                 * context is invalid)
-                 */
                 sessionContext.deactivate();
             } finally {
-                /* Ensure that whatever happens we dissociate to prevent any memory leaks */
                 sessionContext.dissociate(storage);
             }
         }
