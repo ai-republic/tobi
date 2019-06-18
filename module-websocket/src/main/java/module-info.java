@@ -24,7 +24,7 @@ module com.airepublic.microprofile.module.http.websocket {
     requires com.airepublic.microprofile.config;
     requires com.airepublic.microprofile.module.http.core;
 
-    requires javax.websocket.api;
+    requires transitive javax.websocket.api;
 
     opens com.airepublic.microprofile.module.http.websocket;
 

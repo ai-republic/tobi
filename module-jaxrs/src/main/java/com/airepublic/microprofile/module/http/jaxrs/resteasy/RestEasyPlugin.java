@@ -1,6 +1,8 @@
 package com.airepublic.microprofile.module.http.jaxrs.resteasy;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,11 +18,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.airepublic.microprofile.core.AbstractIOHandler;
+import com.airepublic.microprofile.core.DetermineStatus;
+import com.airepublic.microprofile.core.IServicePlugin;
+import com.airepublic.microprofile.core.Pair;
 import com.airepublic.microprofile.core.Reflections;
 import com.airepublic.microprofile.core.ServerContext;
-import com.airepublic.microprofile.module.http.core.IServicePluginHttp;
+import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.module.http.core.HttpBufferUtils;
 
-public class RestEasyPlugin implements IServicePluginHttp {
+public class RestEasyPlugin implements IServicePlugin {
     private final static Logger LOG = LoggerFactory.getLogger(RestEasyPlugin.class);
     public final static String CONTEXT_PATH = "jax-rs.context.path";
     @Inject
@@ -42,13 +48,35 @@ public class RestEasyPlugin implements IServicePluginHttp {
     }
 
 
+    @Override
+    public Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException {
+        final String path = HttpBufferUtils.getUriPath(buffer);
+
+        if (path == null) {
+            return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
+        }
+
+        if (findMapping(path) != null) {
+            try {
+                final RestEasyIOHandler handler = serverContext.getCdiContainer().select(RestEasyIOHandler.class).get();
+                handler.init(session);
+                return new Pair<>(DetermineStatus.TRUE, handler);
+            } catch (final Exception e) {
+                LOG.error("Could not instantiate handler: " + RestEasyIOHandler.class, e);
+                throw new IOException("Could not initialize handler: " + RestEasyIOHandler.class, e);
+            }
+        }
+
+        return new Pair<>(DetermineStatus.FALSE, null);
+    }
+
+
     public void addMapping(final String path, final Class<? extends AbstractIOHandler> ioHandlerClass) {
         mappings.put(path, ioHandlerClass);
     }
 
 
-    @Override
-    public Class<? extends AbstractIOHandler> findMapping(final String path) {
+    protected Class<? extends AbstractIOHandler> findMapping(final String path) {
         return mappings.get(path);
     }
 

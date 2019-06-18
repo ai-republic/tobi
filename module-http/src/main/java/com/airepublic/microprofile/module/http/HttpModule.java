@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
@@ -23,13 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.airepublic.microprofile.core.AbstractIOHandler;
-import com.airepublic.microprofile.core.BufferUtil;
 import com.airepublic.microprofile.core.DetermineStatus;
-import com.airepublic.microprofile.core.IServicePlugin;
 import com.airepublic.microprofile.core.IServerModule;
+import com.airepublic.microprofile.core.IServicePlugin;
 import com.airepublic.microprofile.core.Pair;
 import com.airepublic.microprofile.core.ServerContext;
 import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.module.http.core.HttpBufferUtils;
 import com.airepublic.microprofile.module.http.core.IServicePluginHttp;
 
 @ApplicationScoped
@@ -42,7 +43,7 @@ public class HttpModule implements IServerModule {
     public final static String TRUSTSTORE_FILE = "http.truststore.file";
     public final static String TRUSTSTORE_PASSWORD = "http.truststore.password";
     private final static String SESSION_ATTRIBUTE_SSL_ENGINE = "http.sslEngine";
-    private final Set<IServicePlugin> featurePlugins = new HashSet<>();
+    private final Set<IServicePlugin> servicePlugins = new HashSet<>();
     @Inject
     @ConfigProperty(name = PORT)
     private Integer port;
@@ -130,9 +131,9 @@ public class HttpModule implements IServerModule {
     public void addServicePlugins(final Set<IServicePlugin> plugins) {
         if (plugins != null) {
             for (final IServicePlugin featurePlugin : plugins) {
-                if (!featurePlugins.contains(featurePlugin)) {
+                if (!servicePlugins.contains(featurePlugin)) {
                     LOG.info("\tAdding feature-plugin: " + featurePlugin.getName());
-                    featurePlugins.add(featurePlugin);
+                    servicePlugins.add(featurePlugin);
                 } else {
                     LOG.warn("Feature-plugin " + featurePlugin.getName() + " is already added!");
                 }
@@ -248,7 +249,7 @@ public class HttpModule implements IServerModule {
 
 
     protected Class<? extends AbstractIOHandler> findMapping(final String path) {
-        for (final IServicePlugin plugin : featurePlugins) {
+        for (final IServicePlugin plugin : servicePlugins) {
             if (IServicePluginHttp.class.isAssignableFrom(plugin.getClass())) {
                 final Class<? extends AbstractIOHandler> handlerClass = ((IServicePluginHttp) plugin).findMapping(path);
 
@@ -264,67 +265,53 @@ public class HttpModule implements IServerModule {
 
     @Override
     public Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException {
-        String path = null;
+        final String path = HttpBufferUtils.getUriPath(buffer);
 
-        // mark buffer to reset it after read to leave it untouched for handler
-        buffer.mark();
-        final String line = BufferUtil.readLine(buffer);
-        buffer.reset();
-
-        // check for the URI request line
-        if (line != null) {
-            final int startIdx = line.indexOf(" ");
-
-            if (startIdx != -1) {
-                final int endIdx = line.indexOf(" ", startIdx + 1);
-
-                if (endIdx != -1) {
-                    path = line.substring(startIdx, endIdx).strip();
-
-                    // strip trailing slash if there is one
-                    if (path != null && path.endsWith("/")) {
-                        path = path.substring(0, path.length() - 1);
-                    }
-                } else {
-                    throw new IOException(line + " does not contain valid URI");
-                }
-            } else {
-                throw new IOException(line + " does not contain valid URI");
-            }
-        } else {
+        if (path == null) {
             return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
         }
 
-        // check if there is a SocketHandler for the path
-        Class<? extends AbstractIOHandler> handlerClass = null;
-
-        if (path != null) {
-            handlerClass = findMapping(path);
-        }
-
         AbstractIOHandler handler = null;
+        boolean needMoreData = false;
+        final Iterator<IServicePlugin> it = servicePlugins.iterator();
 
-        try {
-            // if no handler was mapped, use default HttpSocketHandler
-            if (handlerClass == null) {
-                LOG.info("Module " + getName() + " could not find mapping for: " + path);
-                return new Pair<>(DetermineStatus.FALSE, null);
-            } else if (session.getServerContext().getCdiContainer() != null) {
-                handler = session.getServerContext().getCdiContainer().select(handlerClass).get();
-            } else {
-                handler = handlerClass.getConstructor().newInstance();
+        while (handler == null && it.hasNext()) {
+            final IServicePlugin plugin = it.next();
+            final Pair<DetermineStatus, AbstractIOHandler> result = plugin.determineIoHandler(buffer, session);
+
+            switch (result.getValue1()) {
+                case FALSE:
+                break;
+
+                case TRUE: {
+                    if (result.getValue2() != null) {
+                        handler = result.getValue2();
+                    }
+                }
+                break;
+
+                case NEED_MORE_DATA: {
+                    needMoreData = true;
+                }
+                break;
+                default:
+                break;
             }
-
-            handler.init(session);
-        } catch (final Exception e) {
-            LOG.error("Could not instantiate handler: " + handlerClass.getName(), e);
-            throw new IOException("Could not initialize handler: " + handlerClass, e);
         }
 
-        LOG.info("Using " + handler.getClass().getName() + " for request: " + path);
-
-        return new Pair<>(DetermineStatus.TRUE, handler);
-
+        if (handler != null) {
+            LOG.info("Using " + handler.getClass().getName() + " for request: " + path);
+            return new Pair<>(DetermineStatus.TRUE, handler);
+        } else if (needMoreData) {
+            return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
+        } else {
+            // if no handler was mapped, use default HttpIOHandler
+            handler = serverContext.getCdiContainer().select(HttpIOHandler.class).get();
+            handler.init(session);
+            LOG.info("Module " + getName() + " could not find mapping for: " + path);
+            LOG.info("Using default " + handler.getClass().getName() + " for request: " + path);
+            return new Pair<>(DetermineStatus.TRUE, handler);
+        }
     }
 
 }
