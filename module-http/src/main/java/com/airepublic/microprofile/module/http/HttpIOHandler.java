@@ -15,6 +15,11 @@ public class HttpIOHandler extends AbstractHttpIOHandler {
     }
 
 
+    /**
+     * The default implementation will return a HTTP 404 {@link HttpResponse}.
+     * 
+     * @return a HTTP 404 {@link HttpResponse}
+     */
     @Override
     public HttpResponse getHttpResponse() {
         final Headers headers = new Headers();

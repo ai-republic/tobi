@@ -106,18 +106,12 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
 
 
     /**
-     * The default implementation will return a HTTP 404 {@link HttpResponse}.
+     * The implementation should produce a {@link HttpResponse} according to the
+     * {@link HttpRequest}.
      * 
      * @return a HTTP 404 {@link HttpResponse}
      */
-    public HttpResponse getHttpResponse() {
-        final Headers headers = new Headers();
-        headers.add(Headers.CONTENT_TYPE, "text/plain");
-        final ByteBuffer buffer = ByteBuffer.wrap("The page requested was not found.".getBytes());
-        final HttpResponse response = new HttpResponse(HttpStatus.NOT_FOUND, headers, buffer);
-
-        return response;
-    }
+    public abstract HttpResponse getHttpResponse();
 
 
     /**
