@@ -23,12 +23,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>core</artifactId>
+			<artifactId>server-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>module-http-core</artifactId>
+			<artifactId>http-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

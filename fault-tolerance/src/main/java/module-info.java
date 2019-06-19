@@ -11,10 +11,10 @@ module com.airepublic.microprofile.faulttolerance {
     // requires openwebbeans.se;
     // requires openwebbeans.spi;
     // requires openwebbeans.impl;
-    requires weld.se.shaded;
+    requires transitive weld.se.shaded;
 
     requires jdk.unsupported;
-    requires microprofile.fault.tolerance.api;
+    requires transitive microprofile.fault.tolerance.api;
 
     opens com.airepublic.microprofile.faulttolerance;
 

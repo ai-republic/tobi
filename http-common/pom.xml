@@ -9,29 +9,24 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>module-websocket</artifactId>
+	<artifactId>http-common</artifactId>
 
 
 	<properties>
 		<encoding>UTF-8</encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<websocket.version>1.1</websocket.version>
+		<openssl.version>1.0.6.Final</openssl.version>
 	</properties>
+
 
 
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>module-http</artifactId>
+			<artifactId>server-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
-		<!-- Websocket -->
-		<dependency>
-			<groupId>javax.websocket</groupId>
-			<artifactId>javax.websocket-api</artifactId>
-			<version>${websocket.version}</version>
-		</dependency>
 	</dependencies>
 
 

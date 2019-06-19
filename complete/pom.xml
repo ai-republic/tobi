@@ -25,12 +25,12 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>module-jaxrs</artifactId>
+			<artifactId>plugin-jaxrs</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>module-websocket</artifactId>
+			<artifactId>plugin-websocket</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
