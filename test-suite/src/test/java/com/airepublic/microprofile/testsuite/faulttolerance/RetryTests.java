@@ -10,13 +10,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @WeldSetup
-public class TestRetry {
-    private RetryCombinations test;
+public class RetryTests {
+    private RetryTestClass test;
 
 
     @BeforeEach
     public void setUp() {
-        test = SeContainerInitializer.newInstance().initialize().select(RetryCombinations.class).get();
+        test = SeContainerInitializer.newInstance().initialize().select(RetryTestClass.class).get();
     }
 
 
@@ -56,7 +56,8 @@ public class TestRetry {
 
         for (int i = 1; i < test.callTimes.size(); i++) {
             final Long nextTime = test.callTimes.get(i);
-            Assertions.assertTrue(nextTime - time > 1000);
+            final long duration = nextTime - time;
+            Assertions.assertTrue(duration >= 1000);
             time = nextTime;
         }
     }
@@ -75,7 +76,8 @@ public class TestRetry {
 
         for (int i = 1; i < test.callTimes.size(); i++) {
             final Long nextTime = test.callTimes.get(i);
-            Assertions.assertTrue(nextTime - time > 1000);
+            final long duration = nextTime - time;
+            Assertions.assertTrue(duration >= 1000);
             time = nextTime;
         }
     }
@@ -98,7 +100,8 @@ public class TestRetry {
 
             for (int i = 1; i < test.callTimes.size(); i++) {
                 final Long nextTime = test.callTimes.get(i);
-                Assertions.assertTrue(nextTime - time > 900 && nextTime - time < 1200);
+                final long duration = nextTime - time;
+                Assertions.assertTrue(duration >= 900 && duration < 1200);
                 time = nextTime;
             }
         }

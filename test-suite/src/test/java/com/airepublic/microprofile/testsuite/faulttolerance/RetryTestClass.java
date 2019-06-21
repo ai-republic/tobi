@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.eclipse.microprofile.faulttolerance.Retry;
 
-public class RetryCombinations {
+public class RetryTestClass {
     int counter = 0;
     List<Long> callTimes = new ArrayList<>();
 

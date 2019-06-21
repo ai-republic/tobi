@@ -36,6 +36,8 @@
 		<module>fault-tolerance</module>
 		<module>complete</module>
 		<module>test-suite</module>
+		<module>metrics</module>
+		<module>health</module>
 	</modules>
 
 	<build>

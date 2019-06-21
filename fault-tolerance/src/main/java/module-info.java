@@ -1,3 +1,7 @@
+import javax.enterprise.inject.spi.Extension;
+
+import com.airepublic.microprofile.faulttolerance.FallbackBindingAnnotator;
+
 module com.airepublic.microprofile.faulttolerance {
     exports com.airepublic.microprofile.faulttolerance;
 
@@ -15,6 +19,8 @@ module com.airepublic.microprofile.faulttolerance {
 
     requires jdk.unsupported;
     requires transitive microprofile.fault.tolerance.api;
+
+    provides Extension with FallbackBindingAnnotator;
 
     opens com.airepublic.microprofile.faulttolerance;
 
