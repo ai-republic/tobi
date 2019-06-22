@@ -26,18 +26,20 @@
 
 
 	<modules>
-		<module>config</module>
 		<module>server-core</module>
-		<module>http-common</module>
 		<module>module-http</module>
-		<module>plugin-jaxrs</module>
-		<module>plugin-websocket</module>
-		<module>jwt-auth</module>
-		<module>fault-tolerance</module>
+		<module>util-http-common</module>
+		<module>plugin-http-jaxrs</module>
+		<module>plugin-http-websocket</module>
+		<module>feature-mp-config</module>
+		<module>feature-mp-jwtauth</module>
+		<module>feature-mp-faulttolerance</module>
+		<module>feature-mp-metrics</module>
+		<module>feature-mp-health</module>
+		<module>feature-cdi-weld</module>
+		<module>feature-cdi-owb</module>
 		<module>complete</module>
 		<module>test-suite</module>
-		<module>metrics</module>
-		<module>health</module>
 	</modules>
 
 	<build>
