@@ -1,6 +1,5 @@
 package com.airepublic.microprofile.feature.cdi.weld;
 
-import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.se.SeContainer;
 
 import org.jboss.weld.environment.se.Weld;
@@ -18,11 +17,5 @@ public class CDIServiceProviderImpl implements ICDIServiceProvider {
         }
 
         return seContainer;
-    }
-
-
-    @Produces
-    public SeContainer produceSeContainer() {
-        return getSeContainer();
     }
 }

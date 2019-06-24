@@ -5,15 +5,14 @@ import com.airepublic.microprofile.feature.mp.faulttolerance.FallbackAnnotationD
 module com.airepublic.microprofile.feature.mp.faulttolerance {
     exports com.airepublic.microprofile.feature.mp.faulttolerance;
 
+    requires transitive microprofile.fault.tolerance.api;
+
     requires org.slf4j;
     requires ch.qos.logback.classic;
-
     requires cdi.api;
     requires java.annotation;
     requires javax.inject;
     requires javax.interceptor.api;
-
-    requires transitive microprofile.fault.tolerance.api;
 
     provides Extension with FallbackAnnotationDecorator;
 

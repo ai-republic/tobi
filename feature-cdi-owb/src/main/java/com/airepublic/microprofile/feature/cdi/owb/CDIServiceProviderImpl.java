@@ -1,6 +1,5 @@
 package com.airepublic.microprofile.feature.cdi.owb;
 
-import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 
@@ -23,9 +22,4 @@ public class CDIServiceProviderImpl implements ICDIServiceProvider {
         return seContainer;
     }
 
-
-    @Produces
-    public SeContainer produceSeContainer() {
-        return getSeContainer();
-    }
 }

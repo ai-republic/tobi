@@ -5,9 +5,8 @@ module com.airepublic.microprofile.feature.mp.health {
 
     requires org.slf4j;
     requires ch.qos.logback.classic;
-
-    requires java.annotation;
     requires cdi.api;
+    requires java.annotation;
     requires javax.inject;
 
     requires transitive java.json;

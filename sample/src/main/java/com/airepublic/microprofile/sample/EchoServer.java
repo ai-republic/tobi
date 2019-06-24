@@ -12,21 +12,30 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.metrics.annotation.Timed;
+import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
+import org.eclipse.microprofile.openapi.annotations.info.Contact;
+import org.eclipse.microprofile.openapi.annotations.info.Info;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@OpenAPIDefinition(info = @Info(title = "EchoServer", contact = @Contact(name = "Torsten Oltmanns"), version = "1.0"))
 @ServerEndpoint(value = "/ws")
 public class EchoServer {
     private static final Logger LOG = LoggerFactory.getLogger(EchoServer.class);
     int id = 0;
 
 
+    @Timed
     @OnOpen
     public void onOpen(final Session session) {
         LOG.info("Connected ... " + session.getId());
     }
 
 
+    @Timeout
     @OnMessage
     public String onMessage(final String message, final Session session) {
         System.out.println("onMessage: " + message);
@@ -44,6 +53,7 @@ public class EchoServer {
     }
 
 
+    @CircuitBreaker(delay = 100)
     @OnMessage
     public void onMessage(final byte[] bytes, final Session session) {
         try {

@@ -42,7 +42,49 @@
 		
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-config</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-faulttolerance</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-health</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-jwtauth</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-metrics</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-openapi</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-opentracing</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-restclient</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

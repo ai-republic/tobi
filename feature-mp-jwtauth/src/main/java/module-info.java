@@ -7,7 +7,6 @@ module com.airepublic.microprofile.feature.mp.jwtauth {
 
     requires org.slf4j;
     requires ch.qos.logback.classic;
-
     requires cdi.api;
     requires java.annotation;
     requires javax.inject;

@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -36,11 +37,13 @@ public class JavaServer {
     private final Map<SelectionKey, ServerSocketChannel> serverSocketChannels = new HashMap<>();
 
 
-    protected void init() {
+    private void init(final SeContainer cdiContainer) {
         if (!initialized.get()) {
             synchronized (initialized) {
                 if (!initialized.get()) {
                     try {
+                        serverContext.setCdiContainer(cdiContainer);
+
                         selector = Selector.open();
                         final String host = serverContext.getHost();
                         final List<Integer> openPorts = new ArrayList<>();
@@ -115,11 +118,11 @@ public class JavaServer {
     }
 
 
-    public void start() throws IOException {
+    public void start(final SeContainer cdiContainer) throws IOException {
         if (!initialized.get()) {
             synchronized (initialized) {
                 if (!initialized.get()) {
-                    init();
+                    init(cdiContainer);
                 }
             }
         }

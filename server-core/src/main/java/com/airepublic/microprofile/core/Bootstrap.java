@@ -18,7 +18,7 @@ public class Bootstrap {
     private void startServer(final SeContainer cdiContainer) throws IOException {
         final JavaServer javaServer = cdiContainer.select(JavaServer.class).get();
         LOG.info("Booting microprofile-server ...");
-        javaServer.start();
+        javaServer.start(cdiContainer);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override

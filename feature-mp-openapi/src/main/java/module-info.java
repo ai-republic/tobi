@@ -1,4 +1,13 @@
 module com.airepublic.microprofile.feature.mp.openapi {
     requires transitive com.airepublic.microprofile.feature.mp.config;
-    requires transitive smallrye.open.api;
+
+    requires transitive microprofile.openapi.api;
+
+    requires org.slf4j;
+    requires ch.qos.logback.classic;
+    requires cdi.api;
+    requires java.annotation;
+    requires javax.inject;
+
+    requires smallrye.open.api;
 }
