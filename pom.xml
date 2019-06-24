@@ -40,6 +40,9 @@
 		<module>complete</module>
 		<module>test-suite</module>
 		<module>server-core-spi</module>
+		<module>feature-mp-openapi</module>
+		<module>feature-mp-opentracing</module>
+		<module>feature-mp-restclient</module>
 	</modules>
 
 	<build>
