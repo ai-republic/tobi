@@ -26,23 +26,23 @@
 
 	<modules>
 		<module>server-core</module>
+		<module>server-core-spi</module>
 		<module>module-http</module>
 		<module>util-http-common</module>
 		<module>plugin-http-jaxrs</module>
 		<module>plugin-http-websocket</module>
 		<module>feature-mp-config</module>
-		<module>feature-mp-jwtauth</module>
 		<module>feature-mp-faulttolerance</module>
-		<module>feature-mp-metrics</module>
 		<module>feature-mp-health</module>
-		<module>feature-cdi-weld</module>
-		<module>feature-cdi-owb</module>
-		<module>complete</module>
-		<module>test-suite</module>
-		<module>server-core-spi</module>
+		<module>feature-mp-jwtauth</module>
+		<module>feature-mp-metrics</module>
 		<module>feature-mp-openapi</module>
 		<module>feature-mp-opentracing</module>
 		<module>feature-mp-restclient</module>
+		<module>feature-cdi-weld</module>
+		<module>feature-cdi-owb</module>
+		<module>sample</module>
+		<module>test-suite</module>
 	</modules>
 
 	<build>
