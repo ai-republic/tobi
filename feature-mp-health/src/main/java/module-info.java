@@ -1,15 +1,16 @@
-module com.airepublic.microprofile.health {
-    exports com.airepublic.microprofile.health;
+module com.airepublic.microprofile.feature.mp.health {
+    exports com.airepublic.microprofile.feature.mp.health;
 
     requires transitive microprofile.health.api;
 
     requires org.slf4j;
     requires ch.qos.logback.classic;
 
-    requires transitive weld.se.shaded;
-    requires transitive jdk.unsupported;
+    requires java.annotation;
+    requires cdi.api;
+    requires javax.inject;
 
     requires transitive java.json;
 
-    opens com.airepublic.microprofile.health;
+    opens com.airepublic.microprofile.feature.mp.health;
 }

@@ -9,7 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>fault-tolerance</artifactId>
+	<artifactId>feature-mp-faulttolerance</artifactId>
 
 	<properties>
 		<encoding>UTF-8</encoding>

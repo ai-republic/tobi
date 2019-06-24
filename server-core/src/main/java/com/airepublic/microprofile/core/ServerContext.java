@@ -27,6 +27,7 @@ public class ServerContext {
     private int workerCount;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final Queue<ServerSession> openSessions = new ConcurrentLinkedQueue<>();
+    @Inject
     private SeContainer cdiContainer;
     private final Set<IServerModule> modules = new HashSet<>();
 

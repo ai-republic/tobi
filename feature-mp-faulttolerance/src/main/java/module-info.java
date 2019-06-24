@@ -1,27 +1,22 @@
 import javax.enterprise.inject.spi.Extension;
 
-import com.airepublic.microprofile.faulttolerance.FallbackBindingAnnotator;
+import com.airepublic.microprofile.feature.mp.faulttolerance.FallbackAnnotationDecorator;
 
-module com.airepublic.microprofile.faulttolerance {
-    exports com.airepublic.microprofile.faulttolerance;
+module com.airepublic.microprofile.feature.mp.faulttolerance {
+    exports com.airepublic.microprofile.feature.mp.faulttolerance;
 
     requires org.slf4j;
     requires ch.qos.logback.classic;
 
-    // requires cdi.api;
-    // requires java.annotation;
-    // requires javax.inject;
-    // requires javax.interceptor.api;
-    // requires openwebbeans.se;
-    // requires openwebbeans.spi;
-    // requires openwebbeans.impl;
-    requires transitive weld.se.shaded;
+    requires cdi.api;
+    requires java.annotation;
+    requires javax.inject;
+    requires javax.interceptor.api;
 
-    requires jdk.unsupported;
     requires transitive microprofile.fault.tolerance.api;
 
-    provides Extension with FallbackBindingAnnotator;
+    provides Extension with FallbackAnnotationDecorator;
 
-    opens com.airepublic.microprofile.faulttolerance;
+    opens com.airepublic.microprofile.feature.mp.faulttolerance;
 
 }

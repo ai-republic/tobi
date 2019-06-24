@@ -9,7 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>health</artifactId>
+	<artifactId>feature-mp-health</artifactId>
 
 	<properties>
 		<encoding>UTF-8</encoding>

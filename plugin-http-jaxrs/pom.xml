@@ -9,7 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>plugin-jaxrs</artifactId>
+	<artifactId>plugin-http-jaxrs</artifactId>
 
 	<properties>
 		<encoding>UTF-8</encoding>
@@ -34,7 +34,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>http-common</artifactId>
+			<artifactId>util-http-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

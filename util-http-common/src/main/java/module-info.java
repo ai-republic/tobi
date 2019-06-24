@@ -1,15 +1,8 @@
-module com.airepublic.microprofile.module.http.core {
-    exports com.airepublic.microprofile.module.http.core;
+module com.airepublic.microprofile.util.http.common {
+    exports com.airepublic.microprofile.util.http.common;
 
-    requires com.airepublic.microprofile.config;
+    requires com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.core;
 
-    opens com.airepublic.microprofile.module.http.core;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.buf;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.codec.binary;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.security;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.threads;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.websocket;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.websocket.pojo;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.websocket.server;
+    opens com.airepublic.microprofile.util.http.common;
 }

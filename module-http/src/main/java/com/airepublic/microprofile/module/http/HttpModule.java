@@ -30,8 +30,8 @@ import com.airepublic.microprofile.core.IServicePlugin;
 import com.airepublic.microprofile.core.Pair;
 import com.airepublic.microprofile.core.ServerContext;
 import com.airepublic.microprofile.core.ServerSession;
-import com.airepublic.microprofile.module.http.core.HttpBufferUtils;
-import com.airepublic.microprofile.module.http.core.IServicePluginHttp;
+import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
+import com.airepublic.microprofile.util.http.common.IServicePluginHttp;
 
 @ApplicationScoped
 public class HttpModule implements IServerModule {
@@ -75,7 +75,7 @@ public class HttpModule implements IServerModule {
 
     @Override
     public String getName() {
-        return "Http module";
+        return "HTTP";
     }
 
 
@@ -187,10 +187,9 @@ public class HttpModule implements IServerModule {
                 case BUFFER_UNDERFLOW:
                     return SslSupport.handleBufferUnderflow(sslEngine, buffer);
                 case CLOSED:
-                    LOG.debug("Client wants to close connection...");
+                    LOG.debug("Closing SSL connection...");
                     SslSupport.closeConnection(session.getChannel(), sslEngine);
                     session.close();
-                    LOG.debug("Goodbye client!");
                     return null;
                 default:
                     throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -300,7 +299,7 @@ public class HttpModule implements IServerModule {
         }
 
         if (handler != null) {
-            LOG.info("Using " + handler.getClass().getName() + " for request: " + path);
+            LOG.debug("Session #" + session.getId() + " is using " + handler.getClass().getName() + " for request: " + path);
             return new Pair<>(DetermineStatus.TRUE, handler);
         } else if (needMoreData) {
             return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);

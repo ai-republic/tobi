@@ -17,24 +17,20 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.context.SessionScoped;
-import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SessionScoped
-public class ServerSession implements Runnable, Closeable, Serializable {
+public class ServerSession implements Closeable, Serializable {
     private static final long serialVersionUID = 1L;
     private static final Logger LOG = LoggerFactory.getLogger(ServerSession.class);
-    private static AtomicLong ID_GENERATOR = new AtomicLong();
-    private final long id = ID_GENERATOR.incrementAndGet();
-    @Inject
     private ServerContext serverContext;
+    private long id;
     private Selector selector;
     private SelectionKey key;
     private AbstractIOHandler ioHandler;
@@ -46,9 +42,11 @@ public class ServerSession implements Runnable, Closeable, Serializable {
     private final Map<String, Object> attributes = new HashMap<>();
 
 
-    public void init(final IServerModule module, final SocketChannel channel) throws IOException {
+    public void init(final long id, final IServerModule module, final SocketChannel channel, final ServerContext serverContext) throws IOException {
+        this.id = id;
         this.module = module;
         this.channel = channel;
+        this.serverContext = serverContext;
     }
 
 
@@ -107,10 +105,7 @@ public class ServerSession implements Runnable, Closeable, Serializable {
     }
 
 
-    @Override
     public void run() {
-        LOG.info("Starting session #" + getId() + " for module " + module.getName());
-
         try {
             channel.configureBlocking(false);
             module.onAccept(this);
@@ -141,7 +136,7 @@ public class ServerSession implements Runnable, Closeable, Serializable {
                             it.remove();
 
                             if (key == null) {
-                                return;
+                                continue;
                             }
 
                             if (key.isValid() && key.isReadable()) {
@@ -162,7 +157,6 @@ public class ServerSession implements Runnable, Closeable, Serializable {
                 }
             }
         } finally {
-            LOG.info("Closing session #" + getId() + " for module " + module.getName() + "!");
             try {
                 handleAction(ChannelAction.CLOSE_ALL);
             } catch (final IOException e) {

@@ -9,7 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>plugin-websocket</artifactId>
+	<artifactId>plugin-http-websocket</artifactId>
 
 
 	<properties>

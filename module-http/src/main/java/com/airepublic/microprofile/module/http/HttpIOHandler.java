@@ -3,10 +3,10 @@ package com.airepublic.microprofile.module.http;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import com.airepublic.microprofile.module.http.core.AbstractHttpIOHandler;
-import com.airepublic.microprofile.module.http.core.Headers;
-import com.airepublic.microprofile.module.http.core.HttpResponse;
-import com.airepublic.microprofile.module.http.core.HttpStatus;
+import com.airepublic.microprofile.util.http.common.AbstractHttpIOHandler;
+import com.airepublic.microprofile.util.http.common.Headers;
+import com.airepublic.microprofile.util.http.common.HttpResponse;
+import com.airepublic.microprofile.util.http.common.HttpStatus;
 
 public class HttpIOHandler extends AbstractHttpIOHandler {
 

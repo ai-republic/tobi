@@ -1,1 +1,1 @@
-com.airepublic.microprofile.module.http.jaxrs.resteasy.RestEasyPlugin
+com.airepublic.microprofile.plugin.http.jaxrs.resteasy.RestEasyPlugin

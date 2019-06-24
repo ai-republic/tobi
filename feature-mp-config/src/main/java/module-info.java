@@ -2,17 +2,17 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import com.airepublic.microprofile.config.ConfigProviderResolverImpl;
+import com.airepublic.microprofile.feature.mp.config.ConfigProviderResolverImpl;
 
-module com.airepublic.microprofile.config {
-    exports com.airepublic.microprofile.config;
+module com.airepublic.microprofile.feature.mp.config {
+    exports com.airepublic.microprofile.feature.mp.config;
 
     requires transitive microprofile.config.api;
+    requires java.annotation;
+    requires cdi.api;
+    requires javax.inject;
     requires org.slf4j;
     requires ch.qos.logback.classic;
-
-    requires transitive jdk.unsupported;
-    requires transitive weld.se.shaded;
 
     uses ConfigProviderResolver;
     uses ConfigSource;
@@ -20,5 +20,5 @@ module com.airepublic.microprofile.config {
 
     provides ConfigProviderResolver with ConfigProviderResolverImpl;
 
-    opens com.airepublic.microprofile.config;
+    opens com.airepublic.microprofile.feature.mp.config;
 }

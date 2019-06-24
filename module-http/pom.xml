@@ -28,7 +28,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>http-common</artifactId>
+			<artifactId>util-http-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

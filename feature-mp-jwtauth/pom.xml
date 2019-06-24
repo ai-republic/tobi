@@ -9,7 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>jwt-auth</artifactId>
+	<artifactId>feature-mp-jwtauth</artifactId>
 
 	<properties>
 		<encoding>UTF-8</encoding>
@@ -23,7 +23,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>config</artifactId>
+			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

@@ -25,18 +25,24 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>plugin-jaxrs</artifactId>
+			<artifactId>plugin-http-jaxrs</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>plugin-websocket</artifactId>
+			<artifactId>plugin-http-websocket</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-cdi-weld</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>jwt-auth</artifactId>
+			<artifactId>feature-mp-jwtauth</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

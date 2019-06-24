@@ -4,18 +4,18 @@ import com.airepublic.microprofile.module.http.HttpModule;
 module com.airepublic.microprofile.module.http {
     exports com.airepublic.microprofile.module.http;
 
-    requires com.airepublic.microprofile.config;
+    requires com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.core;
-    requires transitive com.airepublic.microprofile.module.http.core;
+    requires transitive com.airepublic.microprofile.util.http.common;
+
+    requires org.slf4j;
+    requires ch.qos.logback.classic;
+
+    requires java.annotation;
+    requires cdi.api;
+    requires javax.inject;
 
     provides IServerModule with HttpModule;
 
     opens com.airepublic.microprofile.module.http;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.buf;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.codec.binary;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.security;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.util.threads;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.websocket;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.websocket.pojo;
-    // opens com.airepublic.microprofile.javaserver.websocket.tomcat.websocket.server;
 }

@@ -21,7 +21,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>fault-tolerance</artifactId>
+			<artifactId>feature-mp-faulttolerance</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

@@ -123,7 +123,7 @@ public class SslSupport {
      */
     static boolean doHandshake(final SocketChannel socketChannel, final SSLEngine engine) throws IOException {
 
-        LOG.debug("About to do handshake...");
+        LOG.debug("Performing SSL handshake...");
         ByteBuffer packetBuffer = ByteBuffer.allocate(packetBufferSize);
         ByteBuffer peerPacketBuffer = ByteBuffer.allocate(packetBufferSize);
 

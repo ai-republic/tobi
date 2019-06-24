@@ -9,7 +9,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>http-common</artifactId>
+	<artifactId>util-http-common</artifactId>
 
 
 	<properties>

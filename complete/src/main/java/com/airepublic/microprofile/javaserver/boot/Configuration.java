@@ -12,8 +12,8 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.airepublic.microprofile.jwtauth.ClaimsSet;
-import com.airepublic.microprofile.jwtauth.JWTUtil;
+import com.airepublic.microprofile.feature.mp.jwtauth.ClaimsSet;
+import com.airepublic.microprofile.feature.mp.jwtauth.JWTUtil;
 
 public class Configuration {
     private final static Logger LOG = LoggerFactory.getLogger(Configuration.class);
