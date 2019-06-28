@@ -14,22 +14,87 @@
 	<properties>
 		<encoding>UTF-8</encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven-compiler-plugin.version>2.3.2</maven-compiler-plugin.version>
+		<arquillian.version>1.1.13.Final</arquillian.version>
+		<testng.version>6.10</testng.version>
+		<jaxrs.version>2.1</jaxrs.version>
+		<rest-assured.version>3.0.6</rest-assured.version>
+		<hamcrest-all.version>1.3</hamcrest-all.version>
+		<java-hamcrest.version>2.0.0.0</java-hamcrest.version>
+		<servlet.version>3.1.0</servlet.version>
+		<httpclient.version>4.5.2</httpclient.version>
+		<jackson.version>2.9.3</jackson.version>
+		<restclient.version>1.1</restclient.version>
 	</properties>
 
-
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>javax.ws.rs</groupId>
+				<artifactId>javax.ws.rs-api</artifactId>
+				<version>2.0.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testng</groupId>
+				<artifactId>testng</artifactId>
+				<version>6.9.9</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.arquillian</groupId>
+				<artifactId>arquillian-bom</artifactId>
+				<version>1.1.13.Final</version>
+				<scope>import</scope>
+				<type>pom</type>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-logging-java</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-config</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-faulttolerance</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
-		<!-- Test Frameworks -->
 		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<scope>test</scope>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-health</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-jwtauth</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-metrics</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-openapi</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-opentracing</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-restclient</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>

@@ -25,6 +25,11 @@
 			<artifactId>module-http</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-logging-java</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<!-- Websocket -->
 		<dependency>

@@ -4,15 +4,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class SessionContext {
-    private final static Logger LOG = LoggerFactory.getLogger(SessionContext.class);
+    private final static Logger LOG = new SerializableLogger(SessionContext.class.getName());
 
     private final long sessionId;
     private final Map<Contextual<Object>, Object> beans = new HashMap<>();
@@ -60,7 +61,7 @@ public class SessionContext {
             contextual.destroy(instance, creationalContext);
             creationalContext.release();
         } catch (final Exception e) {
-            LOG.error("Error destroying bean: ", e);
+            LOG.log(Level.SEVERE, "Error destroying bean: ", e);
         }
 
     }

@@ -26,10 +26,9 @@ import java.util.zip.Inflater;
 
 import javax.websocket.Extension;
 import javax.websocket.Extension.Parameter;
+import javax.websocket.SendHandler;
 
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
-
-import javax.websocket.SendHandler;
 
 public class PerMessageDeflate implements Transformation {
 

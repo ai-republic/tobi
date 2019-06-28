@@ -27,11 +27,10 @@ import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
 import javax.websocket.Decoder.Binary;
 import javax.websocket.Decoder.BinaryStream;
-
-import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
-
 import javax.websocket.EndpointConfig;
 import javax.websocket.Session;
+
+import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 /**
  * ByteBuffer specific concrete implementation for handling whole messages.

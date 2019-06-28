@@ -19,9 +19,10 @@ package com.airepublic.microprofile.plugin.http.websocket.util.threads;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 /**
  * Shared latch that allows the latch to be acquired a limited number of times after which all
@@ -30,7 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 public class LimitLatch {
 
-    private static final Logger log = LoggerFactory.getLogger(LimitLatch.class);
+    private static final Logger log = new SerializableLogger(LimitLatch.class.getName());
 
     private class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 1L;
@@ -119,8 +120,8 @@ public class LimitLatch {
      * @throws InterruptedException If the current thread is interrupted
      */
     public void countUpOrAwait() throws InterruptedException {
-        if (log.isDebugEnabled()) {
-            log.debug("Counting up[" + Thread.currentThread().getName() + "] latch=" + getCount());
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Counting up[" + Thread.currentThread().getName() + "] latch=" + getCount());
         }
         sync.acquireSharedInterruptibly(1);
     }
@@ -134,8 +135,8 @@ public class LimitLatch {
     public long countDown() {
         sync.releaseShared(0);
         final long result = getCount();
-        if (log.isDebugEnabled()) {
-            log.debug("Counting down[" + Thread.currentThread().getName() + "] latch=" + result);
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "Counting down[" + Thread.currentThread().getName() + "] latch=" + result);
         }
         return result;
     }

@@ -1,5 +1,6 @@
 import javax.enterprise.inject.spi.Extension;
 
+import com.airepublic.microprofile.feature.mp.faulttolerance.AsynchronousCheckExtension;
 import com.airepublic.microprofile.feature.mp.faulttolerance.FallbackAnnotationDecorator;
 
 module com.airepublic.microprofile.feature.mp.faulttolerance {
@@ -7,14 +8,12 @@ module com.airepublic.microprofile.feature.mp.faulttolerance {
 
     requires transitive microprofile.fault.tolerance.api;
 
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
     requires cdi.api;
     requires java.annotation;
     requires javax.inject;
     requires javax.interceptor.api;
 
-    provides Extension with FallbackAnnotationDecorator;
+    provides Extension with AsynchronousCheckExtension, FallbackAnnotationDecorator;
 
     opens com.airepublic.microprofile.feature.mp.faulttolerance;
 

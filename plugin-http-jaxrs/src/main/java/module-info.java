@@ -4,16 +4,14 @@ import com.airepublic.microprofile.plugin.http.jaxrs.resteasy.RestEasyPlugin;
 module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
     exports com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 
-    requires com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.core;
     requires transitive com.airepublic.microprofile.util.http.common;
+    requires com.airepublic.microprofile.feature.mp.config;
+    requires com.airepublic.microprofile.feature.logging.java;
 
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
-
-    requires java.annotation;
     requires cdi.api;
     requires javax.inject;
+    requires java.annotation;
 
     requires java.xml.bind;
 

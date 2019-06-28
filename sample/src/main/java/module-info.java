@@ -15,9 +15,7 @@ module com.airepublic.microprofile.samplw {
     requires transitive com.airepublic.microprofile.feature.mp.openapi;
     requires transitive com.airepublic.microprofile.feature.mp.opentracing;
     requires transitive com.airepublic.microprofile.feature.mp.restclient;
-
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
+    requires transitive com.airepublic.microprofile.feature.logging.java;
 
     requires cdi.api;
     requires java.annotation;

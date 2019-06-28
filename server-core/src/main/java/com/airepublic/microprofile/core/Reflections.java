@@ -24,14 +24,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class Reflections {
-    private static final Logger LOG = LoggerFactory.getLogger(Reflections.class);
+    private static final Logger LOG = new SerializableLogger(Reflections.class.getName());
     public static final List<String> ALL_PACKAGES = new ArrayList<>();
     public static final List<ModuleReference> ALL_MODULES = new ArrayList<>();
     public static final List<Class<?>> ALL_CLASSES = new ArrayList<>();
@@ -49,46 +50,46 @@ public class Reflections {
         }
 
         // List system modules
-        LOG.debug("\nSYSTEM MODULES:\n");
+        LOG.fine("\nSYSTEM MODULES:\n");
         for (final ModuleReference ref : SYSTEM_MODULES) {
-            LOG.debug("  " + ref.descriptor().name());
+            LOG.fine("  " + ref.descriptor().name());
         }
 
         // Show info for non-system modules
-        LOG.debug("\nNON-SYSTEM MODULES:");
+        LOG.fine("\nNON-SYSTEM MODULES:");
         for (final ModuleReference ref : NON_SYSTEM_MODULES) {
-            LOG.debug("\n  " + ref.descriptor().name());
-            LOG.debug("\tVersion: " + ref.descriptor().toNameAndVersion());
-            LOG.debug("\tPackages: " + ref.descriptor().packages());
-            // LOG.debug(" ClassLoader: " + layer.findLoader(ref.descriptor().name()));
+            LOG.fine("\n  " + ref.descriptor().name());
+            LOG.fine("\tVersion: " + ref.descriptor().toNameAndVersion());
+            LOG.fine("\tPackages: " + ref.descriptor().packages());
+            // LOG.fine(" ClassLoader: " + layer.findLoader(ref.descriptor().name()));
             final Optional<URI> location = ref.location();
 
             if (location.isPresent()) {
-                LOG.debug("\tLocation: " + location.get());
+                LOG.fine("\tLocation: " + location.get());
             }
 
             try (final ModuleReader moduleReader = ref.open()) {
                 final Stream<String> stream = moduleReader.list();
 
                 stream.forEach(s -> {
-                    LOG.debug("\t\tFile: " + s);
+                    LOG.fine("\t\tFile: " + s);
                     if (s.endsWith(".class")) {
                         final String className = s.replace(".class", "").replace('/', '.');
 
                         try {
                             ALL_CLASSES.add(Class.forName(className));
                         } catch (final Throwable e) {
-                            LOG.info("Error: ", e);
+                            LOG.info("Error: " + e.getMessage());
                         }
                     }
                 });
             } catch (final Exception e) {
-                LOG.info("Error: ", e.getMessage());
+                LOG.info("Error: " + e.getMessage());
             }
         }
 
         for (final String pkg : ALL_PACKAGES) {
-            LOG.debug("\t" + pkg);
+            LOG.fine("\t" + pkg);
         }
     }
 
@@ -260,7 +261,7 @@ public class Reflections {
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            LOG.error("Error getting @" + annotationClass.getSimpleName() + " annotation value on class: " + obj.getClass(), e);
+            LOG.log(Level.SEVERE, "Error getting @" + annotationClass.getSimpleName() + " annotation value on class: " + obj.getClass(), e);
         }
 
         throw new IllegalArgumentException("No @" + annotationClass.getSimpleName() + " annotation found on class: " + obj.getClass());
@@ -278,7 +279,7 @@ public class Reflections {
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            LOG.error("Error getting @" + annotationClass.getSimpleName() + " annotation value on class: " + obj.getClass(), e);
+            LOG.log(Level.SEVERE, "Error getting @" + annotationClass.getSimpleName() + " annotation value on class: " + obj.getClass(), e);
         }
 
         return fields;
@@ -303,7 +304,7 @@ public class Reflections {
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            LOG.error("Error finding @" + annotationClass.getSimpleName() + " annotation methods on class: " + clazz, e);
+            LOG.log(Level.SEVERE, "Error finding @" + annotationClass.getSimpleName() + " annotation methods on class: " + clazz, e);
         }
 
         return methods;
@@ -354,7 +355,7 @@ public class Reflections {
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            LOG.error("Error setting @" + annotationClass.getSimpleName() + " annotation value on class: " + obj.getClass(), e);
+            LOG.log(Level.SEVERE, "Error setting @" + annotationClass.getSimpleName() + " annotation value on class: " + obj.getClass(), e);
         }
 
         throw new IllegalArgumentException("No @" + annotationClass.getSimpleName() + " annotation found on class: " + obj.getClass());
@@ -455,7 +456,7 @@ public class Reflections {
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            LOG.error("Error setting field " + fieldName + " value on class: " + obj.getClass(), e);
+            LOG.log(Level.SEVERE, "Error setting field " + fieldName + " value on class: " + obj.getClass(), e);
         }
 
         throw new IllegalArgumentException("No field " + fieldName + " found on class: " + obj.getClass());
@@ -478,7 +479,7 @@ public class Reflections {
             }
         } catch (final Exception e) {
             e.printStackTrace();
-            LOG.error("Error getting field " + fieldName + " value on class: " + obj.getClass(), e);
+            LOG.log(Level.SEVERE, "Error getting field " + fieldName + " value on class: " + obj.getClass(), e);
         }
 
         throw new IllegalArgumentException("No field " + fieldName + " found on class: " + obj.getClass());

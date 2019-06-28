@@ -22,10 +22,10 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Hashtable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 /**
@@ -33,7 +33,7 @@ import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
  */
 public final class IntrospectionUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(IntrospectionUtils.class);
+    private static final Logger log = new SerializableLogger(IntrospectionUtils.class.getName());
     private static final StringManager sm = StringManager.getManager(IntrospectionUtils.class);
 
 
@@ -54,9 +54,8 @@ public final class IntrospectionUtils {
     @SuppressWarnings("null") // setPropertyMethodVoid is not null when used
     public static boolean setProperty(final Object o, final String name, final String value,
             final boolean invokeSetProperty) {
-        if (log.isDebugEnabled()) {
-            log.debug("IntrospectionUtils: setProperty(" +
-                    o.getClass() + " " + name + "=" + value + ")");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "IntrospectionUtils: setProperty(" + o.getClass() + " " + name + "=" + value + ")");
         }
 
         final String setter = "set" + capitalize(name);
@@ -115,16 +114,16 @@ public final class IntrospectionUtils {
                         try {
                             params[0] = InetAddress.getByName(value);
                         } catch (final UnknownHostException exc) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("IntrospectionUtils: Unable to resolve host name:" + value);
+                            if (log.isLoggable(Level.FINEST)) {
+                                log.log(Level.FINEST, "IntrospectionUtils: Unable to resolve host name:" + value);
                             }
                             ok = false;
                         }
 
                         // Unknown type
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("IntrospectionUtils: Unknown type " +
+                        if (log.isLoggable(Level.FINEST)) {
+                            log.log(Level.FINEST, "IntrospectionUtils: Unknown type " +
                                     paramType.getName());
                         }
                     }
@@ -173,10 +172,10 @@ public final class IntrospectionUtils {
             }
 
         } catch (IllegalArgumentException | SecurityException | IllegalAccessException e) {
-            log.warn(sm.getString("introspectionUtils.setPropertyError", name, value, o.getClass()), e);
+            log.log(Level.WARNING, sm.getString("introspectionUtils.setPropertyError", name, value, o.getClass()), e);
         } catch (final InvocationTargetException e) {
             ExceptionUtils.handleThrowable(e.getCause());
-            log.warn(sm.getString("introspectionUtils.setPropertyError", name, value, o.getClass()), e);
+            log.log(Level.WARNING, sm.getString("introspectionUtils.setPropertyError", name, value, o.getClass()), e);
         }
         return false;
     }
@@ -213,14 +212,14 @@ public final class IntrospectionUtils {
             }
 
         } catch (IllegalArgumentException | SecurityException | IllegalAccessException e) {
-            log.warn(sm.getString("introspectionUtils.getPropertyError", name, o.getClass()), e);
+            log.log(Level.WARNING, sm.getString("introspectionUtils.getPropertyError", name, o.getClass()), e);
         } catch (final InvocationTargetException e) {
             if (e.getCause() instanceof NullPointerException) {
                 // Assume the underlying object uses a storage to represent an unset property
                 return null;
             }
             ExceptionUtils.handleThrowable(e.getCause());
-            log.warn(sm.getString("introspectionUtils.getPropertyError", name, o.getClass()), e);
+            log.log(Level.WARNING, sm.getString("introspectionUtils.getPropertyError", name, o.getClass()), e);
         }
         return null;
     }
@@ -358,10 +357,8 @@ public final class IntrospectionUtils {
         if (target == null || methodN == null || param1 == null) {
             throw new IllegalArgumentException(sm.getString("introspectionUtils.nullParameter"));
         }
-        if (log.isDebugEnabled()) {
-            log.debug("IntrospectionUtils: callMethod1 " +
-                    target.getClass().getName() + " " +
-                    param1.getClass().getName() + " " + typeParam1);
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "IntrospectionUtils: callMethod1 " + target.getClass().getName() + " " + param1.getClass().getName() + " " + typeParam1);
         }
 
         final Class<?> params[] = new Class[1];
@@ -389,16 +386,15 @@ public final class IntrospectionUtils {
         Method m = null;
         m = findMethod(target.getClass(), methodN, typeParams);
         if (m == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("IntrospectionUtils: Can't find method " + methodN +
-                        " in " + target + " CLASS " + target.getClass());
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "IntrospectionUtils: Can't find method " + methodN + " in " + target + " CLASS " + target.getClass());
             }
             return null;
         }
         try {
             final Object o = m.invoke(target, params);
 
-            if (log.isDebugEnabled()) {
+            if (log.isLoggable(Level.FINEST)) {
                 // debug
                 final StringBuilder sb = new StringBuilder();
                 sb.append(target.getClass().getName()).append('.')
@@ -410,7 +406,7 @@ public final class IntrospectionUtils {
                     sb.append(params[i]);
                 }
                 sb.append(")");
-                log.debug("IntrospectionUtils:" + sb.toString());
+                log.log(Level.FINEST, "IntrospectionUtils:" + sb.toString());
             }
             return o;
         } catch (final InvocationTargetException ie) {
@@ -441,17 +437,15 @@ public final class IntrospectionUtils {
             try {
                 result = InetAddress.getByName(object);
             } catch (final UnknownHostException exc) {
-                if (log.isDebugEnabled()) {
-                    log.debug("IntrospectionUtils: Unable to resolve host name:" +
-                            object);
+                if (log.isLoggable(Level.FINEST)) {
+                    log.log(Level.FINEST, "IntrospectionUtils: Unable to resolve host name:" + object);
                 }
             }
 
             // Unknown type
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("IntrospectionUtils: Unknown type " +
-                        paramType.getName());
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, "IntrospectionUtils: Unknown type " + paramType.getName());
             }
         }
         if (result == null) {

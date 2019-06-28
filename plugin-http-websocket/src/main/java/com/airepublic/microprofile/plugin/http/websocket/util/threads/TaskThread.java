@@ -16,8 +16,10 @@
  */
 package com.airepublic.microprofile.plugin.http.websocket.util.threads;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 /**
  * A Thread implementation that records the time at which it was created.
@@ -25,7 +27,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TaskThread extends Thread {
 
-    private static final Logger log = LoggerFactory.getLogger(TaskThread.class);
+    private static final Logger log = new SerializableLogger(TaskThread.class.getName());
     private final long creationTime;
 
 
@@ -69,7 +71,7 @@ public class TaskThread extends Thread {
             } catch (final StopPooledThreadException exc) {
                 // expected : we just swallow the exception to avoid disturbing
                 // debuggers like eclipse's
-                log.debug("Thread exiting on purpose", exc);
+                log.log(Level.FINEST, "Thread exiting on purpose", exc);
             }
         }
 

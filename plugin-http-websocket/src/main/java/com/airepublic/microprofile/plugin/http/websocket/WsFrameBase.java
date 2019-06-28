@@ -24,14 +24,14 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Extension;
 import javax.websocket.MessageHandler;
 import javax.websocket.PongMessage;
-
-import org.slf4j.Logger;
 
 import com.airepublic.microprofile.plugin.http.websocket.util.ExceptionUtils;
 import com.airepublic.microprofile.plugin.http.websocket.util.buf.Utf8Decoder;
@@ -219,8 +219,8 @@ public abstract class WsFrameBase {
         }
         payloadLength = b & 0x7F;
         state = State.PARTIAL_HEADER;
-        if (getLog().isDebugEnabled()) {
-            getLog().debug(sm.getString("wsFrame.partialHeaderComplete", Boolean.toString(fin),
+        if (getLog().isLoggable(Level.FINEST)) {
+            getLog().finest(sm.getString("wsFrame.partialHeaderComplete", Boolean.toString(fin),
                     Integer.toString(rsv), Integer.toString(opCode), Long.toString(payloadLength)));
         }
         return true;
@@ -756,8 +756,8 @@ public abstract class WsFrameBase {
                     if (readState != ReadState.SUSPENDING_WAIT) {
                         continue;
                     } else {
-                        if (getLog().isWarnEnabled()) {
-                            getLog().warn(sm.getString("wsFrame.suspendRequested"));
+                        if (getLog().isLoggable(Level.WARNING)) {
+                            getLog().warning(sm.getString("wsFrame.suspendRequested"));
                         }
                     }
                     return;
@@ -765,8 +765,8 @@ public abstract class WsFrameBase {
                     if (readState != ReadState.SUSPENDING_PROCESS) {
                         continue;
                     } else {
-                        if (getLog().isWarnEnabled()) {
-                            getLog().warn(sm.getString("wsFrame.suspendRequested"));
+                        if (getLog().isLoggable(Level.WARNING)) {
+                            getLog().warning(sm.getString("wsFrame.suspendRequested"));
                         }
                     }
                     return;
@@ -774,8 +774,8 @@ public abstract class WsFrameBase {
                     if (readState != ReadState.SUSPENDED) {
                         continue;
                     } else {
-                        if (getLog().isWarnEnabled()) {
-                            getLog().warn(sm.getString("wsFrame.alreadySuspended"));
+                        if (getLog().isLoggable(Level.WARNING)) {
+                            getLog().warning(sm.getString("wsFrame.alreadySuspended"));
                         }
                     }
                     return;
@@ -795,8 +795,8 @@ public abstract class WsFrameBase {
                     if (readState != ReadState.WAITING) {
                         continue;
                     } else {
-                        if (getLog().isWarnEnabled()) {
-                            getLog().warn(sm.getString("wsFrame.alreadyResumed"));
+                        if (getLog().isLoggable(Level.WARNING)) {
+                            getLog().warning(sm.getString("wsFrame.alreadyResumed"));
                         }
                     }
                     return;
@@ -804,8 +804,8 @@ public abstract class WsFrameBase {
                     if (readState != ReadState.PROCESSING) {
                         continue;
                     } else {
-                        if (getLog().isWarnEnabled()) {
-                            getLog().warn(sm.getString("wsFrame.alreadyResumed"));
+                        if (getLog().isLoggable(Level.WARNING)) {
+                            getLog().warning(sm.getString("wsFrame.alreadyResumed"));
                         }
                     }
                     return;

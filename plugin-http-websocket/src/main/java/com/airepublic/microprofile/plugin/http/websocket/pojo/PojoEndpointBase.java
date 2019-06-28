@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
@@ -27,9 +29,7 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.Session;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.ExceptionUtils;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
@@ -39,8 +39,8 @@ import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
  */
 public abstract class PojoEndpointBase extends Endpoint {
 
-    private final Logger log = LoggerFactory.getLogger(PojoEndpointBase.class); // must not be
-                                                                                // static
+    private final Logger log = new SerializableLogger(PojoEndpointBase.class.getName()); // must not be
+    // static
     private static final StringManager sm = StringManager.getManager(PojoEndpointBase.class);
 
     private Object pojo;
@@ -69,9 +69,7 @@ public abstract class PojoEndpointBase extends Endpoint {
 
             } catch (final IllegalAccessException e) {
                 // Reflection related problems
-                log.error(sm.getString(
-                        "pojoEndpointBase.onOpenFail",
-                        pojo.getClass().getName()), e);
+                log.log(Level.SEVERE, sm.getString("pojoEndpointBase.onOpenFail", pojo.getClass().getName()), e);
                 handleOnOpenOrCloseError(session, e);
             } catch (final InvocationTargetException e) {
                 final Throwable cause = e.getCause();
@@ -92,7 +90,7 @@ public abstract class PojoEndpointBase extends Endpoint {
         try {
             session.close();
         } catch (final IOException ioe) {
-            log.warn(sm.getString("pojoEndpointBase.closeSessionFail"), ioe);
+            log.log(Level.WARNING, sm.getString("pojoEndpointBase.closeSessionFail"), ioe);
         }
     }
 
@@ -105,8 +103,7 @@ public abstract class PojoEndpointBase extends Endpoint {
                 methodMapping.getOnClose().invoke(pojo,
                         methodMapping.getOnCloseArgs(pathParameters, session, closeReason));
             } catch (final Throwable t) {
-                log.error(sm.getString("pojoEndpointBase.onCloseFail",
-                        pojo.getClass().getName()), t);
+                log.log(Level.SEVERE, sm.getString("pojoEndpointBase.onCloseFail", pojo.getClass().getName()), t);
                 handleOnOpenOrCloseError(session, t);
             }
         }
@@ -125,8 +122,7 @@ public abstract class PojoEndpointBase extends Endpoint {
     public final void onError(final Session session, final Throwable throwable) {
 
         if (methodMapping.getOnError() == null) {
-            log.error(sm.getString("pojoEndpointBase.onError",
-                    pojo.getClass().getName()), throwable);
+            log.log(Level.SEVERE, sm.getString("pojoEndpointBase.onError", pojo.getClass().getName()), throwable);
         } else {
             try {
                 methodMapping.getOnError().invoke(
@@ -135,8 +131,7 @@ public abstract class PojoEndpointBase extends Endpoint {
                                 throwable));
             } catch (final Throwable t) {
                 ExceptionUtils.handleThrowable(t);
-                log.error(sm.getString("pojoEndpointBase.onErrorFail",
-                        pojo.getClass().getName()), t);
+                log.log(Level.SEVERE, sm.getString("pojoEndpointBase.onErrorFail", pojo.getClass().getName()), t);
             }
         }
     }

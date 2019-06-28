@@ -25,29 +25,28 @@ import com.airepublic.microprofile.plugin.http.websocket.BackgroundProcess;
 import com.airepublic.microprofile.plugin.http.websocket.BackgroundProcessManager;
 
 /**
- * Provides timeouts for asynchronous web socket writes. On the server side we
- * only have access to {@link javax.servlet.ServletOutputStream} and
- * {@link javax.servlet.ServletInputStream} so there is no way to set a timeout
- * for writes to the client.
+ * Provides timeouts for asynchronous web socket writes. On the server side we only have access to
+ * javax.servlet.ServletOutputStream and javax.servlet.ServletInputStream so there is no way to set
+ * a timeout for writes to the client.
  */
 public class WsWriteTimeout implements BackgroundProcess {
 
-    private final Set<WsRemoteEndpointImplServer> endpoints =
-            new ConcurrentSkipListSet<>(new EndpointComparator());
+    private final Set<WsRemoteEndpointImplServer> endpoints = new ConcurrentSkipListSet<>(new EndpointComparator());
     private final AtomicInteger count = new AtomicInteger(0);
     private int backgroundProcessCount = 0;
     private volatile int processPeriod = 1;
 
+
     @Override
     public void backgroundProcess() {
         // This method gets called once a second.
-        backgroundProcessCount ++;
+        backgroundProcessCount++;
 
         if (backgroundProcessCount >= processPeriod) {
             backgroundProcessCount = 0;
 
-            long now = System.currentTimeMillis();
-            for (WsRemoteEndpointImplServer endpoint : endpoints) {
+            final long now = System.currentTimeMillis();
+            for (final WsRemoteEndpointImplServer endpoint : endpoints) {
                 if (endpoint.getTimeoutExpiry() < now) {
                     // Background thread, not the thread that triggered the
                     // write so no need to use a dispatch
@@ -64,16 +63,15 @@ public class WsWriteTimeout implements BackgroundProcess {
 
 
     @Override
-    public void setProcessPeriod(int period) {
-        this.processPeriod = period;
+    public void setProcessPeriod(final int period) {
+        processPeriod = period;
     }
 
 
     /**
      * {@inheritDoc}
      *
-     * The default value is 1 which means asynchronous write timeouts are
-     * processed every 1 second.
+     * The default value is 1 which means asynchronous write timeouts are processed every 1 second.
      */
     @Override
     public int getProcessPeriod() {
@@ -81,10 +79,10 @@ public class WsWriteTimeout implements BackgroundProcess {
     }
 
 
-    public void register(WsRemoteEndpointImplServer endpoint) {
-        boolean result = endpoints.add(endpoint);
+    public void register(final WsRemoteEndpointImplServer endpoint) {
+        final boolean result = endpoints.add(endpoint);
         if (result) {
-            int newCount = count.incrementAndGet();
+            final int newCount = count.incrementAndGet();
             if (newCount == 1) {
                 BackgroundProcessManager.getInstance().register(this);
             }
@@ -92,16 +90,15 @@ public class WsWriteTimeout implements BackgroundProcess {
     }
 
 
-    public void unregister(WsRemoteEndpointImplServer endpoint) {
-        boolean result = endpoints.remove(endpoint);
+    public void unregister(final WsRemoteEndpointImplServer endpoint) {
+        final boolean result = endpoints.remove(endpoint);
         if (result) {
-            int newCount = count.decrementAndGet();
+            final int newCount = count.decrementAndGet();
             if (newCount == 0) {
                 BackgroundProcessManager.getInstance().unregister(this);
             }
         }
     }
-
 
     /**
      * Note: this comparator imposes orderings that are inconsistent with equals
@@ -110,11 +107,11 @@ public class WsWriteTimeout implements BackgroundProcess {
             Comparator<WsRemoteEndpointImplServer> {
 
         @Override
-        public int compare(WsRemoteEndpointImplServer o1,
-                WsRemoteEndpointImplServer o2) {
+        public int compare(final WsRemoteEndpointImplServer o1,
+                final WsRemoteEndpointImplServer o2) {
 
-            long t1 = o1.getTimeoutExpiry();
-            long t2 = o2.getTimeoutExpiry();
+            final long t1 = o1.getTimeoutExpiry();
+            final long t2 = o2.getTimeoutExpiry();
 
             if (t1 < t2) {
                 return -1;

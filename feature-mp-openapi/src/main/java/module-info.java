@@ -3,8 +3,6 @@ module com.airepublic.microprofile.feature.mp.openapi {
 
     requires transitive microprofile.openapi.api;
 
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
     requires cdi.api;
     requires java.annotation;
     requires javax.inject;

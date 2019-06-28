@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.DeploymentException;
 import javax.websocket.Session;
@@ -23,12 +25,10 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.airepublic.microprofile.core.AbstractIOHandler;
 import com.airepublic.microprofile.core.ChannelAction;
 import com.airepublic.microprofile.core.pathmatcher.MappingResult;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.server.UpgradeUtil;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsFrameServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsHttpUpgradeHandler;
@@ -38,7 +38,7 @@ import com.airepublic.microprofile.util.http.common.AsyncHttpRequestReader;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
 
 public class WebSocketIOHandler extends AbstractIOHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(WebSocketIOHandler.class);
+    private static final Logger LOG = new SerializableLogger(WebSocketIOHandler.class.getName());
     private static WsServerContainer webSocketContainer;
     private boolean handshakeDone = false;
     private final AsyncHttpRequestReader httpRequestReader = new AsyncHttpRequestReader();
@@ -61,7 +61,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
                     doHandshake();
                 }
             } catch (final Exception e) {
-                LOG.error("Error receiving websocket upgrade request and handshake!", e);
+                LOG.log(Level.SEVERE, "Error receiving websocket upgrade request and handshake!", e);
                 action = ChannelAction.CLOSE_ALL;
             }
         } else if (httpRequestReader.isRequestFullyRead() && !handshakeDone) {
@@ -70,7 +70,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
             try {
                 doHandshake();
             } catch (final Exception e) {
-                LOG.error("Error performing websocket handshake!", e);
+                LOG.log(Level.SEVERE, "Error performing websocket handshake!", e);
                 action = ChannelAction.CLOSE_ALL;
             }
         } else {
@@ -266,14 +266,14 @@ public class WebSocketIOHandler extends AbstractIOHandler {
 
     @Override
     protected ChannelAction onReadError(final Throwable t) {
-        LOG.error("Error not handled!", t);
+        LOG.log(Level.SEVERE, "Error not handled!", t);
         return ChannelAction.KEEP_OPEN;
     }
 
 
     @Override
     protected void handleClosedInput() throws IOException {
-        LOG.error("----> Calling close action on Websocket initialization should not happen!");
+        LOG.log(Level.SEVERE, "----> Calling close action on Websocket initialization should not happen!");
     }
 
 

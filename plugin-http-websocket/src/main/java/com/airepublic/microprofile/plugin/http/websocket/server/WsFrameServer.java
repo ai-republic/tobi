@@ -19,10 +19,10 @@ package com.airepublic.microprofile.plugin.http.websocket.server;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.Transformation;
 import com.airepublic.microprofile.plugin.http.websocket.WsFrameBase;
 import com.airepublic.microprofile.plugin.http.websocket.WsIOException;
@@ -31,7 +31,8 @@ import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 public class WsFrameServer extends WsFrameBase {
 
-    private final Logger log = LoggerFactory.getLogger(WsFrameServer.class); // must not be static
+    private final Logger log = new SerializableLogger(WsFrameServer.class.getName()); // must not be
+                                                                                // static
     private static final StringManager sm = StringManager.getManager(WsFrameServer.class);
 
     private final ClassLoader applicationClassLoader;
@@ -49,8 +50,8 @@ public class WsFrameServer extends WsFrameBase {
      * @throws IOException if an I/O error occurs while processing the available data
      */
     public void onDataAvailable(final ByteBuffer buffer) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("wsFrameServer.onDataAvailable");
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, "wsFrameServer.onDataAvailable");
         }
         if (isOpen() && inputBuffer.hasRemaining() && !isSuspended()) {
             // There might be a data that was left in the buffer when
@@ -80,8 +81,8 @@ public class WsFrameServer extends WsFrameBase {
             } else if (read == 0) {
                 return;
             }
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("wsFrameServer.bytesRead", Integer.toString(read)));
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, sm.getString("wsFrameServer.bytesRead", Integer.toString(read)));
             }
             processInputBuffer();
         }

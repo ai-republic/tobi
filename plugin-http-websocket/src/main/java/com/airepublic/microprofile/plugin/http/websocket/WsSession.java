@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCode;
@@ -47,9 +49,7 @@ import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 import javax.websocket.server.ServerEndpointConfig;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.ExceptionUtils;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
@@ -64,7 +64,7 @@ public class WsSession implements Session {
     private static final StringManager sm = StringManager.getManager(WsSession.class);
     private static AtomicLong ids = new AtomicLong(0);
 
-    private final Logger log = LoggerFactory.getLogger(WsSession.class); // must not be static
+    private final Logger log = new SerializableLogger(WsSession.class.getName()); // must not be static
 
     private final Endpoint localEndpoint;
     private final WsRemoteEndpointImplBase wsRemoteEndpoint;
@@ -179,8 +179,8 @@ public class WsSession implements Session {
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(sm.getString("wsSession.created", id));
+        if (log.isLoggable(Level.FINEST)) {
+            log.log(Level.FINEST, sm.getString("wsSession.created", id));
         }
     }
 
@@ -470,13 +470,13 @@ public class WsSession implements Session {
                 return;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("wsSession.doClose", id));
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, sm.getString("wsSession.doClose", id));
             }
             try {
                 wsRemoteEndpoint.setBatchingAllowed(false);
             } catch (final IOException e) {
-                log.warn(sm.getString("wsSession.flushFailOnClose"), e);
+                log.log(Level.WARNING, sm.getString("wsSession.flushFailOnClose"), e);
                 fireEndpointOnError(e);
             }
 
@@ -511,7 +511,7 @@ public class WsSession implements Session {
                 try {
                     wsRemoteEndpoint.setBatchingAllowed(false);
                 } catch (final IOException e) {
-                    log.warn(sm.getString("wsSession.flushFailOnClose"), e);
+                    log.log(Level.WARNING, sm.getString("wsSession.flushFailOnClose"), e);
                     fireEndpointOnError(e);
                 }
                 if (state == State.OPEN) {
@@ -604,8 +604,8 @@ public class WsSession implements Session {
         } catch (IOException | WritePendingException e) {
             // Failed to send close message. Close the socket and let the caller
             // deal with the Exception
-            if (log.isDebugEnabled()) {
-                log.debug(sm.getString("wsSession.sendCloseFail", id), e);
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, sm.getString("wsSession.sendCloseFail", id), e);
             }
             wsRemoteEndpoint.close();
             // Failure to send a close message is not unexpected in the case of
@@ -812,8 +812,8 @@ public class WsSession implements Session {
 
         if (System.currentTimeMillis() - lastActive > timeout) {
             final String msg = sm.getString("wsSession.timeout", getId());
-            if (log.isDebugEnabled()) {
-                log.debug(msg);
+            if (log.isLoggable(Level.FINEST)) {
+                log.log(Level.FINEST, msg);
             }
             doClose(new CloseReason(CloseCodes.GOING_AWAY, msg),
                     new CloseReason(CloseCodes.CLOSED_ABNORMALLY, msg));

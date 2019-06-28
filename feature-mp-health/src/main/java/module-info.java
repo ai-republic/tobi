@@ -2,9 +2,8 @@ module com.airepublic.microprofile.feature.mp.health {
     exports com.airepublic.microprofile.feature.mp.health;
 
     requires transitive microprofile.health.api;
+    requires com.airepublic.microprofile.feature.logging.java;
 
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
     requires cdi.api;
     requires java.annotation;
     requires javax.inject;

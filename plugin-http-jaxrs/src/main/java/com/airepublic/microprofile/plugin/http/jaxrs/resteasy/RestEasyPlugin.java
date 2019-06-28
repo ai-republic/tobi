@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -14,8 +16,6 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Path;
 
 import org.eclipse.microprofile.config.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.airepublic.microprofile.core.AbstractIOHandler;
 import com.airepublic.microprofile.core.DetermineStatus;
@@ -24,10 +24,14 @@ import com.airepublic.microprofile.core.Pair;
 import com.airepublic.microprofile.core.Reflections;
 import com.airepublic.microprofile.core.ServerContext;
 import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
 
 public class RestEasyPlugin implements IServicePlugin {
-    private final static Logger LOG = LoggerFactory.getLogger(RestEasyPlugin.class);
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
     public final static String CONTEXT_PATH = "jax-rs.context.path";
     @Inject
     private Config config;
@@ -62,7 +66,7 @@ public class RestEasyPlugin implements IServicePlugin {
                 handler.init(session);
                 return new Pair<>(DetermineStatus.TRUE, handler);
             } catch (final Exception e) {
-                LOG.error("Could not instantiate handler: " + RestEasyIOHandler.class, e);
+                logger.log(Level.SEVERE, "Could not instantiate handler: " + RestEasyIOHandler.class, e);
                 throw new IOException("Could not initialize handler: " + RestEasyIOHandler.class, e);
             }
         }
@@ -91,7 +95,7 @@ public class RestEasyPlugin implements IServicePlugin {
 
         final RestEasyHttpContextBuilder contextBuilder = new RestEasyHttpContextBuilder();
 
-        LOG.info("Searching for JAX-RS applications...");
+        logger.info("Searching for JAX-RS applications...");
 
         // check if there is an Application class with an @ApplicationPath annotation
         final Class<?> app = findApplicationClass();
@@ -99,7 +103,7 @@ public class RestEasyPlugin implements IServicePlugin {
         String contextPath = null;
 
         if (app != null) {
-            LOG.info("Found JAX-RS application: " + app.getName());
+            logger.info("Found JAX-RS application: " + app.getName());
             // if an application was found use the value of the @ApplicationPath annotation as
             // context-path
             contextBuilder.getDeployment().setApplicationClass(app.getName());
@@ -115,13 +119,13 @@ public class RestEasyPlugin implements IServicePlugin {
             }
 
             contextBuilder.setPath(contextPath);
-            LOG.info("Determined context-path for JAX-RS application: " + app.getName() + " -> " + contextPath);
+            logger.info("Determined context-path for JAX-RS application: " + app.getName() + " -> " + contextPath);
 
             Object appImpl = null;
             try {
                 appImpl = serverContext.getCdiContainer().select(app).get();
             } catch (final Exception e) {
-                LOG.error("Failed to instantiate Application class!", e);
+                logger.log(Level.SEVERE, "Failed to instantiate Application class!", e);
             }
 
             if (appImpl != null) {
@@ -131,7 +135,7 @@ public class RestEasyPlugin implements IServicePlugin {
                             try {
                                 addResource(contextPath, resource);
                             } catch (final Exception e) {
-                                LOG.error("Failed to add JAX-RS resource: " + resource.getName());
+                                logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName());
                             }
                         }
                     }
@@ -144,7 +148,7 @@ public class RestEasyPlugin implements IServicePlugin {
                             try {
                                 addResource(contextPath, resource.getClass());
                             } catch (final Exception e) {
-                                LOG.error("Failed to add JAX-RS resource: " + resource.getClass().getName());
+                                logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getClass().getName());
                             }
                         }
                     }
@@ -153,12 +157,12 @@ public class RestEasyPlugin implements IServicePlugin {
                 }
             }
         } else {
-            LOG.info("Found JAX-RS application: \n\t[]");
-            LOG.info("Searching for JAX-RS resources...");
+            logger.info("Found JAX-RS application: \n\t[]");
+            logger.info("Searching for JAX-RS resources...");
             contextPath = defaultContextPath;
             // find all resources with a @Path annotation
             final Set<Class<?>> resources = findResourceClasses();
-            LOG.info("Found JAX-RS Resources:\n\t" + resources);
+            logger.info("Found JAX-RS Resources:\n\t" + resources);
 
             if (resources != null) {
                 for (final Class<?> resource : resources) {
@@ -166,19 +170,19 @@ public class RestEasyPlugin implements IServicePlugin {
                         addResource(contextPath, resource);
                         contextBuilder.getDeployment().getScannedResourceClasses().add(resource.getName());
                     } catch (final Exception e) {
-                        LOG.error("Failed to add JAX-RS resource: " + resource.getName());
+                        logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName());
                     }
                 }
             }
 
             // use the configured or default context path
             contextBuilder.setPath(contextPath);
-            LOG.info("Determined context-path for JAX-RS resources: " + contextPath);
+            logger.info("Determined context-path for JAX-RS resources: " + contextPath);
         }
 
         contextBuilder.bind();
         serverContext.setAttribute("JAX-RS", contextBuilder);
-        LOG.info("Finished configuring JAX-RS server!");
+        logger.info("Finished configuring JAX-RS server!");
     }
 
 
@@ -212,7 +216,7 @@ public class RestEasyPlugin implements IServicePlugin {
             }
 
             addMapping(rootPath, RestEasyIOHandler.class);
-            LOG.info("Adding JAX-RS mapping for: " + resource.getName() + " -> " + rootPath);
+            logger.info("Adding JAX-RS mapping for: " + resource.getName() + " -> " + rootPath);
 
             // check for Path annotated methods
             for (final Method method : Reflections.getAnnotatedMethods(resource, Path.class)) {
@@ -229,7 +233,7 @@ public class RestEasyPlugin implements IServicePlugin {
                 }
 
                 addMapping(rootPath + subPath, RestEasyIOHandler.class);
-                LOG.info("Adding JAX-RS mapping for: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
+                logger.info("Adding JAX-RS mapping for: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
             }
         } catch (final Exception e) {
             // otherwise use the configured or default context-path

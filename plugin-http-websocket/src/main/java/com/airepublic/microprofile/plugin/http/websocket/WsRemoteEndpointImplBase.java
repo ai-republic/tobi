@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
@@ -43,9 +44,7 @@ import javax.websocket.RemoteEndpoint;
 import javax.websocket.SendHandler;
 import javax.websocket.SendResult;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.buf.Utf8Encoder;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
@@ -55,8 +54,7 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
 
     protected static final SendResult SENDRESULT_OK = new SendResult();
 
-    private final Logger log = LoggerFactory.getLogger(WsRemoteEndpointImplBase.class); // must not
-                                                                                        // be static
+    private final Logger log = new SerializableLogger(WsRemoteEndpointImplBase.class.getName());
 
     private final StateMachine stateMachine = new StateMachine();
 
@@ -352,7 +350,7 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
             if (Constants.OPCODE_CLOSE == mp.getOpCode() && getBatchingAllowed()) {
                 // Should not happen. To late to send batched messages now since
                 // the session has been closed. Complain loudly.
-                log.warn(sm.getString("wsRemoteEndpoint.flushOnCloseFailed"));
+                log.warning(sm.getString("wsRemoteEndpoint.flushOnCloseFailed"));
             }
             if (messagePartInProgress.tryAcquire()) {
                 doWrite = true;

@@ -2,7 +2,9 @@ package com.airepublic.microprofile.sample;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Logger;
 
+import javax.inject.Inject;
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.OnClose;
@@ -18,20 +20,23 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Contact;
 import org.eclipse.microprofile.openapi.annotations.info.Info;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 @OpenAPIDefinition(info = @Info(title = "EchoServer", contact = @Contact(name = "Torsten Oltmanns"), version = "1.0"))
 @ServerEndpoint(value = "/ws")
 public class EchoServer {
-    private static final Logger LOG = LoggerFactory.getLogger(EchoServer.class);
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
     int id = 0;
 
 
-    @Timed
+    @Timed(description = "Echoserver open time", tags = "type=Websocket")
     @OnOpen
     public void onOpen(final Session session) {
-        LOG.info("Connected ... " + session.getId());
+        logger.info("Connected ... " + session.getId());
     }
 
 

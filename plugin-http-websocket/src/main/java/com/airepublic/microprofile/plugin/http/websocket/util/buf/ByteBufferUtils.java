@@ -22,16 +22,16 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 public class ByteBufferUtils {
 
     private static final StringManager sm = StringManager.getManager(ByteBufferUtils.class);
-    private static final Logger log = LoggerFactory.getLogger(ByteBufferUtils.class);
+    private static final Logger log = new SerializableLogger(ByteBufferUtils.class.getName());
 
     private static final Object unsafe;
     private static final Method cleanerMethod;
@@ -52,7 +52,7 @@ public class ByteBufferUtils {
             cleanMethodLocal = cleanerObject.getClass().getMethod("clean");
             cleanMethodLocal.invoke(cleanerObject);
         } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-            log.warn(sm.getString("byteBufferUtils.cleaner"), e);
+            log.log(Level.WARNING, sm.getString("byteBufferUtils.cleaner"), e);
             cleanerMethodLocal = null;
             cleanMethodLocal = null;
         }

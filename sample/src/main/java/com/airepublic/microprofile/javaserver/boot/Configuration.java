@@ -4,19 +4,20 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.Produces;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.feature.mp.jwtauth.ClaimsSet;
 import com.airepublic.microprofile.feature.mp.jwtauth.JWTUtil;
 
 public class Configuration {
-    private final static Logger LOG = LoggerFactory.getLogger(Configuration.class);
+    private final static Logger LOG = new SerializableLogger(Configuration.class.getName());
     private JsonWebToken jwt;
 
 
@@ -31,7 +32,7 @@ public class Configuration {
             try {
                 jwt = JWTUtil.createJWT(Paths.get(pemFile), claimSet);
             } catch (final IOException e) {
-                LOG.error("Could not load PEM file from path: " + pemFile, e);
+                LOG.log(Level.SEVERE, "Could not load PEM file from path: " + pemFile, e);
             }
         } else {
             final byte[] secretKey = "mysupersecretneverguessjwtincrediblekey".getBytes();

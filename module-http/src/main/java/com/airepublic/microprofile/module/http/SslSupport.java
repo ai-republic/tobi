@@ -8,6 +8,8 @@ import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -20,11 +22,10 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class SslSupport {
-    private final static Logger LOG = LoggerFactory.getLogger(SslSupport.class);
+    private final static Logger LOG = new SerializableLogger(SslSupport.class.getName());
     private final static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private static int applicationBufferSize = 16 * 1024;
     private static int packetBufferSize = 16 * 1024;
@@ -123,7 +124,7 @@ public class SslSupport {
      */
     static boolean doHandshake(final SocketChannel socketChannel, final SSLEngine engine) throws IOException {
 
-        LOG.debug("Performing SSL handshake...");
+        LOG.fine("Performing SSL handshake...");
         ByteBuffer packetBuffer = ByteBuffer.allocate(packetBufferSize);
         ByteBuffer peerPacketBuffer = ByteBuffer.allocate(packetBufferSize);
 
@@ -155,7 +156,7 @@ public class SslSupport {
                         try {
                             engine.closeInbound();
                         } catch (final SSLException e) {
-                            LOG.error("This engine was forced to close inbound, without having received the proper SSL/TLS close notification message from the peer, due to end of stream.", e);
+                            LOG.log(Level.SEVERE, "This engine was forced to close inbound, without having received the proper SSL/TLS close notification message from the peer, due to end of stream.", e);
                         }
                         engine.closeOutbound();
                         // After closeOutbound the engine will be set to WRAP state, in order to try
@@ -171,7 +172,7 @@ public class SslSupport {
                         peerPacketBuffer.compact();
                         handshakeStatus = result.getHandshakeStatus();
                     } catch (final SSLException e) {
-                        LOG.error("A problem was encountered while processing the data that caused the SSLEngine to abort. Will try to properly close connection...", e);
+                        LOG.log(Level.SEVERE, "A problem was encountered while processing the data that caused the SSLEngine to abort. Will try to properly close connection...", e);
                         engine.closeOutbound();
                         handshakeStatus = engine.getHandshakeStatus();
                         break;
@@ -210,7 +211,7 @@ public class SslSupport {
                         result = engine.wrap(myAppData, packetBuffer);
                         handshakeStatus = result.getHandshakeStatus();
                     } catch (final SSLException sslException) {
-                        LOG.error("A problem was encountered while processing the data that caused the SSLEngine to abort. Will try to properly close connection...");
+                        LOG.log(Level.SEVERE, "A problem was encountered while processing the data that caused the SSLEngine to abort. Will try to properly close connection...");
                         engine.closeOutbound();
                         handshakeStatus = engine.getHandshakeStatus();
                         break;
@@ -247,7 +248,7 @@ public class SslSupport {
                                 // so we make sure that peerNetData is clear to read.
                                 peerPacketBuffer.clear();
                             } catch (final Exception e) {
-                                LOG.error("Failed to send server's CLOSE message due to socket channel's failure.");
+                                LOG.log(Level.SEVERE, "Failed to send server's CLOSE message due to socket channel's failure.");
                                 handshakeStatus = engine.getHandshakeStatus();
                             }
                         break;

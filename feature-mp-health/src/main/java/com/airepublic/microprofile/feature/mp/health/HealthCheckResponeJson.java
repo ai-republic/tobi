@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
@@ -23,11 +25,14 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
 import org.eclipse.microprofile.health.Readiness;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 public class HealthCheckResponeJson {
-    private static Logger LOG = LoggerFactory.getLogger(HealthCheckResponeJson.class);
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger LOG;
     private static final Map<String, ?> JSON_CONFIG = Collections.singletonMap(JsonGenerator.PRETTY_PRINTING, true);
     @Inject
     @Health
@@ -83,7 +88,7 @@ public class HealthCheckResponeJson {
         try {
             return toJson(healthCheck.call());
         } catch (final RuntimeException e) {
-            LOG.error("Error processing Health Checks", e);
+            LOG.log(Level.SEVERE, "Error processing Health Checks", e);
 
             final StringWriter stringWriter = new StringWriter();
             final PrintWriter printWriter = new PrintWriter(stringWriter);

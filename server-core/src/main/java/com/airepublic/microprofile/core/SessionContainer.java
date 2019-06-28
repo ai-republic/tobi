@@ -4,17 +4,21 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 public class SessionContainer {
-    private final static Logger LOG = LoggerFactory.getLogger(SessionContainer.class);
     private static AtomicLong SESSION_ID_GENERATOR = new AtomicLong();
-
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
     private IServerModule module;
     private SocketChannel channel;
     @Inject
@@ -36,7 +40,7 @@ public class SessionContainer {
         final SessionContext sessionContext = new SessionContext(sessionId);
 
         try {
-            LOG.info("Starting session #" + sessionId + " for module " + module.getName());
+            logger.info("Starting session #" + sessionId + " for module " + module.getName());
 
             sessionScopedContext.activate(sessionContext);
 
@@ -44,11 +48,11 @@ public class SessionContainer {
             session.init(sessionId, module, channel, serverContext);
             session.run();
         } catch (final Exception e) {
-            LOG.error("Error creating session", e);
+            logger.log(Level.SEVERE, "Error creating session", e);
         } finally {
-            LOG.info("Closing session #" + sessionId + " for module '" + module.getName() + "'!");
+            logger.info("Closing session #" + sessionId + " for module '" + module.getName() + "'!");
             sessionScopedContext.deactivate();
-            LOG.info("Session #" + sessionId + " for module '" + module.getName() + "' destroyed!");
+            logger.info("Session #" + sessionId + " for module '" + module.getName() + "' destroyed!");
         }
 
         return CompletableFuture.completedFuture(null);

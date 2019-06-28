@@ -9,10 +9,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 /**
  * Implementation of the default {@link ConfigSource} to provide properties stored in a resource
@@ -22,7 +23,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class MicroprofileDefaultConfigSource implements ConfigSource {
-    private static final Logger LOG = LoggerFactory.getLogger(MicroprofileDefaultConfigSource.class);
+    private static final Logger LOG = new SerializableLogger(MicroprofileDefaultConfigSource.class.getName());
     private final Map<String, String> properties = new HashMap<>();
 
 
@@ -46,7 +47,7 @@ public class MicroprofileDefaultConfigSource implements ConfigSource {
                 }
             });
         } catch (final Exception e) {
-            LOG.warn("Config under /META-INF/microprofile-config.properties could not be read!");
+            LOG.warning("Config under /META-INF/microprofile-config.properties could not be read!");
         }
     }
 

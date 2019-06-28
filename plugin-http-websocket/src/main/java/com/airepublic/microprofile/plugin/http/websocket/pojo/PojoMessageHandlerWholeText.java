@@ -26,12 +26,11 @@ import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
 import javax.websocket.Decoder.Text;
 import javax.websocket.Decoder.TextStream;
+import javax.websocket.EndpointConfig;
+import javax.websocket.Session;
 
 import com.airepublic.microprofile.plugin.http.websocket.Util;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
-
-import javax.websocket.EndpointConfig;
-import javax.websocket.Session;
 
 
 /**

@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -38,9 +39,7 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 /**
@@ -49,7 +48,7 @@ import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
  */
 public class AsyncChannelWrapperSecure implements AsyncChannelWrapper {
 
-    private final Logger log = LoggerFactory.getLogger(AsyncChannelWrapperSecure.class);
+    private final Logger log = new SerializableLogger(AsyncChannelWrapperSecure.class.getName());
     private static final StringManager sm = StringManager.getManager(AsyncChannelWrapperSecure.class);
 
     private static final ByteBuffer DUMMY = ByteBuffer.allocate(16921);

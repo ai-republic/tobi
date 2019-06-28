@@ -21,9 +21,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 /**
  * This class implements a String cache for ByteChunk and CharChunk.
@@ -32,7 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public class StringCache {
 
-    private static final Logger log = LoggerFactory.getLogger(StringCache.class);
+    private static final Logger log = new SerializableLogger(StringCache.class.getName());
 
     // ------------------------------------------------------- Static Variables
 
@@ -262,10 +263,9 @@ public class StringCache {
                         bcCount = 0;
                         bcStats.clear();
                         bcCache = tempbcCache;
-                        if (log.isDebugEnabled()) {
+                        if (log.isLoggable(Level.FINEST)) {
                             final long t2 = System.currentTimeMillis();
-                            log.debug("ByteCache generation time: " +
-                                    (t2 - t1) + "ms");
+                            log.log(Level.FINEST, "ByteCache generation time: " + (t2 - t1) + "ms");
                         }
                     } else {
                         bcCount++;
@@ -378,10 +378,9 @@ public class StringCache {
                         ccCount = 0;
                         ccStats.clear();
                         ccCache = tempccCache;
-                        if (log.isDebugEnabled()) {
+                        if (log.isLoggable(Level.FINEST)) {
                             final long t2 = System.currentTimeMillis();
-                            log.debug("CharCache generation time: " +
-                                    (t2 - t1) + "ms");
+                            log.log(Level.FINEST, "CharCache generation time: " + (t2 - t1) + "ms");
                         }
                     } else {
                         ccCount++;

@@ -48,6 +48,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -65,9 +67,7 @@ import javax.websocket.HandshakeResponse;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoEndpointClient;
 import com.airepublic.microprofile.plugin.http.websocket.util.buf.StringUtils;
 import com.airepublic.microprofile.plugin.http.websocket.util.codec.binary.Base64;
@@ -88,8 +88,9 @@ public class WsWebSocketContainer implements WebSocketContainer, BackgroundProce
     private volatile AsynchronousChannelGroup asynchronousChannelGroup = null;
     private final Object asynchronousChannelGroupLock = new Object();
 
-    private final Logger log = LoggerFactory.getLogger(WsWebSocketContainer.class); // must not be
-                                                                                    // static
+    private final Logger log = new SerializableLogger(WsWebSocketContainer.class.getName()); // must not
+                                                                                       // be
+    // static
     // Server side uses the endpoint path as the key
     // Client side uses the client endpoint instance
     private final Map<Object, Set<WsSession>> endpointSessionMap = new HashMap<>();
@@ -851,7 +852,7 @@ public class WsWebSocketContainer implements WebSocketContainer, BackgroundProce
 
         final int index = line.indexOf(':');
         if (index == -1) {
-            log.warn(sm.getString("wsWebSocketContainer.invalidHeader", line));
+            log.warning(sm.getString("wsWebSocketContainer.invalidHeader", line));
             return;
         }
         // Header names are case insensitive so always use lower case
@@ -1028,8 +1029,7 @@ public class WsWebSocketContainer implements WebSocketContainer, BackgroundProce
             try {
                 session.close(cr);
             } catch (final IOException ioe) {
-                log.debug(sm.getString(
-                        "wsWebSocketContainer.sessionCloseFail", session.getId()), ioe);
+                log.log(Level.FINEST, sm.getString("wsWebSocketContainer.sessionCloseFail", session.getId()), ioe);
             }
         }
 

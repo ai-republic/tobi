@@ -2,22 +2,27 @@ package com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
 
 import org.jboss.resteasy.core.Dispatcher;
 import org.jboss.resteasy.core.SynchronousDispatcher;
 import org.jboss.resteasy.core.ThreadLocalResteasyProviderFactory;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.util.http.common.AbstractHttpIOHandler;
 import com.airepublic.microprofile.util.http.common.HttpResponse;
 import com.airepublic.microprofile.util.http.common.HttpStatus;
 
 public class RestEasyIOHandler extends AbstractHttpIOHandler {
-    private final static Logger LOG = LoggerFactory.getLogger(RestEasyIOHandler.class);
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
     protected SynchronousDispatcher dispatcher;
     protected ResteasyProviderFactory providerFactory;
     private RestEasyHttpContextBuilder contextBuilder;
@@ -55,6 +60,7 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
     }
 
 
+    @Override
     public HttpResponse getHttpResponse() {
         if (response == null) {
             try {
@@ -89,7 +95,7 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
                     }
 
                 } catch (final Exception ex) {
-                    LOG.error("Error submitting JAX-RS response!", ex);
+                    logger.log(Level.SEVERE, "Error submitting JAX-RS response!", ex);
                     try {
                         response = new HttpResponse(HttpStatus.INTERNAL_SERVER_ERROR);
                     } catch (final Exception e) {

@@ -40,12 +40,6 @@ import javax.websocket.Decoder.Binary;
 import javax.websocket.Decoder.BinaryStream;
 import javax.websocket.Decoder.Text;
 import javax.websocket.Decoder.TextStream;
-
-import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMessageHandlerPartialBinary;
-import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMessageHandlerWholeBinary;
-import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMessageHandlerWholeText;
-import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
-
 import javax.websocket.DeploymentException;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
@@ -53,6 +47,11 @@ import javax.websocket.Extension;
 import javax.websocket.MessageHandler;
 import javax.websocket.PongMessage;
 import javax.websocket.Session;
+
+import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMessageHandlerPartialBinary;
+import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMessageHandlerWholeBinary;
+import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMessageHandlerWholeText;
+import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 /**
  * Utility class for internal use only within the

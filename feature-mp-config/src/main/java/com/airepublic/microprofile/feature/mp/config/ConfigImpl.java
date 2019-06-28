@@ -11,15 +11,17 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class ConfigImpl implements Config {
-    private final static Logger LOG = LoggerFactory.getLogger(ConfigImpl.class);
+    private final static Logger LOG = new SerializableLogger(ConfigImpl.class.getName());
     private final Map<String, String> values = new ConcurrentHashMap<>();
     private final Queue<ConfigSource> configSources = new ConcurrentLinkedQueue<>();
     private final Map<Class<?>, PriorizedConverter> converters = new HashMap<>();
@@ -120,7 +122,7 @@ public class ConfigImpl implements Config {
             try {
                 convertedValue = (T) Class.forName(propertyValue);
             } catch (final ClassNotFoundException e) {
-                LOG.error("Configuration " + propertyValue + " doesn't represent a valid classname");
+                LOG.severe("Configuration " + propertyValue + " doesn't represent a valid classname");
             }
         }
 
@@ -218,7 +220,7 @@ public class ConfigImpl implements Config {
             }
 
         } catch (final Exception e) {
-            LOG.error("Converter " + converter + " could not be added!", e);
+            LOG.log(Level.SEVERE, "Converter " + converter + " could not be added!", e);
         }
     }
 

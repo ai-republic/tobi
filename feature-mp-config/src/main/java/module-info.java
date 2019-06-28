@@ -9,8 +9,7 @@ module com.airepublic.microprofile.feature.mp.config {
 
     requires transitive microprofile.config.api;
 
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
+    requires com.airepublic.microprofile.feature.logging.java;
     requires cdi.api;
     requires java.annotation;
     requires javax.inject;

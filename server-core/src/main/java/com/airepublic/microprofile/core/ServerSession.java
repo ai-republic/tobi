@@ -17,18 +17,23 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.context.SessionScoped;
+import javax.inject.Inject;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 @SessionScoped
 public class ServerSession implements Closeable, Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOG = LoggerFactory.getLogger(ServerSession.class);
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
     private ServerContext serverContext;
     private long id;
     private Selector selector;
@@ -153,7 +158,7 @@ public class ServerSession implements Closeable, Serializable {
                         }
                     }
                 } catch (final Exception e) {
-                    LOG.error("Error processing request!", e);
+                    logger.log(Level.SEVERE, "Error processing request!", e);
                 }
             }
         } finally {
@@ -196,43 +201,47 @@ public class ServerSession implements Closeable, Serializable {
             ByteBuffer buffer = ByteBuffer.allocate(module.getReadBufferSize());
             final SocketChannel channel = getChannel();
 
-            final int len = channel.read(buffer);
-            buffer.flip();
+            if (channel.isOpen()) {
+                final int len = channel.read(buffer);
+                buffer.flip();
 
-            if (len == -1) {
-                // input stream has been closed
-                handleAction(ChannelAction.CLOSE_ALL);
-                return;
-            }
-
-            buffer = module.unwrap(this, buffer);
-
-            // if the IO handler is null, this is the first read
-            if (getIoHandler() == null) {
-                try {
-                    // need to check which module has registered a handler that can handle the
-                    // initial buffer
-                    action = determineIoHandler(buffer);
-                } catch (final Exception e) {
-                    action = ChannelAction.CLOSE_ALL;
+                if (len == -1) {
+                    // input stream has been closed
+                    handleAction(ChannelAction.CLOSE_ALL);
+                    return;
                 }
-            }
 
-            if (getIoHandler() != null) {
-                if (len > 0) {
+                buffer = module.unwrap(this, buffer);
+
+                // if the IO handler is null, this is the first read
+                if (getIoHandler() == null) {
                     try {
-                        action = getIoHandler().consume(buffer);
+                        // need to check which module has registered a handler that can handle the
+                        // initial buffer
+                        action = determineIoHandler(buffer);
                     } catch (final Exception e) {
-                        action = getIoHandler().onReadError(e);
+                        action = ChannelAction.CLOSE_ALL;
                     }
-                } else {
-                    action = ChannelAction.KEEP_OPEN;
                 }
-            }
 
-            handleAction(action);
+                if (getIoHandler() != null) {
+                    if (len > 0) {
+                        try {
+                            action = getIoHandler().consume(buffer);
+                        } catch (final Exception e) {
+                            action = getIoHandler().onReadError(e);
+                        }
+                    } else {
+                        action = ChannelAction.KEEP_OPEN;
+                    }
+                }
+
+                handleAction(action);
+            } else {
+                handleAction(ChannelAction.CLOSE_ALL);
+            }
         } catch (final Exception e) {
-            LOG.error("Exception during read processing: ", e);
+            logger.log(Level.SEVERE, "Exception during read processing: ", e);
             handleAction(ChannelAction.CLOSE_ALL);
         }
     }
@@ -259,11 +268,15 @@ public class ServerSession implements Closeable, Serializable {
 
                         buffers = module.wrap(this, buffers);
 
-                        final long length = channel.write(buffers);
+                        long length = -1;
+
+                        if (channel.isOpen()) {
+                            length = channel.write(buffers);
+                        }
 
                         action = handler.writeSuccessful(pair.getValue2(), length);
                     } catch (final Throwable t) {
-                        LOG.error("Error writing buffers for session #" + getId() + " in module " + module.getName() + ": ", t);
+                        logger.log(Level.SEVERE, "Error writing buffers for session #" + getId() + " in module " + module.getName() + ": ", t);
                         action = handler.writeFailed(pair.getValue2(), t);
                     }
 
@@ -278,7 +291,7 @@ public class ServerSession implements Closeable, Serializable {
             }
 
         } catch (final Exception e) {
-            LOG.error("Exception during write processing for session #" + getId() + " in module " + module.getName() + ": ", e);
+            logger.log(Level.SEVERE, "Exception during write processing for session #" + getId() + " in module " + module.getName() + ": ", e);
             handleAction(ChannelAction.CLOSE_ALL);
         }
     }

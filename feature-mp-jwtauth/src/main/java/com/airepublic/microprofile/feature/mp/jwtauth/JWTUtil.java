@@ -13,19 +13,21 @@ import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.crypto.spec.SecretKeySpec;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 public class JWTUtil {
-    private final static Logger LOG = LoggerFactory.getLogger(JWTUtil.class);
+    private final static Logger LOG = new SerializableLogger(JWTUtil.class.getName());
 
 
     public static JsonWebToken createJWT(final Path keyFile, final ClaimsSet claims) throws IOException {
@@ -63,7 +65,7 @@ public class JWTUtil {
         try {
             privateKey = Files.readString(keyFile);
         } catch (final IOException e) {
-            LOG.error("Private key file could not be read: ", e);
+            LOG.log(Level.SEVERE, "Private key file could not be read: ", e);
             throw new RuntimeException(e);
         }
 
@@ -86,7 +88,7 @@ public class JWTUtil {
         try {
             kf = KeyFactory.getInstance("RSA");
         } catch (final NoSuchAlgorithmException e) {
-            LOG.error("No RSA algorythm found!", e);
+            LOG.log(Level.SEVERE, "No RSA algorythm found!", e);
             throw new RuntimeException(e);
         }
 
@@ -95,7 +97,7 @@ public class JWTUtil {
         try {
             privKey = kf.generatePrivate(keySpec);
         } catch (final InvalidKeySpecException e) {
-            LOG.error("Invalid private key", e);
+            LOG.log(Level.SEVERE, "Invalid private key", e);
             throw new RuntimeException(e);
         }
 

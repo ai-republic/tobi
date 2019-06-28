@@ -21,15 +21,13 @@ module com.airepublic.microprofile.plugin.http.websocket {
     opens com.airepublic.microprofile.plugin.http.websocket.util.threads;
 
     requires com.airepublic.microprofile.core;
+    requires com.airepublic.microprofile.feature.logging.java;
     requires com.airepublic.microprofile.feature.mp.config;
     requires com.airepublic.microprofile.util.http.common;
 
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
-
-    requires java.annotation;
     requires cdi.api;
     requires javax.inject;
+    requires java.annotation;
 
     requires transitive javax.websocket.api;
 

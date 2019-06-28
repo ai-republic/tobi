@@ -18,10 +18,10 @@ package com.airepublic.microprofile.plugin.http.websocket;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.ExceptionUtils;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
@@ -32,7 +32,7 @@ import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
  */
 public class BackgroundProcessManager {
 
-    private final Logger log = LoggerFactory.getLogger(BackgroundProcessManager.class);
+    private final Logger log = new SerializableLogger(BackgroundProcessManager.class.getName());
     private static final StringManager sm = StringManager.getManager(BackgroundProcessManager.class);
     private static final BackgroundProcessManager instance;
 
@@ -90,8 +90,7 @@ public class BackgroundProcessManager {
                 process.backgroundProcess();
             } catch (final Throwable t) {
                 ExceptionUtils.handleThrowable(t);
-                log.error(sm.getString(
-                        "backgroundProcessManager.processFailed"), t);
+                log.log(Level.SEVERE, sm.getString("backgroundProcessManager.processFailed"), t);
             }
         }
     }

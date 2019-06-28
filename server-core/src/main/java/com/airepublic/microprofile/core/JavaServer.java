@@ -14,20 +14,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 @ApplicationScoped
 public class JavaServer {
-    private static final Logger LOG = LoggerFactory.getLogger(JavaServer.class);
-
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
     private Selector selector;
     @Inject
     private ServerContext serverContext;
@@ -72,7 +77,7 @@ public class JavaServer {
 
                         serviceLoader.forEach(m -> {
                             try {
-                                LOG.info("Starting " + m.getName() + "...");
+                                logger.info("Starting " + m.getName() + "...");
                                 final IServerModule module = serverContext.getCdiContainer().select(m.getClass()).get();
 
                                 // add service plugins for the supported protocol to the module
@@ -82,7 +87,7 @@ public class JavaServer {
 
                                 if (ports != null && ports.length > 0) {
                                     for (final int port : ports) {
-                                        LOG.info("Starting server for module " + module.getName() + " on " + host + ":" + port + "...");
+                                        logger.info("Starting server for module " + module.getName() + " on " + host + ":" + port + "...");
 
                                         if (!openPorts.contains(Integer.valueOf(port))) {
                                             final ServerSocketChannel serverSocket = ServerSocketChannel.open();
@@ -95,7 +100,7 @@ public class JavaServer {
                                             moduleForKey.put(key, module);
                                             openPorts.add(Integer.valueOf(port));
                                         } else {
-                                            LOG.info("Module " + module.getName() + " is sharing the port " + port + " with another module!");
+                                            logger.info("Module " + module.getName() + " is sharing the port " + port + " with another module!");
                                         }
                                     }
                                 }
@@ -106,9 +111,9 @@ public class JavaServer {
                             }
                         });
 
-                        LOG.info("Started server successfully!");
+                        logger.info("Started server successfully!");
                     } catch (final Exception e) {
-                        LOG.error("Error starting server: ", e);
+                        logger.log(Level.SEVERE, "Error starting server: ", e);
                     }
                 }
 
@@ -132,7 +137,7 @@ public class JavaServer {
 
 
     @Asynchronous
-    protected void run() throws IOException {
+    protected Future<Void> run() throws IOException {
         if (!running.get()) {
             synchronized (running) {
                 if (!running.get()) {
@@ -161,6 +166,8 @@ public class JavaServer {
 
             }
         }
+
+        return null;
     }
 
 
@@ -207,7 +214,7 @@ public class JavaServer {
             sessionContainer.init(moduleForKey.get(connectionKey), channel);
             sessionContainer.run();
         } catch (final Exception e) {
-            LOG.error("Error creating session", e);
+            logger.log(Level.SEVERE, "Error creating session", e);
         } finally {
         }
     }

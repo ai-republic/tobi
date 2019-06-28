@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -20,8 +21,6 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.airepublic.microprofile.core.AbstractIOHandler;
 import com.airepublic.microprofile.core.DetermineStatus;
@@ -30,12 +29,13 @@ import com.airepublic.microprofile.core.IServicePlugin;
 import com.airepublic.microprofile.core.Pair;
 import com.airepublic.microprofile.core.ServerContext;
 import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
 import com.airepublic.microprofile.util.http.common.IServicePluginHttp;
 
 @ApplicationScoped
 public class HttpModule implements IServerModule {
-    private final static Logger LOG = LoggerFactory.getLogger(HttpModule.class);
     public final static String PORT = "http.port";
     public final static String SSL_PORT = "http.ssl.port";
     public final static String KEYSTORE_FILE = "http.keystore.file";
@@ -43,6 +43,9 @@ public class HttpModule implements IServerModule {
     public final static String TRUSTSTORE_FILE = "http.truststore.file";
     public final static String TRUSTSTORE_PASSWORD = "http.truststore.password";
     private final static String SESSION_ATTRIBUTE_SSL_ENGINE = "http.sslEngine";
+    @Inject
+    @LoggerConfig(level = LogLevel.FINE)
+    private Logger logger;
     private final Set<IServicePlugin> servicePlugins = new HashSet<>();
     @Inject
     @ConfigProperty(name = PORT)
@@ -132,10 +135,10 @@ public class HttpModule implements IServerModule {
         if (plugins != null) {
             for (final IServicePlugin featurePlugin : plugins) {
                 if (!servicePlugins.contains(featurePlugin)) {
-                    LOG.info("\tAdding feature-plugin: " + featurePlugin.getName());
+                    logger.info("\tAdding feature-plugin: " + featurePlugin.getName());
                     servicePlugins.add(featurePlugin);
                 } else {
-                    LOG.warn("Feature-plugin " + featurePlugin.getName() + " is already added!");
+                    logger.warning("Feature-plugin " + featurePlugin.getName() + " is already added!");
                 }
             }
         }
@@ -158,7 +161,7 @@ public class HttpModule implements IServerModule {
 
                 if (!SslSupport.doHandshake(session.getChannel(), sslEngine)) {
                     session.getChannel().close();
-                    LOG.info("Connection closed due to handshake failure.");
+                    logger.info("Connection closed due to handshake failure.");
                 }
 
                 session.setAttribute(SESSION_ATTRIBUTE_SSL_ENGINE, sslEngine);
@@ -187,7 +190,7 @@ public class HttpModule implements IServerModule {
                 case BUFFER_UNDERFLOW:
                     return SslSupport.handleBufferUnderflow(sslEngine, buffer);
                 case CLOSED:
-                    LOG.debug("Closing SSL connection...");
+                    logger.fine("Closing SSL connection...");
                     SslSupport.closeConnection(session.getChannel(), sslEngine);
                     session.close();
                     return null;
@@ -299,7 +302,7 @@ public class HttpModule implements IServerModule {
         }
 
         if (handler != null) {
-            LOG.debug("Session #" + session.getId() + " is using " + handler.getClass().getName() + " for request: " + path);
+            logger.fine("Session #" + session.getId() + " is using " + handler.getClass().getName() + " for request: " + path);
             return new Pair<>(DetermineStatus.TRUE, handler);
         } else if (needMoreData) {
             return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
@@ -307,8 +310,8 @@ public class HttpModule implements IServerModule {
             // if no handler was mapped, use default HttpIOHandler
             handler = serverContext.getCdiContainer().select(HttpIOHandler.class).get();
             handler.init(session);
-            LOG.info("Module " + getName() + " could not find mapping for: " + path);
-            LOG.info("Using default " + handler.getClass().getName() + " for request: " + path);
+            logger.info("Module " + getName() + " could not find mapping for: " + path);
+            logger.info("Using default " + handler.getClass().getName() + " for request: " + path);
             return new Pair<>(DetermineStatus.TRUE, handler);
         }
     }

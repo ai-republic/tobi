@@ -20,18 +20,19 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
 import javax.websocket.CloseReason.CloseCodes;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
 
 public class WsFrameClient extends WsFrameBase {
 
-    private final Logger log = LoggerFactory.getLogger(WsFrameClient.class); // must not be static
+    private final Logger log = new SerializableLogger(WsFrameClient.class.getName()); // must not be
+                                                                                // static
     private static final StringManager sm = StringManager.getManager(WsFrameClient.class);
 
     private final AsyncChannelWrapper channel;
@@ -218,8 +219,8 @@ public class WsFrameClient extends WsFrameBase {
                 // continuing to send a message after the server sent a close
                 // control message.
                 if (isOpen()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(sm.getString("wsFrameClient.ioe"), e);
+                    if (log.isLoggable(Level.FINEST)) {
+                        log.log(Level.FINEST, sm.getString("wsFrameClient.ioe"), e);
                     }
                     close(e);
                 }

@@ -2,17 +2,17 @@ package com.airepublic.microprofile.core;
 
 import java.io.IOException;
 import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
+import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class Bootstrap {
-    private static final Logger LOG = LoggerFactory.getLogger(Bootstrap.class);
+    private static final Logger LOG = new SerializableLogger(Bootstrap.class.getName());
 
 
     private void startServer(final SeContainer cdiContainer) throws IOException {
@@ -44,7 +44,7 @@ public class Bootstrap {
 
             new Bootstrap().startServer(cdiContainer);
         } catch (final Exception e) {
-            LOG.error("Failed to start server: ", e);
+            LOG.log(Level.SEVERE, "Failed to start server: ", e);
         }
     }
 }

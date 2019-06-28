@@ -10,13 +10,12 @@ module com.airepublic.microprofile.core {
     requires com.airepublic.microprofile.core.spi;
     requires com.airepublic.microprofile.feature.mp.config;
     requires com.airepublic.microprofile.feature.mp.faulttolerance;
+    requires com.airepublic.microprofile.feature.logging.java;
 
     requires java.annotation;
     requires cdi.api;
     requires javax.inject;
     requires javax.interceptor.api;
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
 
     requires transitive java.net.http;
 
