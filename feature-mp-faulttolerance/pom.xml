@@ -14,6 +14,12 @@
 	<properties>
 		<encoding>UTF-8</encoding>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<version.org.jboss.arquillian>1.4.1.Final</version.org.jboss.arquillian>
+		<version.org.jboss.arquillian.container.weld-embedded>2.0.1.Final</version.org.jboss.arquillian.container.weld-embedded>
+		<version.org.jboss.arquillian.wildfly>2.2.0.Final</version.org.jboss.arquillian.wildfly>
+		<version.junit>4.12</version.junit>
+		<version.testng>6.14.3</version.testng>
+		<version.testcontainers>1.11.3</version.testcontainers>
 	</properties>
 
 	<build>
@@ -45,7 +51,13 @@
 			<version>2.0</version>
 			<scope>test</scope>
 		</dependency>
-
+		
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-metrics</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
@@ -55,16 +67,60 @@
 
 		<dependency>
 			<groupId>org.jboss.arquillian.container</groupId>
-			<artifactId>arquillian-tomcat-embedded-8</artifactId>
-			<version>1.0.1.Final</version>
+			<artifactId>arquillian-container-spi</artifactId>
+			<version>1.1.14.Final</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.arquillian.container</groupId>
+			<artifactId>arquillian-container-test-spi</artifactId>
+			<version>1.1.14.Final</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.shrinkwrap.resolver</groupId>
+			<artifactId>shrinkwrap-resolver-depchain</artifactId>
+			<type>pom</type>
+			<version>3.1.3</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.arquillian.testng</groupId>
+			<artifactId>arquillian-testng-container</artifactId>
+			<version>1.1.14.Final</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>${version.testcontainers}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.tomcat.embed</groupId>
-			<artifactId>tomcat-embed-core</artifactId>
-			<version>8.5.42</version>
+			<groupId>org.jboss.arquillian</groupId>
+			<artifactId>arquillian-bom</artifactId>
+			<version>${version.org.jboss.arquillian}</version>
+			<type>pom</type>
+			<scope>import</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.arquillian.container</groupId>
+			<artifactId>arquillian-weld-embedded</artifactId>
+			<version>${version.org.jboss.arquillian.container.weld-embedded}</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.weld.se</groupId>
+			<artifactId>weld-se-core</artifactId>
+			<version>3.1.1.Final</version>
+			<scope>test</scope>
+		</dependency>
+		
 	</dependencies>
 
 

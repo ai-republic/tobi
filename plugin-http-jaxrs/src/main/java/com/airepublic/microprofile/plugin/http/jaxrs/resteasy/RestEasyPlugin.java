@@ -9,21 +9,25 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import javax.annotation.PostConstruct;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 
 import org.eclipse.microprofile.config.Config;
 
-import com.airepublic.microprofile.core.AbstractIOHandler;
-import com.airepublic.microprofile.core.DetermineStatus;
-import com.airepublic.microprofile.core.IServicePlugin;
-import com.airepublic.microprofile.core.Pair;
-import com.airepublic.microprofile.core.Reflections;
-import com.airepublic.microprofile.core.ServerContext;
-import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.core.spi.DetermineStatus;
+import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IServerContext;
+import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
+import com.airepublic.microprofile.core.spi.Pair;
+import com.airepublic.microprofile.core.spi.Reflections;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
@@ -36,13 +40,13 @@ public class RestEasyPlugin implements IServicePlugin {
     @Inject
     private Config config;
     @Inject
-    private ServerContext serverContext;
-    private final Map<String, Class<? extends AbstractIOHandler>> mappings = new ConcurrentHashMap<>();
+    private IServerContext serverContext;
+    private final Map<String, Class<? extends IIOHandler>> mappings = new ConcurrentHashMap<>();
 
 
     @Override
     public String getName() {
-        return "JAX-RS Resteasy plugin";
+        return getClass().getSimpleName();
     }
 
 
@@ -53,21 +57,23 @@ public class RestEasyPlugin implements IServicePlugin {
 
 
     @Override
-    public Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException {
+    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException {
         final String path = HttpBufferUtils.getUriPath(buffer);
 
         if (path == null) {
             return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
         }
 
-        if (findMapping(path) != null) {
+        final Class<? extends IIOHandler> handlerClass = findMapping(path);
+
+        if (handlerClass != null) {
             try {
-                final RestEasyIOHandler handler = serverContext.getCdiContainer().select(RestEasyIOHandler.class).get();
-                handler.init(session);
+                final IIOHandler handler = CDI.current().select(handlerClass).get();
+
                 return new Pair<>(DetermineStatus.TRUE, handler);
             } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Could not instantiate handler: " + RestEasyIOHandler.class, e);
-                throw new IOException("Could not initialize handler: " + RestEasyIOHandler.class, e);
+                logger.log(Level.SEVERE, "Could not instantiate handler: " + handlerClass, e);
+                throw new IOException("Could not initialize handler: " + handlerClass, e);
             }
         }
 
@@ -75,18 +81,23 @@ public class RestEasyPlugin implements IServicePlugin {
     }
 
 
-    public void addMapping(final String path, final Class<? extends AbstractIOHandler> ioHandlerClass) {
+    @Override
+    public void onSessionCreate(final IServerSession session) {
+    }
+
+
+    public void addMapping(final String path, final Class<? extends IIOHandler> ioHandlerClass) {
         mappings.put(path, ioHandlerClass);
     }
 
 
-    protected Class<? extends AbstractIOHandler> findMapping(final String path) {
+    protected Class<? extends IIOHandler> findMapping(final String path) {
         return mappings.get(path);
     }
 
 
-    @PostConstruct
-    public void initPlugin() {
+    @Override
+    public void initPlugin(final IServerModule module) {
         final String defaultContextPath = config.getValue(CONTEXT_PATH, String.class);
 
         if (defaultContextPath == null) {
@@ -123,9 +134,9 @@ public class RestEasyPlugin implements IServicePlugin {
 
             Object appImpl = null;
             try {
-                appImpl = serverContext.getCdiContainer().select(app).get();
+                appImpl = CDI.current().select(app).get();
             } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Failed to instantiate Application class!", e);
+                logger.log(Level.SEVERE, "Failed to instantiate JAX-RS Application class!", e);
             }
 
             if (appImpl != null) {
@@ -196,6 +207,10 @@ public class RestEasyPlugin implements IServicePlugin {
      */
     void addResource(final String contextPath, final Class<?> resource) throws Exception {
         try {
+            if (isSseResource(resource)) {
+                return;
+            }
+
             String rootPath = "";
 
             // check if Path annotation is present on class
@@ -238,6 +253,33 @@ public class RestEasyPlugin implements IServicePlugin {
         } catch (final Exception e) {
             // otherwise use the configured or default context-path
         }
+    }
+
+
+    boolean isSseResource(final Class<?> resource) {
+        boolean sseMethodFound = true;
+
+        // check for SSE Produces annotated methods (mimetype text/event-stream)
+        for (final Method method : Reflections.getAnnotatedMethods(resource, Produces.class)) {
+            final Produces annotation = method.getAnnotation(Produces.class);
+            sseMethodFound = Stream.of(annotation.value()).anyMatch(s -> s.equals("text/event-stream"));
+
+            if (sseMethodFound) {
+                return true;
+            }
+        }
+
+        // check for SSE Consumes annotated methods (mimetype text/event-stream)
+        for (final Method method : Reflections.getAnnotatedMethods(resource, Consumes.class)) {
+            final Consumes annotation = method.getAnnotation(Consumes.class);
+            sseMethodFound = Stream.of(annotation.value()).anyMatch(s -> s.equals("text/event-stream"));
+
+            if (sseMethodFound) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 

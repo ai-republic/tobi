@@ -1,8 +1,8 @@
 package com.airepublic.microprofile.util.http.common;
 
-import com.airepublic.microprofile.core.AbstractIOHandler;
-import com.airepublic.microprofile.core.IServicePlugin;
+import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
 
 public interface IServicePluginHttp extends IServicePlugin {
-    Class<? extends AbstractIOHandler> findMapping(String path);
+    Class<? extends IIOHandler> findMapping(String path);
 }

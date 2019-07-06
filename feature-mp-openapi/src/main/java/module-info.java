@@ -3,9 +3,9 @@ module com.airepublic.microprofile.feature.mp.openapi {
 
     requires transitive microprofile.openapi.api;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
 
     requires smallrye.open.api;
 }

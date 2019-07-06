@@ -1,6 +1,6 @@
 import javax.websocket.server.ServerEndpointConfig;
 
-import com.airepublic.microprofile.core.IServicePlugin;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.plugin.http.websocket.WebSocketPlugin;
 import com.airepublic.microprofile.plugin.http.websocket.server.DefaultServerEndpointConfigurator;
 
@@ -20,13 +20,13 @@ module com.airepublic.microprofile.plugin.http.websocket {
     opens com.airepublic.microprofile.plugin.http.websocket.util.security;
     opens com.airepublic.microprofile.plugin.http.websocket.util.threads;
 
-    requires com.airepublic.microprofile.core;
+    requires com.airepublic.microprofile.core.spi;
     requires com.airepublic.microprofile.feature.logging.java;
     requires com.airepublic.microprofile.feature.mp.config;
     requires com.airepublic.microprofile.util.http.common;
 
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
 
     requires transitive javax.websocket.api;

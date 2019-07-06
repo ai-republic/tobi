@@ -30,7 +30,7 @@ public class EchoServer {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
-    int id = 0;
+    private int id = 0;
 
 
     @Timed(description = "Echoserver open time", tags = "type=Websocket")

@@ -23,12 +23,17 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>server-core</artifactId>
+			<artifactId>server-core-spi</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>util-http-common</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

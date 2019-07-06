@@ -1,10 +1,13 @@
-import com.airepublic.microprofile.core.IServerModule;
-import com.airepublic.microprofile.core.IServicePlugin;
+import com.airepublic.microprofile.core.ServerContext;
+import com.airepublic.microprofile.core.ServerSession;
 import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
+import com.airepublic.microprofile.core.spi.IServerContext;
+import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
 
 module com.airepublic.microprofile.core {
     exports com.airepublic.microprofile.core;
-    exports com.airepublic.microprofile.core.pathmatcher;
     exports com.airepublic.microprofile.core.util;
 
     requires com.airepublic.microprofile.core.spi;
@@ -12,16 +15,19 @@ module com.airepublic.microprofile.core {
     requires com.airepublic.microprofile.feature.mp.faulttolerance;
     requires com.airepublic.microprofile.feature.logging.java;
 
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires cdi.api;
-    requires javax.inject;
-    requires javax.interceptor.api;
+    requires jakarta.interceptor.api;
 
-    requires transitive java.net.http;
+    requires java.net.http;
 
     opens com.airepublic.microprofile.core;
 
     uses IServerModule;
     uses IServicePlugin;
     uses ICDIServiceProvider;
+
+    provides IServerSession with ServerSession;
+    provides IServerContext with ServerContext;
 }

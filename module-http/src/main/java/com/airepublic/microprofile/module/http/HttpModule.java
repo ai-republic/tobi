@@ -3,7 +3,9 @@ package com.airepublic.microprofile.module.http;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -22,16 +24,16 @@ import javax.net.ssl.TrustManager;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import com.airepublic.microprofile.core.AbstractIOHandler;
-import com.airepublic.microprofile.core.DetermineStatus;
-import com.airepublic.microprofile.core.IServerModule;
-import com.airepublic.microprofile.core.IServicePlugin;
-import com.airepublic.microprofile.core.Pair;
-import com.airepublic.microprofile.core.ServerContext;
-import com.airepublic.microprofile.core.ServerSession;
+import com.airepublic.microprofile.core.spi.DetermineStatus;
+import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IServerContext;
+import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
+import com.airepublic.microprofile.core.spi.Pair;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
+import com.airepublic.microprofile.util.http.common.BufferUtil;
 import com.airepublic.microprofile.util.http.common.IServicePluginHttp;
 
 @ApplicationScoped
@@ -66,12 +68,12 @@ public class HttpModule implements IServerModule {
     @ConfigProperty(name = TRUSTSTORE_PASSWORD, defaultValue = "changeit")
     private String truststorePassword;
     @Inject
-    private ServerContext serverContext;
+    private IServerContext serverContext;
     private SSLContext sslContext;
     private int readBufferSize = 16 * 1024;
 
 
-    protected ServerContext getServerContext() {
+    protected IServerContext getServerContext() {
         return serverContext;
     }
 
@@ -131,27 +133,37 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public void addServicePlugins(final Set<IServicePlugin> plugins) {
-        if (plugins != null) {
-            for (final IServicePlugin featurePlugin : plugins) {
-                if (!servicePlugins.contains(featurePlugin)) {
-                    logger.info("\tAdding feature-plugin: " + featurePlugin.getName());
-                    servicePlugins.add(featurePlugin);
-                } else {
-                    logger.warning("Feature-plugin " + featurePlugin.getName() + " is already added!");
-                }
+    public void addServicePlugin(final IServicePlugin servicePlugin) {
+        if (servicePlugin != null) {
+            if (!servicePlugins.contains(servicePlugin)) {
+                logger.info("\tAdding service-plugin: " + servicePlugin.getName());
+                servicePlugins.add(servicePlugin);
+            } else {
+                logger.warning("Service-plugin " + servicePlugin.getName() + " is already added!");
             }
         }
     }
 
 
-    boolean isSecure(final ServerSession session) throws IOException {
-        return sslPort != null && session != null && sslPort.intValue() == ((InetSocketAddress) session.getChannel().getLocalAddress()).getPort();
+    @Override
+    public Set<IServicePlugin> getServicePlugins() {
+        return Collections.unmodifiableSet(servicePlugins);
+    }
+
+
+    boolean isSecure(final IServerSession session) throws IOException {
+        final Boolean secure = (Boolean) session.getAttribute(IServerSession.SESSION_IS_SECURE);
+
+        if (secure == null || secure == Boolean.FALSE) {
+            return sslPort != null && session != null && sslPort.intValue() == ((InetSocketAddress) session.getChannel().getLocalAddress()).getPort();
+        }
+
+        return secure;
     }
 
 
     @Override
-    public void onAccept(final ServerSession session) throws IOException {
+    public void onAccept(final IServerSession session) throws IOException {
 
         if (isSecure(session)) {
             try {
@@ -174,7 +186,7 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public ByteBuffer unwrap(final ServerSession session, final ByteBuffer buffer) throws IOException {
+    public ByteBuffer unwrap(final IServerSession session, final ByteBuffer buffer) throws IOException {
         if (isSecure(session)) {
             final ByteBuffer unwrapBuffer = ByteBuffer.allocate(buffer.capacity());
             final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SESSION_ATTRIBUTE_SSL_ENGINE);
@@ -204,7 +216,7 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public ByteBuffer[] wrap(final ServerSession session, final ByteBuffer... buffers) throws IOException {
+    public ByteBuffer[] wrap(final IServerSession session, final ByteBuffer... buffers) throws IOException {
         if (isSecure(session)) {
             final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SESSION_ATTRIBUTE_SSL_ENGINE);
             final ByteBuffer[] wrappedBuffers = new ByteBuffer[buffers.length];
@@ -250,10 +262,10 @@ public class HttpModule implements IServerModule {
     }
 
 
-    protected Class<? extends AbstractIOHandler> findMapping(final String path) {
+    protected Class<? extends IIOHandler> findMapping(final String path) {
         for (final IServicePlugin plugin : servicePlugins) {
             if (IServicePluginHttp.class.isAssignableFrom(plugin.getClass())) {
-                final Class<? extends AbstractIOHandler> handlerClass = ((IServicePluginHttp) plugin).findMapping(path);
+                final Class<? extends IIOHandler> handlerClass = ((IServicePluginHttp) plugin).findMapping(path);
 
                 if (handlerClass != null) {
                     return handlerClass;
@@ -266,52 +278,65 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public Pair<DetermineStatus, AbstractIOHandler> determineIoHandler(final ByteBuffer buffer, final ServerSession session) throws IOException {
-        final String path = HttpBufferUtils.getUriPath(buffer);
-
-        if (path == null) {
-            return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
-        }
-
-        AbstractIOHandler handler = null;
+    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException {
+        IIOHandler handler = null;
         boolean needMoreData = false;
-        final Iterator<IServicePlugin> it = servicePlugins.iterator();
+        String line;
 
-        while (handler == null && it.hasNext()) {
-            final IServicePlugin plugin = it.next();
-            final Pair<DetermineStatus, AbstractIOHandler> result = plugin.determineIoHandler(buffer, session);
+        buffer.reset();
 
-            switch (result.getValue1()) {
-                case FALSE:
-                break;
+        try {
+            line = BufferUtil.readLine(buffer, Charset.forName("ASCII"));
 
-                case TRUE: {
-                    if (result.getValue2() != null) {
-                        handler = result.getValue2();
+            final Iterator<IServicePlugin> it = servicePlugins.iterator();
+
+            while (handler == null && it.hasNext()) {
+                final IServicePlugin plugin = it.next();
+
+                try {
+                    buffer.reset();
+
+                    final Pair<DetermineStatus, IIOHandler> result = plugin.determineIoHandler(buffer, session);
+
+                    switch (result.getValue1()) {
+                        case FALSE:
+                        break;
+
+                        case TRUE: {
+                            if (result.getValue2() != null) {
+                                handler = result.getValue2();
+                            }
+                        }
+                        break;
+
+                        case NEED_MORE_DATA: {
+                            needMoreData = true;
+                        }
+                        break;
+                        default:
+                        break;
                     }
-                }
-                break;
+                } catch (final Exception e) {
+                    // ignore quietly and proceed with search
 
-                case NEED_MORE_DATA: {
-                    needMoreData = true;
+                } finally {
+                    buffer.reset();
                 }
-                break;
-                default:
-                break;
             }
+        } finally {
+            buffer.reset();
         }
 
         if (handler != null) {
-            logger.fine("Session #" + session.getId() + " is using " + handler.getClass().getName() + " for request: " + path);
+            logger.info("Session #" + session.getId() + " is using " + handler.getClass().getName() + " for request: " + line);
             return new Pair<>(DetermineStatus.TRUE, handler);
         } else if (needMoreData) {
             return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
         } else {
             // if no handler was mapped, use default HttpIOHandler
             handler = serverContext.getCdiContainer().select(HttpIOHandler.class).get();
-            handler.init(session);
-            logger.info("Module " + getName() + " could not find mapping for: " + path);
-            logger.info("Using default " + handler.getClass().getName() + " for request: " + path);
+            logger.info("Module " + getName() + " could not find mapping for: " + line);
+            logger.info("Using default " + handler.getClass().getName() + " for request: " + line);
             return new Pair<>(DetermineStatus.TRUE, handler);
         }
     }

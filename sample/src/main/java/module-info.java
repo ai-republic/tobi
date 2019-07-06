@@ -3,9 +3,11 @@ module com.airepublic.microprofile.samplw {
     exports com.airepublic.microprofile.sample;
 
     requires transitive com.airepublic.microprofile.core;
+    requires transitive com.airepublic.microprofile.core.spi;
     requires transitive com.airepublic.microprofile.module.http;
     requires transitive com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
     requires transitive com.airepublic.microprofile.plugin.http.websocket;
+    requires transitive com.airepublic.microprofile.plugin.http.sse;
     requires transitive com.airepublic.microprofile.feature.cdi.weld;
     requires transitive com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.feature.mp.faulttolerance;
@@ -14,12 +16,12 @@ module com.airepublic.microprofile.samplw {
     requires transitive com.airepublic.microprofile.feature.mp.metrics;
     requires transitive com.airepublic.microprofile.feature.mp.openapi;
     requires transitive com.airepublic.microprofile.feature.mp.opentracing;
-    requires transitive com.airepublic.microprofile.feature.mp.restclient;
+    // requires transitive com.airepublic.microprofile.feature.mp.restclient;
     requires transitive com.airepublic.microprofile.feature.logging.java;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
 
     requires org.eclipse.jetty.websocket.api;
     requires org.eclipse.jetty.websocket.client;

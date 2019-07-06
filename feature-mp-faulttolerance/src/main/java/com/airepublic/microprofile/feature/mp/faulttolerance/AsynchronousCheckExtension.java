@@ -5,7 +5,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
+import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
@@ -36,9 +36,9 @@ public class AsynchronousCheckExtension implements Extension {
     }
 
 
-    void throwExceptionIfAsynchronousUseFails(@Observes final AfterBeanDiscovery event, final BeanManager bm) {
+    void throwExceptionIfAsynchronousUseFails(@Observes final AfterDeploymentValidation event, final BeanManager bm) {
         if (t != null) {
-            event.addDefinitionError(t);
+            event.addDeploymentProblem(t);
         }
     }
 }

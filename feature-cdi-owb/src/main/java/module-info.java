@@ -6,9 +6,9 @@ module com.airepublic.microprofile.feature.cdi.owb {
 
     requires com.airepublic.microprofile.core.spi;
 
-    requires transitive cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires transitive java.annotation;
-    requires transitive javax.inject;
 
     requires transitive openwebbeans.se;
     requires transitive openwebbeans.spi;

@@ -3,10 +3,15 @@ package com.airepublic.microprofile.util.http.common;
 import java.nio.ByteBuffer;
 
 public class HttpResponse {
-    private final String protocol = "HTTP/1.1";
+    private String scheme = "http";
+    private String version = "1.1";
     private HttpStatus status;
     private Headers headers;
     private ByteBuffer body;
+
+
+    public HttpResponse() {
+    }
 
 
     public HttpResponse(final HttpStatus status) {
@@ -26,13 +31,39 @@ public class HttpResponse {
     }
 
 
+    public String getScheme() {
+        return scheme;
+    }
+
+
+    public HttpResponse withScheme(final String scheme) {
+        this.scheme = scheme;
+
+        return this;
+    }
+
+
+    public String getVersion() {
+        return version;
+    }
+
+
+    public HttpResponse withVersion(final String version) {
+        this.version = version;
+
+        return this;
+    }
+
+
     public HttpStatus getStatus() {
         return status;
     }
 
 
-    public void setStatus(final HttpStatus status) {
+    public HttpResponse withStatus(final HttpStatus status) {
         this.status = status;
+
+        return this;
     }
 
 
@@ -41,8 +72,10 @@ public class HttpResponse {
     }
 
 
-    public void setHeaders(final Headers headers) {
+    public HttpResponse withHeaders(final Headers headers) {
         this.headers = headers;
+
+        return this;
     }
 
 
@@ -51,14 +84,16 @@ public class HttpResponse {
     }
 
 
-    public void setBody(final ByteBuffer body) {
+    public HttpResponse withBody(final ByteBuffer body) {
         this.body = body;
+
+        return this;
     }
 
 
     public ByteBuffer getHeaderBuffer() {
         final StringBuffer str = new StringBuffer();
-        str.append(protocol + " " + status.code() + " " + status.name() + "\r\n");
+        str.append(scheme.toUpperCase() + "/" + version + " " + status.code() + " " + status.name() + "\r\n");
 
         if (headers != null) {
             final StringBuffer headerBuf = headers.entrySet().stream().map(entry -> {

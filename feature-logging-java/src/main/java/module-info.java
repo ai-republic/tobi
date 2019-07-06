@@ -5,8 +5,8 @@ import com.airepublic.microprofile.feature.logging.java.LoggingExtension;
 module com.airepublic.microprofile.feature.logging.java {
     exports com.airepublic.microprofile.feature.logging.java;
 
-    requires cdi.api;
-    requires javax.inject;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires transitive java.logging;
 
     opens com.airepublic.microprofile.feature.logging.java;

@@ -6,10 +6,31 @@ import java.nio.ByteBuffer;
 import java.security.Principal;
 
 public class HttpRequest {
-    private String requestLine;
-    private final Headers headers;
+    private String host;
+    private int port = -1;
+    private String method;
+    private String scheme;
+    private String version;
+    private String path;
+    private String query;
+    private Headers headers;
     private ByteBuffer body;
-    private URI uri;
+
+
+    public HttpRequest() {
+        headers = new Headers();
+    }
+
+
+    public HttpRequest(final URI uri) {
+        this(uri, new Headers());
+    }
+
+
+    public HttpRequest(final URI uri, final Headers headers) {
+        setUri(uri);
+        withHeaders(headers);
+    }
 
 
     public HttpRequest(final String requestLine, final Headers headers) {
@@ -18,7 +39,7 @@ public class HttpRequest {
 
 
     public HttpRequest(final String requestLine, final Headers headers, final ByteBuffer body) {
-        this.requestLine = requestLine;
+        setRequestLine(requestLine);
         this.headers = headers;
         this.body = body;
     }
@@ -29,13 +50,30 @@ public class HttpRequest {
     }
 
 
+    public HttpRequest withHeaders(final Headers headers) {
+        this.headers = headers;
+        return this;
+    }
+
+
     public String getRequestLine() {
-        return requestLine;
+        return getMethod() + " " + getPath() + (getQuery() != null ? "?" + getQuery() : "") + " " + getVersion();
     }
 
 
     public void setRequestLine(final String requestLine) {
-        this.requestLine = requestLine;
+        final String[] requestParts = requestLine.split(" ");
+        final String[] requestQuery = requestParts[1].split("\\?");
+
+        method = requestParts[0];
+        path = requestQuery[0];
+
+        if (requestQuery.length > 1) {
+            query = requestQuery[1];
+        }
+
+        version = requestParts[2];
+        scheme = "http";
     }
 
 
@@ -44,150 +82,154 @@ public class HttpRequest {
     }
 
 
-    public void setBody(final ByteBuffer body) {
+    public HttpRequest withBody(final ByteBuffer body) {
         this.body = body;
+        return this;
     }
 
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (body == null ? 0 : body.hashCode());
-        result = prime * result + (headers == null ? 0 : headers.hashCode());
-        result = prime * result + (requestLine == null ? 0 : requestLine.hashCode());
-        return result;
-    }
+    public ByteBuffer getHeaderBuffer() {
+        final StringBuffer str = new StringBuffer();
+        str.append(getRequestLine() + "\r\n");
 
+        if (headers != null) {
+            final StringBuffer headerBuf = headers.entrySet().stream().map(entry -> {
+                final StringBuffer buf = new StringBuffer();
+                entry.getValue().stream().forEach(value -> buf.append(entry.getKey() + ": " + value + "\r\n"));
+                return buf;
+            }).collect(StringBuffer::new, StringBuffer::append, StringBuffer::append);
 
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
+            str.append(headerBuf);
+            str.append("\r\n");
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final HttpRequest other = (HttpRequest) obj;
-        if (body == null) {
-            if (other.body != null) {
-                return false;
-            }
-        } else if (!body.equals(other.body)) {
-            return false;
-        }
-        if (headers == null) {
-            if (other.headers != null) {
-                return false;
-            }
-        } else if (!headers.equals(other.headers)) {
-            return false;
-        }
-        if (requestLine == null) {
-            if (other.requestLine != null) {
-                return false;
-            }
-        } else if (!requestLine.equals(other.requestLine)) {
-            return false;
-        }
-        return true;
-    }
 
-
-    @Override
-    public String toString() {
-        return "HttpRequest [requestLine=" + requestLine + ", headers=" + headers + ", body=" + body + "]";
+        return ByteBuffer.wrap(str.toString().getBytes());
     }
 
 
     public URI getUri() throws URISyntaxException {
-        if (uri == null) {
-            if (requestLine == null) {
-                new URISyntaxException(requestLine, "is null");
-            }
-
-            uri = new URI(getScheme() + "://" + getHost() + ":" + getPort() + getPath() + (getQuery().isBlank() ? "" : "?" + getQuery()));
-        }
-
-        return uri;
+        return new URI(getScheme() + "://" + getHost() + ":" + getPort() + getPath() + (getQuery() == null || getQuery().isBlank() ? "" : "?" + getQuery()));
     }
 
 
     public void setUri(final URI uri) {
-        this.uri = uri;
+        host = uri.getHost();
+
+        if (uri.getPort() != -1) {
+            port = uri.getPort();
+        } else {
+            port = -1;
+        }
+
+        scheme = uri.getScheme();
+        path = uri.getPath();
+        query = uri.getQuery();
     }
 
 
     public String getMethod() {
-        if (requestLine == null) {
-            new URISyntaxException(requestLine, "is null");
-        }
+        return method;
+    }
 
-        final int idx = requestLine.indexOf(" ");
 
-        if (idx != -1) {
-            return requestLine.substring(0, idx);
-        }
+    public HttpRequest withMethod(final String method) {
+        this.method = method;
 
-        throw new IllegalArgumentException("No request line present: " + requestLine);
+        return this;
     }
 
 
     public String getHost() {
-        final String hosts = headers.getFirst(Headers.HOST);
-        final String[] hostport = hosts.split(":");
-        return hostport[0];
+        if (host == null) {
+            if (headers != null) {
+                final String hosts = headers.getFirst(Headers.HOST);
+
+                if (hosts != null) {
+                    final String[] hostport = hosts.split(":");
+                    host = hostport[0];
+                }
+            }
+        }
+        return host;
+    }
+
+
+    public HttpRequest withHost(final String host) {
+        this.host = host;
+
+        return this;
     }
 
 
     public int getPort() {
-        final String hosts = headers.getFirst(Headers.HOST);
-        final String[] hostport = hosts.split(":");
+        if (port == -1) {
+            if (headers != null) {
+                final String hosts = headers.getFirst(Headers.HOST);
 
-        if (hostport.length > 1) {
-            return Integer.parseInt(hostport[1].strip());
-        } else {
-            return 80;
+                if (hosts != null) {
+                    final String[] hostport = hosts.split(":");
+
+                    if (hostport.length > 1) {
+                        port = Integer.parseInt(hostport[1].strip());
+                    }
+                }
+            }
         }
+        return port;
+    }
+
+
+    public HttpRequest withPort(final int port) {
+        this.port = port;
+
+        return this;
     }
 
 
     public String getPath() {
-        final String[] requestParts = requestLine.split(" ");
-        final String[] requestQuery = requestParts[1].split("\\?");
+        return path;
+    }
 
-        if (requestQuery.length > 0) {
-            return requestQuery[0];
-        } else {
-            return "";
-        }
+
+    public HttpRequest withPath(final String path) {
+        this.path = path;
+
+        return this;
     }
 
 
     public String getQuery() {
-        final String[] requestParts = requestLine.split(" ");
-        final String[] requestQuery = requestParts[1].split("\\?");
+        return query;
+    }
 
-        if (requestQuery.length > 1) {
-            return requestQuery[1];
-        } else {
-            return "";
-        }
+
+    public HttpRequest withQuery(final String query) {
+        this.query = query;
+
+        return this;
     }
 
 
     public String getScheme() {
-        final String[] requestParts = requestLine.split(" ");
-        final String[] requestQuery = requestParts[2].split("/");
+        return scheme;
+    }
 
-        if (requestQuery.length > 1) {
-            return requestQuery[0].toLowerCase();
-        } else {
-            return "http";
-        }
+
+    public HttpRequest withScheme(final String scheme) {
+        this.scheme = scheme;
+
+        return this;
+    }
+
+
+    public String getVersion() {
+        return version;
+    }
+
+
+    public HttpRequest withVersion(final String version) {
+        this.version = version;
+        return this;
     }
 
 

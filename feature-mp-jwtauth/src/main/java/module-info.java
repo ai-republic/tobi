@@ -6,9 +6,9 @@ module com.airepublic.microprofile.feature.mp.jwtauth {
 
     requires transitive microprofile.jwt.auth.api;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
 
     requires jjwt;
     requires java.xml.bind;

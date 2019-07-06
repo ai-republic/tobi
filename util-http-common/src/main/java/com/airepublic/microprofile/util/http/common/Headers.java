@@ -3,6 +3,7 @@ package com.airepublic.microprofile.util.http.common;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Headers extends HashMap<String, List<String>> {
     private static final long serialVersionUID = 1L;
@@ -57,6 +58,9 @@ public class Headers extends HashMap<String, List<String>> {
     /** RFC 1945 (HTTP/1.0) Section 10.5, RFC 2616 (HTTP/1.1) Section 14.17 */
     public static final String CONTENT_TYPE = "Content-Type";
 
+    /** RFC 2109 */
+    public static final String COOKIE = "Cookie";
+
     /** RFC 1945 (HTTP/1.0) Section 10.6, RFC 2616 (HTTP/1.1) Section 14.18 */
     public static final String DATE = "Date";
 
@@ -102,6 +106,9 @@ public class Headers extends HashMap<String, List<String>> {
     /** RFC 2616 (HTTP/1.1) Section 14.28 */
     public static final String IF_UNMODIFIED_SINCE = "If-Unmodified-Since";
 
+    /** SSE specification */
+    public static final String LAST_EVENT_ID_HEADER = "Last-Event-ID";
+
     /** RFC 1945 (HTTP/1.0) Section 10.10, RFC 2616 (HTTP/1.1) Section 14.29 */
     public static final String LAST_MODIFIED = "Last-Modified";
 
@@ -137,6 +144,9 @@ public class Headers extends HashMap<String, List<String>> {
 
     /** RFC 1945 (HTTP/1.0) Section 10.14, RFC 2616 (HTTP/1.1) Section 14.38 */
     public static final String SERVER = "Server";
+
+    /** RFC 2109 */
+    public static final String SET_COOKIE = "Set-Cookie";
 
     /** RFC 2518 (WevDAV) Section 9.7 */
     public static final String STATUS_URI = "Status-URI";
@@ -193,15 +203,15 @@ public class Headers extends HashMap<String, List<String>> {
     }
 
 
-    public void add(final String key, final String value) {
-        List<String> values = get(key);
+    public void add(final String key, final String... values) {
+        List<String> list = get(key);
 
-        if (values == null) {
-            values = new ArrayList<>();
-            put(key, values);
+        if (list == null) {
+            list = new ArrayList<>();
+            put(key, list);
         }
 
-        values.add(value);
-
+        Stream.of(values).forEach(list::add);
     }
+
 }

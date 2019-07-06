@@ -37,7 +37,7 @@ public class RestEasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpR
 
     @Override
     public void setStatus(final int status) {
-        response.setStatus(HttpStatus.forCode(status));
+        response.withStatus(HttpStatus.forCode(status));
     }
 
 
@@ -103,11 +103,11 @@ public class RestEasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpR
 
 
     public void mergeToResponse() {
-        response.setHeaders(new Headers());
+        response.withHeaders(new Headers());
         responseHeaders.keySet().stream().forEach(key -> responseHeaders.get(key).stream().forEach(value -> response.getHeaders().add(key, value.toString())));
 
         final byte[] bytes = getRawOutputStream().toByteArray();
-        response.setBody(ByteBuffer.wrap(bytes));
+        response.withBody(ByteBuffer.wrap(bytes));
     }
 
 }

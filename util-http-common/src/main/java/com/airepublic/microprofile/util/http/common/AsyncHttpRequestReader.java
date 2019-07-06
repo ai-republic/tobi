@@ -3,11 +3,9 @@ package com.airepublic.microprofile.util.http.common;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.airepublic.microprofile.core.BufferUtil;
-import com.airepublic.microprofile.core.ChannelAction;
 
 public class AsyncHttpRequestReader {
     private final List<ByteBuffer> requestBuffers = new ArrayList<>();
@@ -15,7 +13,16 @@ public class AsyncHttpRequestReader {
     private HttpRequest httpRequest;
 
 
-    public ChannelAction receiveRequestBuffer(final ByteBuffer buffer) throws IOException {
+    /**
+     * This method will parse the input buffer. If the request is fully read it will return true
+     * otherwise false if more data is needed.
+     * 
+     * @param buffer
+     * @return if the request is fully read it will return true otherwise false if more data is
+     *         needed
+     * @throws IOException if reading from the buffer fails
+     */
+    public boolean receiveRequestBuffer(final ByteBuffer buffer) throws IOException {
         if (!requestFullyRead) {
             if (buffer.hasRemaining()) {
                 final byte[] bytes = new byte[buffer.remaining()];
@@ -25,15 +32,15 @@ public class AsyncHttpRequestReader {
 
             // check if finished receiving incoming buffers
             if (buffer.limit() == buffer.capacity()) {
-                return ChannelAction.KEEP_OPEN;
+                requestFullyRead = false;
+            } else {
+                requestFullyRead = true;
             }
-
-            requestFullyRead = true;
         } else {
             throw new IOException("Request has already been fully read. Illegal incoming second request!");
         }
 
-        return ChannelAction.CLOSE_INPUT;
+        return requestFullyRead;
     }
 
 
@@ -57,7 +64,7 @@ public class AsyncHttpRequestReader {
 
     private HttpRequest parseBuffers() throws IOException {
         if (httpRequest == null) {
-            final HttpRequest request = new HttpRequest(null, new Headers());
+            final HttpRequest request = new HttpRequest();
             boolean isFinishedHeaders = false;
             boolean isFirstLine = true;
             final ByteArrayOutputStream bis = new ByteArrayOutputStream();
@@ -66,7 +73,7 @@ public class AsyncHttpRequestReader {
                 if (!isFinishedHeaders) {
                     while (buffer.hasRemaining()) {
 
-                        String line = BufferUtil.readLine(buffer);
+                        String line = BufferUtil.readLine(buffer, Charset.forName("ASCII"));
 
                         if (line != null) {
                             line = line.strip();
@@ -77,7 +84,7 @@ public class AsyncHttpRequestReader {
                                 isFinishedHeaders = true;
                                 // read all following blank lines
                                 while (buffer.hasRemaining() && line != null && line.isBlank()) {
-                                    line = BufferUtil.readLine(buffer);
+                                    line = BufferUtil.readLine(buffer, Charset.forName("ASCII"));
                                 }
                                 continue;
                             } else {
@@ -109,7 +116,7 @@ public class AsyncHttpRequestReader {
                 }
             }
 
-            request.setBody(ByteBuffer.wrap(bis.toByteArray()));
+            request.withBody(ByteBuffer.wrap(bis.toByteArray()));
             bis.close();
 
             httpRequest = request;

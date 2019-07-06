@@ -2,18 +2,19 @@ package com.airepublic.microprofile.util.http.common;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import com.airepublic.microprofile.core.BufferUtil;
+import java.nio.charset.Charset;
 
 public class HttpBufferUtils {
 
-    public static String getUriPath(ByteBuffer buffer) throws IOException {
+    public static String getUriPath(final ByteBuffer buffer) throws IOException {
         String path = null;
 
         // mark buffer to reset it after read to leave it untouched for handler
-        buffer.mark();
-        final String line = BufferUtil.readLine(buffer);
-        buffer.reset();
+        final String line = BufferUtil.readLine(buffer, Charset.forName("ASCII"));
+
+        if (line != null && !line.contains(" HTTP")) {
+            throw new IOException(line + " does not contain valid URI");
+        }
 
         // check for the URI request line
         if (line != null) {
@@ -35,9 +36,10 @@ public class HttpBufferUtils {
             } else {
                 throw new IOException(line + " does not contain valid URI");
             }
-            
+
             return path;
         }
+
         return null;
     }
 

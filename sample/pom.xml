@@ -20,12 +20,22 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>server-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>module-http</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>plugin-http-jaxrs</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>plugin-http-sse</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
@@ -82,11 +92,11 @@
 			<version>${project.version}</version>
 		</dependency>
 		
-		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>feature-mp-restclient</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>com.ai-republic.microprofile</groupId> -->
+<!-- 			<artifactId>feature-mp-restclient</artifactId> -->
+<!-- 			<version>${project.version}</version> -->
+<!-- 		</dependency> -->
 		
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>

@@ -14,8 +14,12 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import com.airepublic.microprofile.core.spi.IServerContext;
+import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServerSession;
+
 @ApplicationScoped
-public class ServerContext {
+public class ServerContext implements IServerContext {
     public final static String HOST = "host";
     public final static String WORKER_COUNT = "workerCount";
     private final static String DEFAULT_WORKER_COUNT = "10";
@@ -31,23 +35,26 @@ public class ServerContext {
     private final Set<IServerModule> modules = new HashSet<>();
 
 
-    public ServerContext setAttribute(final String key, final Object value) {
+    @Override
+    public IServerContext setAttribute(final String key, final Object value) {
         attributes.put(key, value);
         return this;
     }
 
 
+    @Override
     public Object getAttribute(final String key) {
         return attributes.get(key);
     }
 
 
+    @Override
     public boolean hasAttribute(final String key) {
         return attributes.containsKey(key);
     }
 
 
-    ServerContext addModule(final IServerModule module) {
+    IServerContext addModule(final IServerModule module) {
         if (!modules.contains(module)) {
             modules.add(module);
         }
@@ -66,23 +73,25 @@ public class ServerContext {
     }
 
 
+    @Override
     public String getHost() {
         return host;
     }
 
 
-    ServerContext setHost(final String host) {
+    IServerContext setHost(final String host) {
         this.host = host;
         return this;
     }
 
 
+    @Override
     public int getWorkerCount() {
         return workerCount;
     }
 
 
-    ServerContext setWorkerCount(final int workerCount) {
+    IServerContext setWorkerCount(final int workerCount) {
         this.workerCount = workerCount;
         return this;
     }
@@ -93,7 +102,7 @@ public class ServerContext {
     }
 
 
-    void removeServerSession(final ServerSession session) {
+    void removeServerSession(final IServerSession session) {
         openSessions.remove(session);
     }
 
@@ -103,12 +112,13 @@ public class ServerContext {
     }
 
 
+    @Override
     public SeContainer getCdiContainer() {
         return cdiContainer;
     }
 
 
-    ServerContext setCdiContainer(final SeContainer cdiContainer) {
+    IServerContext setCdiContainer(final SeContainer cdiContainer) {
         this.cdiContainer = cdiContainer;
         return this;
     }

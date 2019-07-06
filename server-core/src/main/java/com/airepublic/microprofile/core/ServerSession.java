@@ -23,23 +23,32 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.enterprise.context.SessionScoped;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
+import com.airepublic.microprofile.core.spi.ChannelAction;
+import com.airepublic.microprofile.core.spi.DetermineStatus;
+import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.Pair;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 @SessionScoped
-public class ServerSession implements Closeable, Serializable {
+public class ServerSession implements Closeable, Serializable, IServerSession {
     private static final long serialVersionUID = 1L;
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
+    @Inject
     private ServerContext serverContext;
     private long id;
     private Selector selector;
-    private SelectionKey key;
-    private AbstractIOHandler ioHandler;
+    private SelectionKey selectionKey;
+    private IIOHandler ioHandler;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final AtomicBoolean closing = new AtomicBoolean(false);
     private final Queue<ByteBuffer> in = new ConcurrentLinkedQueue<>();
     private final Queue<Pair<ByteBuffer[], CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
     private SocketChannel channel;
@@ -47,70 +56,64 @@ public class ServerSession implements Closeable, Serializable {
     private final Map<String, Object> attributes = new HashMap<>();
 
 
-    public void init(final long id, final IServerModule module, final SocketChannel channel, final ServerContext serverContext) throws IOException {
-        this.id = id;
-        this.module = module;
-        this.channel = channel;
-        this.serverContext = serverContext;
-    }
-
-
+    @Override
     public long getId() {
         return id;
     }
 
 
-    public ServerContext getServerContext() {
-        return serverContext;
-    }
-
-
-    void setServerContext(final ServerContext serverContext) {
-        this.serverContext = serverContext;
-    }
-
-
-    Selector getSelector() {
+    protected Selector getSelector() {
         return selector;
     }
 
 
-    public SelectionKey getKey() {
-        return key;
+    @Override
+    public SelectionKey getSelectionKey() {
+        return selectionKey;
     }
 
 
-    public AbstractIOHandler getIoHandler() {
+    protected IIOHandler getIoHandler() {
         return ioHandler;
     }
 
 
-    void setIoHandler(final AbstractIOHandler handler) {
+    protected void setIoHandler(final IIOHandler handler) {
         ioHandler = handler;
     }
 
 
+    @Override
     public SocketChannel getChannel() {
         return channel;
     }
 
 
+    @Override
     public boolean isClosed() {
         return closed.get();
     }
 
 
+    @Override
     public void setAttribute(final String key, final Object value) {
         attributes.put(key, value);
     }
 
 
+    @Override
     public Object getAttribute(final String key) {
         return attributes.get(key);
     }
 
 
-    public void run() {
+    @Override
+    public void open(final long id, final IServerModule module, final SocketChannel channel, final Map<String, Object> attributes, final boolean isOutbound) throws IOException {
+        this.id = id;
+        this.module = module;
+        this.channel = channel;
+        this.attributes.putAll(attributes);
+
         try {
             channel.configureBlocking(false);
             module.onAccept(this);
@@ -119,59 +122,58 @@ public class ServerSession implements Closeable, Serializable {
             channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
 
             selector = Selector.open();
-            key = channel.register(selector, SelectionKey.OP_READ, this);
+
+            if (isOutbound) {
+                selectionKey = channel.register(selector, SelectionKey.OP_WRITE, this);
+            } else {
+                selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
+            }
+
         } catch (final Exception e) {
-            close();
-
-            throw new RuntimeException("Failed to initialize " + getClass().getName(), e);
+            throw new RuntimeException("Failed to initialize session #" + id, e);
         }
+    }
 
-        try {
 
-            while (selector.isOpen()) {
-                try {
-                    selector.select();
+    protected void handleIO() {
 
-                    if (selector.isOpen()) {
-                        final Set<SelectionKey> selectedKeys = selector.selectedKeys();
-                        final Iterator<SelectionKey> it = selectedKeys.iterator();
+        while (getSelector().isOpen() && !closing.get() && !isClosed()) {
+            try {
+                getSelector().select();
 
-                        while (it.hasNext()) {
-                            final SelectionKey key = it.next();
-                            it.remove();
+                if (getSelector().isOpen()) {
+                    final Set<SelectionKey> selectedKeys = getSelector().selectedKeys();
+                    final Iterator<SelectionKey> it = selectedKeys.iterator();
 
-                            if (key == null) {
-                                continue;
-                            }
+                    while (it.hasNext()) {
+                        final SelectionKey key = it.next();
+                        it.remove();
 
-                            if (key.isValid() && key.isReadable()) {
-                                handleRead();
-                            }
+                        if (key == null) {
+                            continue;
+                        }
 
-                            if (key.isValid() && key.isWritable()) {
-                                handleWrite();
-                            }
+                        if (key.isValid() && key.isReadable()) {
+                            handleRead();
+                        }
 
-                            if (!key.isValid()) {
-                                handleAction(ChannelAction.CLOSE_ALL);
-                            }
+                        if (key.isValid() && key.isWritable()) {
+                            handleWrite();
+                        }
+
+                        if (!key.isValid()) {
+                            handleAction(ChannelAction.CLOSE_ALL);
                         }
                     }
-                } catch (final Exception e) {
-                    logger.log(Level.SEVERE, "Error processing request!", e);
                 }
-            }
-        } finally {
-            try {
-                handleAction(ChannelAction.CLOSE_ALL);
-            } catch (final IOException e) {
-                // ignore quietly
+            } catch (final Exception e) {
+                logger.log(Level.SEVERE, "Error processing request!", e);
             }
         }
     }
 
 
-    private void handleAction(final ChannelAction action) throws IOException {
+    protected void handleAction(final ChannelAction action) throws IOException {
         final SocketChannel channel = getChannel();
 
         switch (action) {
@@ -188,13 +190,13 @@ public class ServerSession implements Closeable, Serializable {
                 channel.shutdownOutput();
             break;
             case CLOSE_ALL:
-                close();
+                closing.set(true);
             break;
         }
     }
 
 
-    private void handleRead() throws IOException {
+    protected void handleRead() throws IOException {
 
         try {
             ChannelAction action = ChannelAction.KEEP_OPEN;
@@ -241,55 +243,35 @@ public class ServerSession implements Closeable, Serializable {
                 handleAction(ChannelAction.CLOSE_ALL);
             }
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, "Exception during read processing: ", e);
-            handleAction(ChannelAction.CLOSE_ALL);
+            logger.log(Level.WARNING, "Exception during read processing. Closing input channel: " + e.getLocalizedMessage());
+            handleAction(ChannelAction.CLOSE_INPUT);
         }
     }
 
 
-    private void handleWrite() throws IOException {
-        final AbstractIOHandler handler = getIoHandler();
+    protected void handleWrite() throws IOException {
+        IIOHandler handler = getIoHandler();
 
-        try {
+        if (handler == null) {
+            determineIoHandler();
+
+            handler = getIoHandler();
+
             if (handler == null) {
+                handleAction(ChannelAction.CLOSE_ALL);
                 throw new IOException("Handler has not been initialized!");
             }
+        }
+
+        try {
 
             handler.produce();
 
-            Pair<ByteBuffer[], CompletionHandler<?, ?>> pair = getNextWriteBuffer();
-            ChannelAction action = ChannelAction.KEEP_OPEN;
-
-            while (pair != null) {
-                if (pair.getValue1() != null) {
-                    try {
-                        final SocketChannel channel = getChannel();
-                        ByteBuffer[] buffers = pair.getValue1();
-
-                        buffers = module.wrap(this, buffers);
-
-                        long length = -1;
-
-                        if (channel.isOpen()) {
-                            length = channel.write(buffers);
-                        }
-
-                        action = handler.writeSuccessful(pair.getValue2(), length);
-                    } catch (final Throwable t) {
-                        logger.log(Level.SEVERE, "Error writing buffers for session #" + getId() + " in module " + module.getName() + ": ", t);
-                        action = handler.writeFailed(pair.getValue2(), t);
-                    }
-
-                    handleAction(action);
-                }
-
-                if (!isClosed()) {
-                    pair = getNextWriteBuffer();
-                } else {
-                    pair = null;
-                }
+            if (out.isEmpty()) {
+                selectionKey.interestOpsAnd(SelectionKey.OP_READ);
+            } else {
+                flush();
             }
-
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Exception during write processing for session #" + getId() + " in module " + module.getName() + ": ", e);
             handleAction(ChannelAction.CLOSE_ALL);
@@ -297,8 +279,84 @@ public class ServerSession implements Closeable, Serializable {
     }
 
 
+    protected void flush() throws IOException {
+        synchronized (closed) {
+            if (!closed.get()) {
+                final IIOHandler handler = getIoHandler();
+
+                if (handler == null) {
+                    throw new IOException("Handler has not been initialized!");
+                }
+
+                Pair<ByteBuffer[], CompletionHandler<?, ?>> pair = getNextWriteBuffer();
+                ChannelAction action = ChannelAction.KEEP_OPEN;
+
+                while (pair != null) {
+                    if (pair.getValue1() != null) {
+                        try {
+                            final SocketChannel channel = getChannel();
+                            ByteBuffer[] buffers = pair.getValue1();
+
+                            buffers = module.wrap(this, buffers);
+
+                            long length = -1;
+
+                            if (channel.isOpen()) {
+                                length = channel.write(buffers);
+                            }
+
+                            action = handler.writeSuccessful(pair.getValue2(), length);
+                        } catch (final Throwable t) {
+                            logger.log(Level.SEVERE, "Error writing buffers for session #" + getId() + " in module " + module.getName() + ": ", t);
+                            action = handler.writeFailed(pair.getValue2(), t);
+                        }
+
+                        handleAction(action);
+                    }
+
+                    if (!closing.get() && !isClosed()) {
+                        pair = getNextWriteBuffer();
+                    } else {
+                        pair = null;
+                    }
+                }
+            }
+        }
+    }
+
+
+    void determineIoHandler() throws IOException {
+        // first check if a handler class or handler has been set in the session attributes
+        IIOHandler handler = (IIOHandler) getAttribute(SESSION_IO_HANDLER);
+
+        if (handler == null) {
+            final Class<? extends IIOHandler> handlerClass = (Class<? extends IIOHandler>) getAttribute(SESSION_IO_HANDLER_CLASS);
+
+            if (handlerClass != null) {
+                try {
+                    handler = CDI.current().select(handlerClass).get();
+                } catch (final Exception e) {
+                    throw new IOException("IOHandler class is set in session attributes, but cannot be instantiated by CDI!", e);
+                }
+
+                setIoHandler(handler);
+            }
+        }
+    }
+
+
     ChannelAction determineIoHandler(final ByteBuffer buffer) throws IOException {
-        final Pair<DetermineStatus, AbstractIOHandler> pair = module.determineIoHandler(buffer, this);
+
+        // otherwise let the module and its plugins try to determine the handler
+        buffer.mark();
+
+        Pair<DetermineStatus, IIOHandler> pair;
+
+        try {
+            pair = module.determineIoHandler(buffer, this);
+        } finally {
+            buffer.reset();
+        }
 
         switch (pair.getValue1()) {
             case FALSE:
@@ -323,9 +381,17 @@ public class ServerSession implements Closeable, Serializable {
 
     @Override
     public void close() {
+        // flush all output
+        try {
+            flush();
+        } catch (final IOException e1) {
+            // ignore quietly
+        }
+
         synchronized (closed) {
             if (!isClosed()) {
-                key.cancel();
+                logger.info("Closing session #" + id + " for module '" + module.getName() + "'!");
+                selectionKey.cancel();
 
                 try {
                     if (getChannel().isOpen()) {
@@ -335,14 +401,14 @@ public class ServerSession implements Closeable, Serializable {
                 }
 
                 try {
-                    selector.close();
+                    getSelector().close();
                 } catch (final IOException e) {
                 }
 
                 serverContext.removeServerSession(this);
                 serverContext = null;
                 ioHandler = null;
-                key = null;
+                selectionKey = null;
                 out.clear();
                 in.clear();
 
@@ -353,16 +419,19 @@ public class ServerSession implements Closeable, Serializable {
     }
 
 
+    @Override
     public synchronized void addToReadBuffer(final ByteBuffer... buffer) {
         Stream.of(buffer).forEach(in::add);
     }
 
 
+    @Override
     public synchronized void addToWriteBuffer(final ByteBuffer... buffer) {
         addToWriteBuffer(null, buffer);
     }
 
 
+    @Override
     public synchronized void addToWriteBuffer(final CompletionHandler<?, ?> handler, final ByteBuffer... buffer) {
         // remove all empty buffers
         final List<ByteBuffer> filtered = Stream.of(buffer).filter(b -> b != null && b.limit() > 0).collect(Collectors.toList());
@@ -375,22 +444,22 @@ public class ServerSession implements Closeable, Serializable {
 
         // if there are buffers in the out queue then wake up selector for writing
         if (out.size() > 0) {
-            key.interestOpsOr(SelectionKey.OP_WRITE);
+            selectionKey.interestOpsOr(SelectionKey.OP_WRITE);
             selector.wakeup();
         }
     }
 
 
-    public synchronized ByteBuffer getNextReadBuffer() {
+    @Override
+    public ByteBuffer getNextReadBuffer() {
         return in.poll();
     }
 
 
-    public synchronized Pair<ByteBuffer[], CompletionHandler<?, ?>> getNextWriteBuffer() {
+    @Override
+    public Pair<ByteBuffer[], CompletionHandler<?, ?>> getNextWriteBuffer() {
         if (out.size() > 0) {
             return out.poll();
-        } else {
-            key.interestOpsAnd(SelectionKey.OP_READ);
         }
 
         return null;

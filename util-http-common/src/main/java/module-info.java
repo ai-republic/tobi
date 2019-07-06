@@ -1,8 +1,11 @@
 module com.airepublic.microprofile.util.http.common {
     exports com.airepublic.microprofile.util.http.common;
+    exports com.airepublic.microprofile.util.http.common.pathmatcher;
 
-    requires com.airepublic.microprofile.feature.mp.config;
-    requires transitive com.airepublic.microprofile.core;
+    requires com.airepublic.microprofile.core.spi;
+
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
 
     opens com.airepublic.microprofile.util.http.common;
 }

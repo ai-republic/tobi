@@ -7,6 +7,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,10 +22,13 @@ import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
+import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
@@ -54,21 +58,21 @@ public class JavaServer {
                         final List<Integer> openPorts = new ArrayList<>();
 
                         // load feature plugins and structure them by protocol
-                        final Map<String, Set<IServicePlugin>> servicePlugins = new HashMap<>();
+                        final Map<String, Set<Class<? extends IServicePlugin>>> servicePlugins = new HashMap<>();
 
                         final ServiceLoader<IServicePlugin> services = ServiceLoader.load(IServicePlugin.class);
                         services.forEach(p -> {
-                            final IServicePlugin plugin = serverContext.getCdiContainer().select(p.getClass()).get();
+                            final IServicePlugin plugin = CDI.current().select(p.getClass()).get();
 
                             for (final String protocol : plugin.getSupportedProtocols()) {
-                                Set<IServicePlugin> protocolServicePlugins = servicePlugins.get(protocol);
+                                Set<Class<? extends IServicePlugin>> protocolServicePlugins = servicePlugins.get(protocol);
 
                                 if (protocolServicePlugins == null) {
                                     protocolServicePlugins = new HashSet<>();
                                     servicePlugins.put(protocol, protocolServicePlugins);
                                 }
 
-                                protocolServicePlugins.add(plugin);
+                                protocolServicePlugins.add(plugin.getClass());
                             }
                         });
 
@@ -78,10 +82,13 @@ public class JavaServer {
                         serviceLoader.forEach(m -> {
                             try {
                                 logger.info("Starting " + m.getName() + "...");
-                                final IServerModule module = serverContext.getCdiContainer().select(m.getClass()).get();
+                                final IServerModule module = CDI.current().select(m.getClass()).get();
 
                                 // add service plugins for the supported protocol to the module
-                                module.addServicePlugins(servicePlugins.get(module.getProtocol()));
+                                servicePlugins.get(module.getProtocol()).forEach(clazz -> {
+                                    final IServicePlugin plugin = CDI.current().select(clazz).get();
+                                    module.addServicePlugin(plugin);
+                                });
 
                                 final int[] ports = module.getPortsToOpen();
 
@@ -106,6 +113,7 @@ public class JavaServer {
                                 }
 
                                 serverContext.addModule(module);
+                                module.getServicePlugins().forEach(plugin -> plugin.initPlugin(module));
                             } catch (final Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -211,8 +219,7 @@ public class JavaServer {
 
         try {
             final SessionContainer sessionContainer = serverContext.getCdiContainer().select(SessionContainer.class).get();
-            sessionContainer.init(moduleForKey.get(connectionKey), channel);
-            sessionContainer.run();
+            sessionContainer.startSession(moduleForKey.get(connectionKey), channel, Collections.emptyMap(), false);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error creating session", e);
         } finally {

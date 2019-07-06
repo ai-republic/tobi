@@ -1,17 +1,21 @@
 package com.airepublic.microprofile.util.http.common;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 
-import com.airepublic.microprofile.core.AbstractIOHandler;
-import com.airepublic.microprofile.core.ChannelAction;
-import com.airepublic.microprofile.core.IServicePlugin;
+import javax.enterprise.context.SessionScoped;
+import javax.inject.Inject;
+
+import com.airepublic.microprofile.core.spi.ChannelAction;
+import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.IServicePlugin;
 
 /**
- * This class is a default implementation of the {@link AbstractIOHandler} for the HTTP
- * protocol.<br/>
+ * This class is a default implementation of the {@link IIOHandler} for the HTTP protocol.<br/>
  * All {@link IServicePlugin} implementations for the HTTP protocol should use the
  * {@link IServicePluginHttp} interface and can use this class as a base needing mostly only to
  * implement the {@link AbstractHttpIOHandler#deploy()} and
@@ -20,8 +24,12 @@ import com.airepublic.microprofile.core.IServicePlugin;
  * @author Torsten Oltmanns
  *
  */
-public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
+@SessionScoped
+public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable {
+    private static final long serialVersionUID = 1L;
     private final AsyncHttpRequestReader requestReader = new AsyncHttpRequestReader();
+    @Inject
+    private IServerSession session;
 
 
     /**
@@ -34,8 +42,8 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
      * @throws IOException if something goes wrong during processing of the {@link ByteBuffer}
      */
     @Override
-    protected ChannelAction consume(final ByteBuffer buffer) throws IOException {
-        return requestReader.receiveRequestBuffer(buffer);
+    public ChannelAction consume(final ByteBuffer buffer) throws IOException {
+        return requestReader.receiveRequestBuffer(buffer) ? ChannelAction.CLOSE_INPUT : ChannelAction.KEEP_OPEN;
     }
 
 
@@ -47,10 +55,10 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
      * @throws IOException if something goes wrong during producing the {@link HttpResponse}
      */
     @Override
-    protected void produce() throws IOException {
+    public void produce() throws IOException {
         final HttpResponse response = getHttpResponse();
 
-        getSession().addToWriteBuffer(response.getHeaderBuffer(), response.getBody());
+        session.addToWriteBuffer(response.getHeaderBuffer(), response.getBody());
     }
 
 
@@ -63,7 +71,7 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
      * @return {@link ChannelAction#CLOSE_ALL}
      */
     @Override
-    protected ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
+    public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
         return ChannelAction.CLOSE_ALL;
     }
 
@@ -77,7 +85,7 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
      * @return {@link ChannelAction#CLOSE_ALL}
      */
     @Override
-    protected ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
+    public ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
         return ChannelAction.CLOSE_ALL;
     }
 
@@ -89,7 +97,7 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
      * @return {@link ChannelAction#CLOSE_ALL}
      */
     @Override
-    protected ChannelAction onReadError(final Throwable t) {
+    public ChannelAction onReadError(final Throwable t) {
         return ChannelAction.CLOSE_ALL;
     }
 
@@ -120,8 +128,8 @@ public abstract class AbstractHttpIOHandler extends AbstractIOHandler {
      * @throws IOException if something goes wrong
      */
     @Override
-    protected void handleClosedInput() throws IOException {
-        getSession().getKey().interestOpsOr(SelectionKey.OP_WRITE);
+    public void handleClosedInput() throws IOException {
+        session.getSelectionKey().interestOpsOr(SelectionKey.OP_WRITE);
     }
 
 }

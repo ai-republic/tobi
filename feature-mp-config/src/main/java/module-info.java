@@ -10,9 +10,9 @@ module com.airepublic.microprofile.feature.mp.config {
     requires transitive microprofile.config.api;
 
     requires com.airepublic.microprofile.feature.logging.java;
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
 
     uses ConfigProviderResolver;
     uses ConfigSource;

@@ -21,22 +21,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.enterprise.inject.spi.CDI;
 import javax.websocket.Extension;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
 public class DefaultServerEndpointConfigurator extends ServerEndpointConfig.Configurator {
-    private final SeContainer cdiContainer = SeContainerInitializer.newInstance().initialize();
-
 
     @Override
     public <T> T getEndpointInstance(final Class<T> clazz) throws InstantiationException {
         try {
-            if (cdiContainer != null) {
-                return cdiContainer.select(clazz).get();
+            if (CDI.current() != null) {
+                return CDI.current().select(clazz).get();
             }
             return clazz.getConstructor().newInstance();
         } catch (final Throwable e) {

@@ -4,9 +4,9 @@ module com.airepublic.microprofile.feature.mp.health {
     requires transitive microprofile.health.api;
     requires com.airepublic.microprofile.feature.logging.java;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
 
     requires transitive java.json;
 

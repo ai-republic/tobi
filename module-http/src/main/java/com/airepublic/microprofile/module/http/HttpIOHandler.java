@@ -1,6 +1,5 @@
 package com.airepublic.microprofile.module.http;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.airepublic.microprofile.util.http.common.AbstractHttpIOHandler;
@@ -9,10 +8,7 @@ import com.airepublic.microprofile.util.http.common.HttpResponse;
 import com.airepublic.microprofile.util.http.common.HttpStatus;
 
 public class HttpIOHandler extends AbstractHttpIOHandler {
-
-    @Override
-    protected void deploy() throws IOException {
-    }
+    private static final long serialVersionUID = 1L;
 
 
     /**

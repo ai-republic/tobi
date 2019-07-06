@@ -8,10 +8,10 @@ module com.airepublic.microprofile.feature.mp.faulttolerance {
 
     requires transitive microprofile.fault.tolerance.api;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
-    requires javax.interceptor.api;
+    requires jakarta.interceptor.api;
 
     provides Extension with AsynchronousCheckExtension, FallbackAnnotationDecorator;
 

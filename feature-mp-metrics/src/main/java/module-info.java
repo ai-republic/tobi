@@ -3,10 +3,10 @@ module com.airepublic.microprofile.feature.mp.metrics {
 
     requires transitive microprofile.metrics.api;
 
-    requires cdi.api;
+    requires jakarta.enterprise.cdi.api;
+    requires jakarta.inject;
     requires java.annotation;
-    requires javax.inject;
-    requires javax.interceptor.api;
+    requires jakarta.interceptor.api;
 
     requires smallrye.metrics;
 }

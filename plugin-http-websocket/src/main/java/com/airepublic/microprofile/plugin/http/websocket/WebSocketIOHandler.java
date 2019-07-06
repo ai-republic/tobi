@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.websocket.DeploymentException;
 import javax.websocket.Session;
 import javax.websocket.server.HandshakeRequest;
@@ -25,10 +27,12 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import com.airepublic.microprofile.core.AbstractIOHandler;
-import com.airepublic.microprofile.core.ChannelAction;
-import com.airepublic.microprofile.core.pathmatcher.MappingResult;
-import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
+import com.airepublic.microprofile.core.spi.ChannelAction;
+import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IServerContext;
+import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.feature.logging.java.LogLevel;
+import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.plugin.http.websocket.server.UpgradeUtil;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsFrameServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsHttpUpgradeHandler;
@@ -36,32 +40,40 @@ import com.airepublic.microprofile.plugin.http.websocket.server.WsRemoteEndpoint
 import com.airepublic.microprofile.plugin.http.websocket.server.WsServerContainer;
 import com.airepublic.microprofile.util.http.common.AsyncHttpRequestReader;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
+import com.airepublic.microprofile.util.http.common.pathmatcher.MappingResult;
 
-public class WebSocketIOHandler extends AbstractIOHandler {
-    private static final Logger LOG = new SerializableLogger(WebSocketIOHandler.class.getName());
+public class WebSocketIOHandler implements IIOHandler {
+    private static final long serialVersionUID = 1L;
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
+    @Inject
+    private IServerContext serverContext;
+    @Inject
+    private IServerSession session;
     private static WsServerContainer webSocketContainer;
     private boolean handshakeDone = false;
     private final AsyncHttpRequestReader httpRequestReader = new AsyncHttpRequestReader();
 
 
-    @Override
-    protected void deploy() throws IOException {
-        webSocketContainer = (WsServerContainer) getSession().getServerContext().getAttribute("websocket.container");
+    @PostConstruct
+    public void init() {
+        webSocketContainer = (WsServerContainer) serverContext.getAttribute("websocket.container");
     }
 
 
     @Override
-    protected ChannelAction consume(final ByteBuffer buffer) throws IOException {
+    public ChannelAction consume(final ByteBuffer buffer) throws IOException {
         ChannelAction action = ChannelAction.KEEP_OPEN;
 
         // check if handshake request has been fully received and handshake has been processed
         if (!httpRequestReader.isRequestFullyRead() && !handshakeDone) {
             try {
-                if (httpRequestReader.receiveRequestBuffer(buffer) == ChannelAction.CLOSE_INPUT) {
+                if (httpRequestReader.receiveRequestBuffer(buffer)) {
                     doHandshake();
                 }
             } catch (final Exception e) {
-                LOG.log(Level.SEVERE, "Error receiving websocket upgrade request and handshake!", e);
+                logger.log(Level.SEVERE, "Error receiving websocket upgrade request and handshake!", e);
                 action = ChannelAction.CLOSE_ALL;
             }
         } else if (httpRequestReader.isRequestFullyRead() && !handshakeDone) {
@@ -70,7 +82,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
             try {
                 doHandshake();
             } catch (final Exception e) {
-                LOG.log(Level.SEVERE, "Error performing websocket handshake!", e);
+                logger.log(Level.SEVERE, "Error performing websocket handshake!", e);
                 action = ChannelAction.CLOSE_ALL;
             }
         } else {
@@ -100,7 +112,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
         final MappingResult<ServerEndpointConfig> mapping = webSocketContainer.getMapping().findMapping(request.getPath());
         final WsHttpUpgradeHandler handler = new WsHttpUpgradeHandler();
         final ByteBuffer response = UpgradeUtil.doUpgrade(webSocketContainer, request.getUri(), request.getHeaders(), request.getUserPrincipal(), mapping.getMappedObject(), mapping.getPathParams(), handler);
-        getSession().addToWriteBuffer(response);
+        session.addToWriteBuffer(response);
         handshakeDone = true;
 
         initWebSocket(handler);
@@ -128,7 +140,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
                 protected void write(final boolean block, final long timeout, final TimeUnit unit, final CompletionHandler<?, ?> handler, final ByteBuffer... buffers) {
                     if (block) {
                         try {
-                            final SocketChannel channel = (SocketChannel) getSession().getKey().channel();
+                            final SocketChannel channel = session.getChannel();
 
                             if (channel.isOpen()) {
                                 final long length = channel.write(buffers);
@@ -140,7 +152,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
                             writeFailed(handler, e);
                         }
                     } else {
-                        getSession().addToWriteBuffer(handler, buffers);
+                        session.addToWriteBuffer(handler, buffers);
                     }
                 }
             };
@@ -237,14 +249,13 @@ public class WebSocketIOHandler extends AbstractIOHandler {
 
 
     @Override
-    protected void produce() throws IOException {
-        getSession().addToWriteBuffer(ByteBuffer.wrap(encode("received")));
+    public void produce() throws IOException {
     }
 
 
     @SuppressWarnings("unchecked")
     @Override
-    protected ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
+    public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
         if (handler != null) {
             ((CompletionHandler<Long, Void>) handler).completed(length, null);
         }
@@ -255,7 +266,7 @@ public class WebSocketIOHandler extends AbstractIOHandler {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
+    public ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
         if (handler != null) {
             ((CompletionHandler<Long, Void>) handler).failed(t, null);
         }
@@ -265,15 +276,14 @@ public class WebSocketIOHandler extends AbstractIOHandler {
 
 
     @Override
-    protected ChannelAction onReadError(final Throwable t) {
-        LOG.log(Level.SEVERE, "Error not handled!", t);
+    public ChannelAction onReadError(final Throwable t) {
+        logger.log(Level.SEVERE, "Error not handled!", t);
         return ChannelAction.KEEP_OPEN;
     }
 
 
     @Override
-    protected void handleClosedInput() throws IOException {
-        LOG.log(Level.SEVERE, "----> Calling close action on Websocket initialization should not happen!");
+    public void handleClosedInput() throws IOException {
     }
 
 

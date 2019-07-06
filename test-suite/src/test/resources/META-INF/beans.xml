@@ -3,12 +3,4 @@
 	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/beans_1_1.xsd"
 	version="2.0" bean-discovery-mode="all">
 
-	<interceptors>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.AsynchronousInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.BulkheadInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.CircuitBreakerInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.FallbackInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.RetryInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.TimeoutInterceptor</class>
-	</interceptors>
 </beans>
