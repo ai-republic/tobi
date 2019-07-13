@@ -165,5 +165,6 @@ public class SseOutboundIOHandler implements IIOHandler {
 
     @Override
     public void onSessionClose() {
+        sseEventSink.close();
     }
 }

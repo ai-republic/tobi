@@ -17,8 +17,10 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.sse.InboundSseEvent;
 import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.Sse;
 import javax.ws.rs.sse.SseEventSink;
@@ -26,6 +28,7 @@ import javax.ws.rs.sse.SseEventSink;
 import com.airepublic.microprofile.module.http.SslSupport;
 import com.airepublic.microprofile.plugin.http.sse.SseAsyncEventReader;
 import com.airepublic.microprofile.plugin.http.sse.SseRepeat;
+import com.airepublic.microprofile.plugin.http.sse.SseUri;
 import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
 import com.airepublic.microprofile.util.http.common.Headers;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
@@ -54,11 +57,12 @@ public class SseSample {
     }
 
 
-    // @Consumes("text/event-stream")
-    // @SseUri("https://api.boerse-frankfurt.de:443/data/price_information?isin=US00724F1012&mic=XFRA")
-    // public void consumes(final InboundSseEvent event) {
-    // System.out.println("received event: " + event);
-    // }
+    @Consumes("text/event-stream")
+    @SseUri("https://api.boerse-frankfurt.de:443/data/price_information?isin=US00724F1012&mic=XFRA")
+    public void consumes(final InboundSseEvent event) {
+        System.out.println("received event: " + event);
+    }
+
 
     public static void main(final String[] args) {
         SocketChannel channel;
