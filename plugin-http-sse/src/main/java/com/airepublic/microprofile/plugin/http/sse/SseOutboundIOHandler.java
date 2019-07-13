@@ -80,6 +80,12 @@ public class SseOutboundIOHandler implements IIOHandler {
         serviceMethod = mappingResult.getMappedObject();
         serviceObject = CDI.current().select(serviceMethod.getDeclaringClass()).get();
 
+        if (serviceMethod.isAnnotationPresent(SseRepeat.class)) {
+            final SseRepeat annotation = serviceMethod.getAnnotation(SseRepeat.class);
+            delayInMs = annotation.unit().toMillis(annotation.delay());
+            maxTimes = annotation.maxTimes();
+        }
+
         final Headers headers = new Headers();
         headers.add(Headers.CONTENT_TYPE, "text/event-stream;charset=UTF-8");
         headers.add(Headers.CONNECTION, "keep-alive");
@@ -87,15 +93,8 @@ public class SseOutboundIOHandler implements IIOHandler {
 
         final HttpResponse response = new HttpResponse(HttpStatus.OK, headers);
 
-        session.getChannel().write(response.getHeaderBuffer());
+        session.addToWriteBuffer(response.getHeaderBuffer());
         isHandshakeDone.set(true);
-        session.getSelectionKey().interestOps(SelectionKey.OP_WRITE);
-
-        if (serviceMethod.isAnnotationPresent(SseRepeat.class)) {
-            final SseRepeat annotation = serviceMethod.getAnnotation(SseRepeat.class);
-            delayInMs = annotation.unit().toMillis(annotation.delay());
-            maxTimes = annotation.maxTimes();
-        }
     }
 
 
@@ -103,11 +102,9 @@ public class SseOutboundIOHandler implements IIOHandler {
     public void produce() throws IOException {
         try {
             final Parameter[] params = serviceMethod.getParameters();
+            final Object[] objs = new Object[params.length];
 
-            if (params.length == 0) {
-                serviceMethod.invoke(serviceObject, (Object[]) null);
-            } else {
-                final Object[] objs = new Object[params.length];
+            if (params.length > 0) {
                 int i = 0;
 
                 for (final Parameter param : params) {
@@ -120,6 +117,8 @@ public class SseOutboundIOHandler implements IIOHandler {
                     i++;
                 }
             }
+
+            serviceMethod.invoke(serviceObject, (Object[]) null);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Could not invoke SSE outbound producer method: " + serviceMethod, e);
         }
@@ -139,14 +138,15 @@ public class SseOutboundIOHandler implements IIOHandler {
 
     @Override
     public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
-        times++;
 
         if (maxTimes == -1 || times < maxTimes) {
+            times++;
+
             try {
                 Thread.sleep(delayInMs);
                 session.getSelectionKey().interestOps(SelectionKey.OP_WRITE);
                 session.getSelectionKey().selector().wakeup();
-                return ChannelAction.KEEP_OPEN;
+                return ChannelAction.CLOSE_INPUT;
             } catch (final InterruptedException e) {
                 logger.log(Level.WARNING, "SSE for outbound events was interrupted!", e);
                 return ChannelAction.CLOSE_ALL;
