@@ -1,5 +1,7 @@
 package com.airepublic.microprofile.plugin.http.sse;
 
+import java.util.Objects;
+
 import javax.ws.rs.sse.SseEvent;
 
 public class SseEventImpl implements SseEvent {
@@ -15,7 +17,7 @@ public class SseEventImpl implements SseEvent {
     }
 
 
-    void setId(final String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -26,7 +28,7 @@ public class SseEventImpl implements SseEvent {
     }
 
 
-    void setName(final String name) {
+    public void setName(final String name) {
         this.name = name;
     }
 
@@ -37,7 +39,7 @@ public class SseEventImpl implements SseEvent {
     }
 
 
-    void setComment(final String comment) {
+    public void setComment(final String comment) {
         this.comment = comment;
     }
 
@@ -48,7 +50,7 @@ public class SseEventImpl implements SseEvent {
     }
 
 
-    void setReconnectDelay(final long reconnectDelay) {
+    public void setReconnectDelay(final long reconnectDelay) {
         this.reconnectDelay = reconnectDelay;
     }
 
@@ -56,6 +58,28 @@ public class SseEventImpl implements SseEvent {
     @Override
     public boolean isReconnectDelaySet() {
         return reconnectDelay != -1L;
+    }
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name);
+    }
+
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final SseEventImpl other = (SseEventImpl) obj;
+        return Objects.equals(id, other.id) && Objects.equals(name, other.name);
     }
 
 }

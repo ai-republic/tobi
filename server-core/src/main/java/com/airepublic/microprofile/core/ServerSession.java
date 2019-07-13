@@ -3,20 +3,18 @@ package com.airepublic.microprofile.core;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -32,18 +30,21 @@ import com.airepublic.microprofile.core.spi.IIOHandler;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.Pair;
+import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
 @SessionScoped
 public class ServerSession implements Closeable, Serializable, IServerSession {
     private static final long serialVersionUID = 1L;
+    private static AtomicLong SESSION_ID_GENERATOR = new AtomicLong();
+
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
     @Inject
     private ServerContext serverContext;
-    private long id;
+    private String id;
     private Selector selector;
     private SelectionKey selectionKey;
     private IIOHandler ioHandler;
@@ -53,11 +54,11 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
     private final Queue<Pair<ByteBuffer[], CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
     private SocketChannel channel;
     private IServerModule module;
-    private final Map<String, Object> attributes = new HashMap<>();
+    private SessionAttributes attributes;
 
 
     @Override
-    public long getId() {
+    public String getId() {
         return id;
     }
 
@@ -73,19 +74,27 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
     }
 
 
-    protected IIOHandler getIoHandler() {
-        return ioHandler;
-    }
-
-
-    protected void setIoHandler(final IIOHandler handler) {
-        ioHandler = handler;
+    @Override
+    public SocketChannel getChannel() {
+        return channel;
     }
 
 
     @Override
-    public SocketChannel getChannel() {
-        return channel;
+    public boolean isSecure() {
+        final Boolean isSecure = getAttribute(IServerSession.SESSION_IS_SECURE, Boolean.class);
+
+        if (isSecure != null && isSecure == Boolean.TRUE) {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    @Override
+    public void setSecure(final boolean isSecure) {
+        setAttribute(SESSION_IS_SECURE, isSecure);
     }
 
 
@@ -97,38 +106,35 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
 
     @Override
     public void setAttribute(final String key, final Object value) {
-        attributes.put(key, value);
+        attributes.set(key, value);
     }
 
 
     @Override
-    public Object getAttribute(final String key) {
-        return attributes.get(key);
+    public <T> T getAttribute(final String key, final Class<T> type) {
+        return attributes.get(key, type);
     }
 
 
     @Override
-    public void open(final long id, final IServerModule module, final SocketChannel channel, final Map<String, Object> attributes, final boolean isOutbound) throws IOException {
-        this.id = id;
+    public void open(final IServerModule module, final SocketChannel channel, final SessionAttributes sessionAttributes, final boolean isClient) throws IOException {
+        if (id == null) {
+            id = "" + SESSION_ID_GENERATOR.incrementAndGet();
+            selector = Selector.open();
+        }
+
+        attributes = sessionAttributes;
         this.module = module;
         this.channel = channel;
-        this.attributes.putAll(attributes);
 
         try {
-            channel.configureBlocking(false);
-            module.onAccept(this);
+            module.onSessionOpen(this, isClient);
 
-            channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-            channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-
-            selector = Selector.open();
-
-            if (isOutbound) {
+            if (isClient) {
                 selectionKey = channel.register(selector, SelectionKey.OP_WRITE, this);
             } else {
                 selectionKey = channel.register(selector, SelectionKey.OP_READ, this);
             }
-
         } catch (final Exception e) {
             throw new RuntimeException("Failed to initialize session #" + id, e);
         }
@@ -215,14 +221,11 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
 
                 buffer = module.unwrap(this, buffer);
 
-                // if the IO handler is null, this is the first read
                 if (getIoHandler() == null) {
-                    try {
-                        // need to check which module has registered a handler that can handle the
-                        // initial buffer
-                        action = determineIoHandler(buffer);
-                    } catch (final Exception e) {
-                        action = ChannelAction.CLOSE_ALL;
+                    final Pair<DetermineStatus, IIOHandler> pair = determineIOHandler(buffer);
+
+                    if (pair.getValue1() == DetermineStatus.TRUE) {
+                        setIoHandler(pair.getValue2());
                     }
                 }
 
@@ -236,6 +239,10 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
                     } else {
                         action = ChannelAction.KEEP_OPEN;
                     }
+                } else {
+                    handleAction(ChannelAction.CLOSE_ALL);
+                    throw new IOException("IIOHandler has not been initialized!");
+
                 }
 
                 handleAction(action);
@@ -244,28 +251,33 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
             }
         } catch (final Exception e) {
             logger.log(Level.WARNING, "Exception during read processing. Closing input channel: " + e.getLocalizedMessage());
-            handleAction(ChannelAction.CLOSE_INPUT);
+
+            if (getIoHandler() != null) {
+                handleAction(getIoHandler().onReadError(e));
+            } else {
+                handleAction(ChannelAction.CLOSE_ALL);
+            }
         }
     }
 
 
     protected void handleWrite() throws IOException {
-        IIOHandler handler = getIoHandler();
+        if (getIoHandler() == null) {
+            final Pair<DetermineStatus, IIOHandler> pair = determineIOHandler(null);
 
-        if (handler == null) {
-            determineIoHandler();
-
-            handler = getIoHandler();
-
-            if (handler == null) {
-                handleAction(ChannelAction.CLOSE_ALL);
-                throw new IOException("Handler has not been initialized!");
+            if (pair.getValue1() == DetermineStatus.TRUE) {
+                setIoHandler(pair.getValue2());
             }
+        }
+
+        if (getIoHandler() == null) {
+            handleAction(ChannelAction.CLOSE_ALL);
+            throw new IOException("IIOHandler has not been set/found!");
         }
 
         try {
 
-            handler.produce();
+            getIoHandler().produce();
 
             if (out.isEmpty()) {
                 selectionKey.interestOpsAnd(SelectionKey.OP_READ);
@@ -325,57 +337,53 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
     }
 
 
-    void determineIoHandler() throws IOException {
-        // first check if a handler class or handler has been set in the session attributes
-        IIOHandler handler = (IIOHandler) getAttribute(SESSION_IO_HANDLER);
-
-        if (handler == null) {
-            final Class<? extends IIOHandler> handlerClass = (Class<? extends IIOHandler>) getAttribute(SESSION_IO_HANDLER_CLASS);
-
-            if (handlerClass != null) {
-                try {
-                    handler = CDI.current().select(handlerClass).get();
-                } catch (final Exception e) {
-                    throw new IOException("IOHandler class is set in session attributes, but cannot be instantiated by CDI!", e);
-                }
-
-                setIoHandler(handler);
-            }
-        }
+    protected IIOHandler getIoHandler() {
+        return ioHandler;
     }
 
 
-    ChannelAction determineIoHandler(final ByteBuffer buffer) throws IOException {
+    protected void setIoHandler(final IIOHandler handler) {
+        ioHandler = handler;
+        setAttribute(SESSION_IO_HANDLER, handler);
+    }
 
-        // otherwise let the module and its plugins try to determine the handler
-        buffer.mark();
 
-        Pair<DetermineStatus, IIOHandler> pair;
+    @SuppressWarnings("unchecked")
+    protected Pair<DetermineStatus, IIOHandler> determineIOHandler(final ByteBuffer buffer) {
+        if (ioHandler == null) {
+            // first check if a handler class or handler has been set in the session attributes
+            IIOHandler handler = getAttribute(SESSION_IO_HANDLER, IIOHandler.class);
 
-        try {
-            pair = module.determineIoHandler(buffer, this);
-        } finally {
-            buffer.reset();
-        }
+            if (handler == null) {
+                final Class<? extends IIOHandler> handlerClass = getAttribute(SESSION_IO_HANDLER_CLASS, Class.class);
 
-        switch (pair.getValue1()) {
-            case FALSE:
-                return ChannelAction.CLOSE_ALL;
+                if (handlerClass != null) {
+                    try {
+                        handler = CDI.current().select(handlerClass).get();
+                        return new Pair<>(DetermineStatus.TRUE, handler);
+                    } catch (final Exception e) {
+                        logger.log(Level.SEVERE, "IOHandler class '" + handlerClass + "' is set in session attributes, but cannot be instantiated by CDI!", e);
+                    }
 
-            case TRUE:
-                if (pair.getValue2() != null) {
-                    setIoHandler(pair.getValue2());
-                    return ChannelAction.KEEP_OPEN;
                 } else {
-                    return ChannelAction.CLOSE_ALL;
-                }
+                    try {
+                        buffer.mark();
 
-            case NEED_MORE_DATA: {
-                return ChannelAction.KEEP_OPEN;
+                        return module.determineIoHandler(attributes, buffer);
+                    } catch (final Exception e) {
+                        logger.log(Level.WARNING, "Module " + module.getName() + " threw an exception while checking if it can handle a channel!", e);
+                    } finally {
+                        buffer.reset();
+                    }
+                }
+            } else {
+                return new Pair<>(DetermineStatus.TRUE, handler);
             }
-            default:
-                return ChannelAction.CLOSE_ALL;
+
+            return new Pair<>(DetermineStatus.FALSE, null);
         }
+
+        return new Pair<>(DetermineStatus.TRUE, ioHandler);
     }
 
 
@@ -391,6 +399,12 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
         synchronized (closed) {
             if (!isClosed()) {
                 logger.info("Closing session #" + id + " for module '" + module.getName() + "'!");
+
+                try {
+                    module.onSessionClose(this);
+                } catch (final IOException e1) {
+                }
+
                 selectionKey.cancel();
 
                 try {
@@ -407,13 +421,15 @@ public class ServerSession implements Closeable, Serializable, IServerSession {
 
                 serverContext.removeServerSession(this);
                 serverContext = null;
-                ioHandler = null;
                 selectionKey = null;
                 out.clear();
                 in.clear();
 
                 closed.set(true);
                 selector.wakeup();
+
+                ioHandler.onSessionClose();
+                ioHandler = null;
             }
         }
     }

@@ -38,7 +38,7 @@ import com.airepublic.microprofile.plugin.http.websocket.server.WsFrameServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsHttpUpgradeHandler;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsRemoteEndpointImplServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsServerContainer;
-import com.airepublic.microprofile.util.http.common.AsyncHttpRequestReader;
+import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
 import com.airepublic.microprofile.util.http.common.pathmatcher.MappingResult;
 
@@ -53,7 +53,7 @@ public class WebSocketIOHandler implements IIOHandler {
     private IServerSession session;
     private static WsServerContainer webSocketContainer;
     private boolean handshakeDone = false;
-    private final AsyncHttpRequestReader httpRequestReader = new AsyncHttpRequestReader();
+    private final AsyncHttpReader httpRequestReader = new AsyncHttpReader();
 
 
     @PostConstruct
@@ -67,16 +67,16 @@ public class WebSocketIOHandler implements IIOHandler {
         ChannelAction action = ChannelAction.KEEP_OPEN;
 
         // check if handshake request has been fully received and handshake has been processed
-        if (!httpRequestReader.isRequestFullyRead() && !handshakeDone) {
+        if (!httpRequestReader.isFullyRead() && !handshakeDone) {
             try {
-                if (httpRequestReader.receiveRequestBuffer(buffer)) {
+                if (httpRequestReader.receiveBuffer(buffer)) {
                     doHandshake();
                 }
             } catch (final Exception e) {
                 logger.log(Level.SEVERE, "Error receiving websocket upgrade request and handshake!", e);
                 action = ChannelAction.CLOSE_ALL;
             }
-        } else if (httpRequestReader.isRequestFullyRead() && !handshakeDone) {
+        } else if (httpRequestReader.isFullyRead() && !handshakeDone) {
             // otherwise if request is fully read but handshake somehow not then do try
             // handshake now
             try {
@@ -284,6 +284,11 @@ public class WebSocketIOHandler implements IIOHandler {
 
     @Override
     public void handleClosedInput() throws IOException {
+    }
+
+
+    @Override
+    public void onSessionClose() {
     }
 
 

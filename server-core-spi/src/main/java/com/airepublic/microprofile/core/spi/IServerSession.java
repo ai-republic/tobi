@@ -5,15 +5,14 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
 
 public interface IServerSession {
-    String SESSION_IS_SECURE = "session.issecure";
-    String SESSION_IO_HANDLER = "session.iohandler";
-    String SESSION_IO_HANDLER_CLASS = "session.iohandler.class";
+    String SESSION_IS_SECURE = "session.isSecure";
+    String SESSION_IO_HANDLER = "session.ioHandler";
+    String SESSION_IO_HANDLER_CLASS = "session.ioHandler.class";
 
 
-    long getId();
+    String getId();
 
 
     SelectionKey getSelectionKey();
@@ -22,19 +21,25 @@ public interface IServerSession {
     SocketChannel getChannel();
 
 
-    boolean isClosed();
+    boolean isSecure();
+
+
+    void setSecure(boolean isSecure);
 
 
     void setAttribute(String key, Object value);
 
 
-    Object getAttribute(String key);
+    <T> T getAttribute(String key, Class<T> type);
 
 
-    void open(long id, IServerModule module, SocketChannel channel, Map<String, Object> attributes, boolean isOutbound) throws IOException;
+    void open(IServerModule module, SocketChannel channel, SessionAttributes sessionAttributes, boolean isClient) throws IOException;
 
 
     void close();
+
+
+    boolean isClosed();
 
 
     void addToReadBuffer(ByteBuffer... buffer);

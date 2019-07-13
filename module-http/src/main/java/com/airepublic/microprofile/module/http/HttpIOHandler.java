@@ -11,6 +11,11 @@ public class HttpIOHandler extends AbstractHttpIOHandler {
     private static final long serialVersionUID = 1L;
 
 
+    @Override
+    public void onSessionClose() {
+    }
+
+
     /**
      * The default implementation will return a HTTP 404 {@link HttpResponse}.
      * 

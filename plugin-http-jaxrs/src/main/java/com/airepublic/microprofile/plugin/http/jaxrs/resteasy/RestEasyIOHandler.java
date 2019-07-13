@@ -48,6 +48,11 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
     }
 
 
+    @Override
+    public void onSessionClose() {
+    }
+
+
     public void setDispatcher(final Dispatcher dispatcher) {
         this.dispatcher = SynchronousDispatcher.class.cast(dispatcher);
     }
@@ -68,11 +73,8 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
     public HttpResponse getHttpResponse() {
         if (response == null) {
             try {
-                // logger.info("***PATH: " + request.getRequestURL());
-                // classloader/deployment aware RestasyProviderFactory. Used to have request
-                // specific
-                // ResteasyProviderFactory.getInstance()
                 final ResteasyProviderFactory defaultInstance = ResteasyProviderFactory.getInstance();
+
                 if (defaultInstance instanceof ThreadLocalResteasyProviderFactory) {
                     ThreadLocalResteasyProviderFactory.push(providerFactory);
                 }
@@ -80,10 +82,6 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
                 response = new HttpResponse(HttpStatus.OK);
 
                 try {
-                    // final HttpCoreContext coreContext = HttpCoreContext.adapt(context);
-                    // ResteasyProviderFactory.pushContext(HttpContext.class, context);
-                    // ResteasyProviderFactory.pushContext(HttpCoreContext.class, coreContext);
-
                     final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, this);
                     final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(getHttpRequest(), restEasyHttpResponse, dispatcher, contextPath);
 
@@ -100,6 +98,7 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
 
                 } catch (final Exception ex) {
                     logger.log(Level.SEVERE, "Error submitting JAX-RS response!", ex);
+
                     try {
                         response = new HttpResponse(HttpStatus.INTERNAL_SERVER_ERROR);
                     } catch (final Exception e) {
@@ -114,6 +113,7 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
                 }
             }
         }
+
         return response;
     }
 

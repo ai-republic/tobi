@@ -75,4 +75,10 @@ public interface IIOHandler extends Serializable {
      */
     ChannelAction writeFailed(CompletionHandler<?, ?> handler, Throwable t);
 
+
+    /**
+     * Called when session is about to be closed.
+     */
+    void onSessionClose();
+
 }

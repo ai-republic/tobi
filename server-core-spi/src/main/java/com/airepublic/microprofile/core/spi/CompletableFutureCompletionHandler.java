@@ -1,4 +1,4 @@
-package com.airepublic.microprofile.util.http.common;
+package com.airepublic.microprofile.core.spi;
 
 import java.nio.channels.CompletionHandler;
 import java.util.concurrent.CompletableFuture;

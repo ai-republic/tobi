@@ -54,9 +54,19 @@ public interface IServerModule {
      * server, e.g. create a SSLEngine and handshake.
      * 
      * @param session the {@link IServerSession}
+     * @param isClient flag whether the channel is a client or server channel
      * @throws IOException if something goes wrong
      */
-    void onAccept(IServerSession session) throws IOException;
+    void onSessionOpen(IServerSession session, boolean isClient) throws IOException;
+
+
+    /**
+     * Callback method to perform final tasks before the session is closed, e.g. close a SSLEngine.
+     * 
+     * @param session the {@link IServerSession}
+     * @throws IOException if something goes wrong
+     */
+    void onSessionClose(IServerSession session) throws IOException;
 
 
     /**
@@ -85,13 +95,13 @@ public interface IServerModule {
      * Tries to determine if the module can handle the initial (unwrapped) {@link ByteBuffer} and
      * map it to an {@link IIOHandler}.
      * 
+     * @param sessionAttributes the {@link SessionAttributes}
      * @param buffer the initial {@link ByteBuffer}
-     * @param session the {@link IServerSession}
      * @return the {@link Pair} of DetermineStatus representing whether it could map a hander or not
      *         or might need more data in the buffer to determine the {@link IIOHandler}
      * @throws IOException if something goes wrong
      */
-    Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException;
+    Pair<DetermineStatus, IIOHandler> determineIoHandler(final SessionAttributes sessionAttributes, final ByteBuffer buffer) throws IOException;
 
 
     /**

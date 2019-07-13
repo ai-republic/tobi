@@ -23,6 +23,7 @@ import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.core.spi.Pair;
 import com.airepublic.microprofile.core.spi.Reflections;
+import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsSci;
@@ -74,7 +75,7 @@ public class WebSocketPlugin implements IServicePlugin {
 
 
     @Override
-    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException {
+    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException {
         final String path = HttpBufferUtils.getUriPath(buffer);
 
         if (path == null) {

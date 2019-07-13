@@ -25,7 +25,7 @@ import javax.net.ssl.TrustManagerFactory;
 import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class SslSupport {
-    private final static Logger LOG = new SerializableLogger(SslSupport.class.getName());
+    private final static Logger LOG = new SerializableLogger(Level.INFO, SslSupport.class.getName());
     private final static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private static int applicationBufferSize = 16 * 1024;
     private static int packetBufferSize = 16 * 1024;
@@ -86,7 +86,7 @@ public class SslSupport {
     }
 
 
-    static ByteBuffer enlargeApplicationBuffer(final SSLEngine engine, final ByteBuffer buffer) {
+    public static ByteBuffer enlargeApplicationBuffer(final SSLEngine engine, final ByteBuffer buffer) {
         return enlargeBuffer(buffer, engine.getSession().getApplicationBufferSize());
     }
 
@@ -122,7 +122,7 @@ public class SslSupport {
      * @return True if the connection handshake was successful or false if an error occurred.
      * @throws IOException - if an error occurs during read/write to the socket channel.
      */
-    static boolean doHandshake(final SocketChannel socketChannel, final SSLEngine engine) throws IOException {
+    public static boolean doHandshake(final SocketChannel socketChannel, final SSLEngine engine) throws IOException {
 
         LOG.fine("Performing SSL handshake...");
         ByteBuffer packetBuffer = ByteBuffer.allocate(packetBufferSize);
@@ -293,7 +293,7 @@ public class SslSupport {
      *        {@link SSLSession}.
      * @return A new buffer with a larger capacity.
      */
-    static ByteBuffer enlargeBuffer(ByteBuffer buffer, final int sessionProposedCapacity) {
+    public static ByteBuffer enlargeBuffer(ByteBuffer buffer, final int sessionProposedCapacity) {
         if (sessionProposedCapacity > buffer.capacity()) {
             buffer = ByteBuffer.allocate(sessionProposedCapacity);
         } else {
@@ -304,7 +304,7 @@ public class SslSupport {
     }
 
 
-    static ByteBuffer enlargePacketBuffer(final SSLEngine engine, final ByteBuffer buffer) {
+    public static ByteBuffer enlargePacketBuffer(final SSLEngine engine, final ByteBuffer buffer) {
         return enlargeBuffer(buffer, engine.getSession().getPacketBufferSize());
     }
 
@@ -323,7 +323,7 @@ public class SslSupport {
      *         more space.
      * @throws Exception
      */
-    static ByteBuffer handleBufferUnderflow(final SSLEngine engine, final ByteBuffer buffer) {
+    public static ByteBuffer handleBufferUnderflow(final SSLEngine engine, final ByteBuffer buffer) {
         if (engine.getSession().getPacketBufferSize() < buffer.limit()) {
             return buffer;
         } else {
@@ -349,29 +349,29 @@ public class SslSupport {
      *        two peers.
      * @throws IOException if an I/O error occurs to the socket channel.
      */
-    static void closeConnection(final SocketChannel socketChannel, final SSLEngine engine) throws IOException {
+    public static void closeConnection(final SocketChannel socketChannel, final SSLEngine engine) throws IOException {
         engine.closeOutbound();
         doHandshake(socketChannel, engine);
         socketChannel.close();
     }
 
 
-    static void setPacketBufferSize(final int size) {
+    public static void setPacketBufferSize(final int size) {
         packetBufferSize = size;
     }
 
 
-    static int getPacketBufferSize() {
+    public static int getPacketBufferSize() {
         return packetBufferSize;
     }
 
 
-    static void setApplicationBufferSize(final int size) {
+    public static void setApplicationBufferSize(final int size) {
         applicationBufferSize = size;
     }
 
 
-    static int getApplicationBufferSize() {
+    public static int getApplicationBufferSize() {
         return applicationBufferSize;
     }
 }

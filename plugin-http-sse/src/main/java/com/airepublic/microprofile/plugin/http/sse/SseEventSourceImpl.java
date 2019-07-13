@@ -4,16 +4,15 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.logging.Level;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -26,8 +25,10 @@ import javax.ws.rs.sse.SseEventSource;
 import com.airepublic.microprofile.core.SessionContainer;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
+import com.airepublic.microprofile.util.http.common.SessionConstants;
 
 /**
  * Implementation of the {@link SseEventSource}.
@@ -68,31 +69,46 @@ public class SseEventSourceImpl implements SseEventSource {
 
     @Override
     public void open() {
-        int port = 80;
+        int checkPort = endpoint.getUri().getScheme().equals("https") ? 443 : 80;
 
         if (endpoint.getUri().getPort() > 0) {
-            port = endpoint.getUri().getPort();
+            checkPort = endpoint.getUri().getPort();
         }
 
-        final SocketAddress remote = new InetSocketAddress(endpoint.getUri().getHost(), port);
+        final int port = checkPort;
+        final Supplier<SocketChannel> supplier = () -> {
 
-        try {
-            final SocketChannel channel = SocketChannel.open(remote);
+            SocketChannel channel;
 
-            open.set(true);
+            try {
+                final SocketAddress remote = new InetSocketAddress(endpoint.getUri().getHost(), port);
+                channel = SocketChannel.open();
+                channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+                channel.configureBlocking(false);
+                channel.connect(remote);
 
-            final Map<String, Object> attributes = new HashMap<>();
-            attributes.put(SsePlugin.SSE_SESSION_EVENTSOURCE, this);
-            attributes.put(SsePlugin.SSE_SESSION_EVENTSOURCE_ENDPOINT, endpoint);
-            attributes.put(SsePlugin.SSE_SESSION_EVENTSOURCE_RECONNECTION_DELAY, reconnectionDelay);
-            attributes.put(IServerSession.SESSION_IO_HANDLER_CLASS, SseInboundIOHandler.class);
-            attributes.put(IServerSession.SESSION_IS_SECURE, endpoint.getUri().getScheme().equals("https"));
+                while (!channel.finishConnect()) {
+                }
+            } catch (final IOException e) {
+                throw new RuntimeException("Failed to create socket channel!", e);
+            }
 
-            final SessionContainer sessionContainer = CDI.current().select(SessionContainer.class).get();
-            sessionContainer.startSession(module, channel, attributes, true);
-        } catch (final IOException e) {
-            logger.log(Level.SEVERE, "Failed to create SSE session!", e);
-        }
+            return channel;
+        };
+
+        open.set(true);
+
+        final SessionAttributes attributes = new SessionAttributes();
+        attributes.set(SsePlugin.SSE_SESSION_EVENTSOURCE, this);
+        attributes.set(SsePlugin.SSE_SESSION_EVENTSOURCE_ENDPOINT, endpoint);
+        attributes.set(SsePlugin.SSE_SESSION_EVENTSOURCE_RECONNECTION_DELAY, reconnectionDelay);
+        attributes.set(IServerSession.SESSION_IO_HANDLER_CLASS, SseInboundIOHandler.class);
+        attributes.set(IServerSession.SESSION_IS_SECURE, endpoint.getUri().getScheme().equals("https"));
+        attributes.set(SessionConstants.SESSION_SSL_CLIENT_HOST, endpoint.getUri().getHost());
+        attributes.set(SessionConstants.SESSION_SSL_CLIENT_PORT, port);
+
+        final SessionContainer sessionContainer = CDI.current().select(SessionContainer.class).get();
+        sessionContainer.startSession(module, supplier, attributes, true);
 
     }
 

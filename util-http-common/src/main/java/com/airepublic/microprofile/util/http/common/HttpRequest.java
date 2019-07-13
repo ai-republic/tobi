@@ -1,5 +1,6 @@
 package com.airepublic.microprofile.util.http.common;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -56,8 +57,8 @@ public class HttpRequest {
     }
 
 
-    public String getRequestLine() {
-        return getMethod() + " " + getPath() + (getQuery() != null ? "?" + getQuery() : "") + " " + getVersion();
+    public String getRequestLine() throws UnsupportedEncodingException {
+        return (getMethod() != null ? getMethod() : "GET") + " " + (getPath() != null && !getPath().isBlank() ? getPath() : "/") + (getQuery() != null ? "?" + getQuery() : "") + " " + (getVersion() != null ? getVersion() : "HTTP/1.1");
     }
 
 
@@ -88,7 +89,7 @@ public class HttpRequest {
     }
 
 
-    public ByteBuffer getHeaderBuffer() {
+    public ByteBuffer getHeaderBuffer() throws UnsupportedEncodingException {
         final StringBuffer str = new StringBuffer();
         str.append(getRequestLine() + "\r\n");
 
@@ -108,7 +109,7 @@ public class HttpRequest {
 
 
     public URI getUri() throws URISyntaxException {
-        return new URI(getScheme() + "://" + getHost() + ":" + getPort() + getPath() + (getQuery() == null || getQuery().isBlank() ? "" : "?" + getQuery()));
+        return new URI(getScheme() + "://" + getHost() + ":" + getPort() + (getPath() != null ? getPath() : "") + (getQuery() == null || getQuery().isBlank() ? "" : "?" + getQuery()));
     }
 
 

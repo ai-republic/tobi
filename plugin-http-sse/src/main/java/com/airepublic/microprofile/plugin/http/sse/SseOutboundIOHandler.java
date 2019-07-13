@@ -21,7 +21,7 @@ import com.airepublic.microprofile.core.spi.IIOHandler;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.util.http.common.AsyncHttpRequestReader;
+import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
 import com.airepublic.microprofile.util.http.common.Headers;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
 import com.airepublic.microprofile.util.http.common.HttpResponse;
@@ -35,7 +35,7 @@ public class SseOutboundIOHandler implements IIOHandler {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
-    private final AsyncHttpRequestReader requestReader = new AsyncHttpRequestReader();
+    private final AsyncHttpReader httpReader = new AsyncHttpReader();
     @Inject
     private IServerSession session;
     @Inject
@@ -52,11 +52,11 @@ public class SseOutboundIOHandler implements IIOHandler {
     @Override
     public ChannelAction consume(final ByteBuffer buffer) throws IOException {
         if (!isHandshakeRead.get()) {
-            if (requestReader.receiveRequestBuffer(buffer)) {
+            if (httpReader.receiveBuffer(buffer)) {
                 isHandshakeRead.set(true);
 
                 try {
-                    doHandshake(requestReader.getHttpRequest());
+                    doHandshake(httpReader.getHttpRequest());
                     return ChannelAction.CLOSE_INPUT;
                 } catch (final URISyntaxException e) {
                     throw new IOException("Error in request URI syntax!", e);
@@ -70,7 +70,7 @@ public class SseOutboundIOHandler implements IIOHandler {
 
     @SuppressWarnings("unchecked")
     private void doHandshake(final HttpRequest httpRequest) throws IOException, URISyntaxException {
-        final PathMapping<Method> sseMethodMapping = (PathMapping<Method>) session.getAttribute(SsePlugin.SSE_METHOD_MAPPING);
+        final PathMapping<Method> sseMethodMapping = session.getAttribute(SsePlugin.SSE_METHOD_MAPPING, PathMapping.class);
         final MappingResult<Method> mappingResult = sseMethodMapping.findMapping(httpRequest.getPath());
 
         if (mappingResult == null || mappingResult.getMappedObject() == null) {
@@ -128,7 +128,7 @@ public class SseOutboundIOHandler implements IIOHandler {
 
     @Override
     public ChannelAction onReadError(final Throwable t) {
-        return ChannelAction.KEEP_OPEN;
+        return ChannelAction.CLOSE_INPUT;
     }
 
 
@@ -162,4 +162,8 @@ public class SseOutboundIOHandler implements IIOHandler {
         return ChannelAction.CLOSE_ALL;
     }
 
+
+    @Override
+    public void onSessionClose() {
+    }
 }

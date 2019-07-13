@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.net.ssl.KeyManager;
@@ -31,10 +30,12 @@ import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.core.spi.Pair;
+import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.util.http.common.BufferUtil;
 import com.airepublic.microprofile.util.http.common.IServicePluginHttp;
+import com.airepublic.microprofile.util.http.common.SessionConstants;
 
 @ApplicationScoped
 public class HttpModule implements IServerModule {
@@ -44,7 +45,6 @@ public class HttpModule implements IServerModule {
     public final static String KEYSTORE_PASSWORD = "http.keystore.password";
     public final static String TRUSTSTORE_FILE = "http.truststore.file";
     public final static String TRUSTSTORE_PASSWORD = "http.truststore.password";
-    private final static String SESSION_ATTRIBUTE_SSL_ENGINE = "http.sslEngine";
     @Inject
     @LoggerConfig(level = LogLevel.FINE)
     private Logger logger;
@@ -81,34 +81,6 @@ public class HttpModule implements IServerModule {
     @Override
     public String getName() {
         return "HTTP";
-    }
-
-
-    @PostConstruct
-    public void initModule() {
-        if (sslPort != null) {
-            try {
-                sslContext = SSLContext.getInstance("TLSv1.2");
-
-                try {
-                    final KeyManager[] keyManagers = SslSupport.createKeyManagers(keystoreFile, truststorePassword, keystorePassword);
-                    final TrustManager[] trustManagers = SslSupport.createTrustManagers(truststoreFile, truststorePassword);
-
-                    sslContext.init(keyManagers, trustManagers, new SecureRandom());
-                } catch (final Exception e) {
-                    throw new IOException("Could not get initialize SSLContext!", e);
-                }
-
-                final SSLSession dummySession = sslContext.createSSLEngine().getSession();
-                SslSupport.setApplicationBufferSize(dummySession.getApplicationBufferSize());
-                SslSupport.setPacketBufferSize(dummySession.getPacketBufferSize());
-                readBufferSize = dummySession.getPacketBufferSize();
-                dummySession.invalidate();
-
-            } catch (final Exception e) {
-                throw new IllegalStateException("Could not get instance of SSLContext!", e);
-            }
-        }
     }
 
 
@@ -151,45 +123,94 @@ public class HttpModule implements IServerModule {
     }
 
 
-    boolean isSecure(final IServerSession session) throws IOException {
-        final Boolean secure = (Boolean) session.getAttribute(IServerSession.SESSION_IS_SECURE);
-
-        if (secure == null || secure == Boolean.FALSE) {
-            return sslPort != null && session != null && sslPort.intValue() == ((InetSocketAddress) session.getChannel().getLocalAddress()).getPort();
+    @Override
+    public void onSessionOpen(final IServerSession session, final boolean isClient) throws IOException {
+        if (sslPort != null && sslPort.intValue() == ((InetSocketAddress) session.getChannel().getLocalAddress()).getPort()) {
+            session.setSecure(true);
         }
 
-        return secure;
-    }
+        if (session.isSecure()) {
+            if (sslContext == null) {
+                try {
+                    sslContext = SSLContext.getInstance("SSL");
 
+                    try {
+                        if (isClient) {
+                            sslContext.init(null, null, null);
+                        } else {
+                            final KeyManager[] keyManagers = SslSupport.createKeyManagers(keystoreFile, truststorePassword, keystorePassword);
+                            final TrustManager[] trustManagers = SslSupport.createTrustManagers(truststoreFile, truststorePassword);
 
-    @Override
-    public void onAccept(final IServerSession session) throws IOException {
+                            sslContext.init(keyManagers, trustManagers, new SecureRandom());
+                        }
+                    } catch (final Exception e) {
+                        throw new IOException("Could not get initialize SSLContext!", e);
+                    }
 
-        if (isSecure(session)) {
+                    final SSLSession dummySession = sslContext.createSSLEngine().getSession();
+                    SslSupport.setApplicationBufferSize(dummySession.getApplicationBufferSize());
+                    SslSupport.setPacketBufferSize(dummySession.getPacketBufferSize());
+                    readBufferSize = dummySession.getPacketBufferSize();
+                    dummySession.invalidate();
+
+                } catch (final Exception e) {
+                    throw new IllegalStateException("Could not get instance of SSLContext!", e);
+                }
+            }
+
             try {
-                final SSLEngine sslEngine = sslContext.createSSLEngine();
-                sslEngine.setUseClientMode(false);
+                SSLEngine sslEngine;
+
+                if (isClient) {
+                    final String host = session.getAttribute(SessionConstants.SESSION_SSL_CLIENT_HOST, String.class);
+                    final Integer port = session.getAttribute(SessionConstants.SESSION_SSL_CLIENT_PORT, Integer.class);
+
+                    if (host == null || port == null) {
+                        throw new IOException("Peer host and port not specified for client SSL connection!");
+                    }
+
+                    sslEngine = sslContext.createSSLEngine(host, port);
+                } else {
+                    sslEngine = sslContext.createSSLEngine();
+                }
+
+                sslEngine.setUseClientMode(isClient);
                 sslEngine.beginHandshake();
 
                 if (!SslSupport.doHandshake(session.getChannel(), sslEngine)) {
                     session.getChannel().close();
                     logger.info("Connection closed due to handshake failure.");
+                } else {
+                    session.setAttribute(SessionConstants.SESSION_ATTRIBUTE_SSL_ENGINE, sslEngine);
                 }
-
-                session.setAttribute(SESSION_ATTRIBUTE_SSL_ENGINE, sslEngine);
             } catch (final Exception e) {
                 throw new IOException("Could not perform SSL handshake!", e);
             }
+        }
+    }
 
+
+    @Override
+    public void onSessionClose(final IServerSession session) throws IOException {
+        final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_ATTRIBUTE_SSL_ENGINE, SSLEngine.class);
+        if (sslEngine != null) {
+            try {
+                sslEngine.closeInbound();
+            } catch (final Exception e) {
+            }
+            try {
+                sslEngine.closeOutbound();
+            } catch (final Exception e) {
+            }
         }
     }
 
 
     @Override
     public ByteBuffer unwrap(final IServerSession session, final ByteBuffer buffer) throws IOException {
-        if (isSecure(session)) {
+        if (session.isSecure()) {
             final ByteBuffer unwrapBuffer = ByteBuffer.allocate(buffer.capacity());
-            final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SESSION_ATTRIBUTE_SSL_ENGINE);
+            final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_ATTRIBUTE_SSL_ENGINE, SSLEngine.class);
 
             final SSLEngineResult result = sslEngine.unwrap(buffer, unwrapBuffer);
 
@@ -204,7 +225,6 @@ public class HttpModule implements IServerModule {
                 case CLOSED:
                     logger.fine("Closing SSL connection...");
                     SslSupport.closeConnection(session.getChannel(), sslEngine);
-                    session.close();
                     return null;
                 default:
                     throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
@@ -217,8 +237,8 @@ public class HttpModule implements IServerModule {
 
     @Override
     public ByteBuffer[] wrap(final IServerSession session, final ByteBuffer... buffers) throws IOException {
-        if (isSecure(session)) {
-            final SSLEngine sslEngine = (SSLEngine) session.getAttribute(SESSION_ATTRIBUTE_SSL_ENGINE);
+        if (session.isSecure()) {
+            final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_ATTRIBUTE_SSL_ENGINE, SSLEngine.class);
             final ByteBuffer[] wrappedBuffers = new ByteBuffer[buffers.length];
 
             for (int i = 0; i < buffers.length; i++) {
@@ -278,12 +298,10 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException {
+    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final SessionAttributes sessionAttributes, final ByteBuffer buffer) throws IOException {
         IIOHandler handler = null;
         boolean needMoreData = false;
         String line;
-
-        buffer.reset();
 
         try {
             line = BufferUtil.readLine(buffer, Charset.forName("ASCII"));
@@ -296,7 +314,7 @@ public class HttpModule implements IServerModule {
                 try {
                     buffer.reset();
 
-                    final Pair<DetermineStatus, IIOHandler> result = plugin.determineIoHandler(buffer, session);
+                    final Pair<DetermineStatus, IIOHandler> result = plugin.determineIoHandler(buffer, sessionAttributes);
 
                     switch (result.getValue1()) {
                         case FALSE:
@@ -328,7 +346,7 @@ public class HttpModule implements IServerModule {
         }
 
         if (handler != null) {
-            logger.info("Session #" + session.getId() + " is using " + handler.getClass().getName() + " for request: " + line);
+            logger.info("Using " + handler.getClass().getName() + " for request: " + line);
             return new Pair<>(DetermineStatus.TRUE, handler);
         } else if (needMoreData) {
             return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);

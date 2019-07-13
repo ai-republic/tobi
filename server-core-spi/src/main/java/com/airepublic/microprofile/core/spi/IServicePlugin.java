@@ -33,12 +33,12 @@ public interface IServicePlugin {
      * map it to an {@link IIOHandler}.
      * 
      * @param buffer the initial {@link ByteBuffer}
-     * @param session the {@link IServerSession}
+     * @param sessionAttributes the {@link SessionAttributes}
      * @return the {@link Pair} of DetermineStatus representing whether it could map a hander or not
      *         or might need more data in the buffer to determine the {@link IIOHandler}
      * @throws IOException if something goes wrong
      */
-    Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException;
+    Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException;
 
 
     /**

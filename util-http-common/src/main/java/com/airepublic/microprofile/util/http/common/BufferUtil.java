@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -15,16 +16,15 @@ import java.util.Objects;
  */
 public class BufferUtil {
     public static String readLine(final ByteBuffer buf, final Charset charset) throws IOException {
-        byte prev;
         byte cur = ' ';
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             while (buf.hasRemaining()) {
-                prev = cur;
                 cur = buf.get();
+
                 bos.write(cur);
 
-                if (prev == (byte) '\r' && cur == (byte) '\n') {
+                if (cur == (byte) '\n') {
                     return new String(bos.toByteArray(), charset);
                 }
             }
@@ -59,5 +59,29 @@ public class BufferUtil {
         }
 
         return null;
+    }
+
+
+    public static ByteBuffer combineBuffers(final Collection<ByteBuffer> buffers) throws IOException {
+
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+
+            for (final ByteBuffer buffer : buffers) {
+                final byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);
+                bos.write(bytes);
+            }
+
+            return ByteBuffer.wrap(bos.toByteArray());
+        } catch (final IOException e) {
+            throw e;
+        }
+    }
+
+
+    public static ByteBuffer copyRemainingBuffer(final ByteBuffer buffer) {
+        final byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        return ByteBuffer.wrap(bytes);
     }
 }

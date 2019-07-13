@@ -3,9 +3,8 @@ package com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -28,6 +27,7 @@ import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.core.spi.Pair;
 import com.airepublic.microprofile.core.spi.Reflections;
+import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
@@ -41,7 +41,8 @@ public class RestEasyPlugin implements IServicePlugin {
     private Config config;
     @Inject
     private IServerContext serverContext;
-    private final Map<String, Class<? extends IIOHandler>> mappings = new ConcurrentHashMap<>();
+    private String contextPath;
+    private final Set<String> mappings = new HashSet<>();
 
 
     @Override
@@ -57,7 +58,7 @@ public class RestEasyPlugin implements IServicePlugin {
 
 
     @Override
-    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final IServerSession session) throws IOException {
+    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException {
         final String path = HttpBufferUtils.getUriPath(buffer);
 
         if (path == null) {
@@ -86,13 +87,19 @@ public class RestEasyPlugin implements IServicePlugin {
     }
 
 
-    public void addMapping(final String path, final Class<? extends IIOHandler> ioHandlerClass) {
-        mappings.put(path, ioHandlerClass);
+    public void addMapping(final String path) {
+        mappings.add(path);
     }
 
 
     protected Class<? extends IIOHandler> findMapping(final String path) {
-        return mappings.get(path);
+        for (final String registerdPath : mappings) {
+            if (path.startsWith(registerdPath)) {
+                return RestEasyIOHandler.class;
+            }
+        }
+
+        return null;
     }
 
 
@@ -132,7 +139,10 @@ public class RestEasyPlugin implements IServicePlugin {
             contextBuilder.setPath(contextPath);
             logger.info("Determined context-path for JAX-RS application: " + app.getName() + " -> " + contextPath);
 
+            this.contextPath = contextPath;
+
             Object appImpl = null;
+
             try {
                 appImpl = CDI.current().select(app).get();
             } catch (final Exception e) {
@@ -189,6 +199,7 @@ public class RestEasyPlugin implements IServicePlugin {
             // use the configured or default context path
             contextBuilder.setPath(contextPath);
             logger.info("Determined context-path for JAX-RS resources: " + contextPath);
+            this.contextPath = contextPath;
         }
 
         contextBuilder.bind();
@@ -230,7 +241,7 @@ public class RestEasyPlugin implements IServicePlugin {
                 }
             }
 
-            addMapping(rootPath, RestEasyIOHandler.class);
+            addMapping(rootPath);
             logger.info("Adding JAX-RS mapping for: " + resource.getName() + " -> " + rootPath);
 
             // check for Path annotated methods
@@ -247,7 +258,7 @@ public class RestEasyPlugin implements IServicePlugin {
                     e.printStackTrace();
                 }
 
-                addMapping(rootPath + subPath, RestEasyIOHandler.class);
+                addMapping(rootPath + subPath);
                 logger.info("Adding JAX-RS mapping for: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
             }
         } catch (final Exception e) {

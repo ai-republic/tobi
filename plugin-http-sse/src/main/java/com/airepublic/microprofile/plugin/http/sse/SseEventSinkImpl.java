@@ -11,8 +11,8 @@ import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.SseEvent;
 import javax.ws.rs.sse.SseEventSink;
 
+import com.airepublic.microprofile.core.spi.CompletableFutureCompletionHandler;
 import com.airepublic.microprofile.core.spi.IServerSession;
-import com.airepublic.microprofile.util.http.common.CompletableFutureCompletionHandler;
 
 /**
  * Implementation of the {@link SseEventSink}.

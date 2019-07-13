@@ -27,13 +27,13 @@ import com.airepublic.microprofile.core.spi.IServicePlugin;
 @SessionScoped
 public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable {
     private static final long serialVersionUID = 1L;
-    private final AsyncHttpRequestReader requestReader = new AsyncHttpRequestReader();
+    private final AsyncHttpReader httpReader = new AsyncHttpReader();
     @Inject
     private IServerSession session;
 
 
     /**
-     * The default implementation forwards the buffer to the {@link AsyncHttpRequestReader} to parse
+     * The default implementation forwards the buffer to the {@link AsyncHttpReader} to parse
      * the {@link HttpRequest}.<br/>
      * Once it has read the {@link HttpRequest} completely it will send a
      * {@link ChannelAction#CLOSE_INPUT} otherwise a {@link ChannelAction#KEEP_OPEN}.
@@ -43,7 +43,7 @@ public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable 
      */
     @Override
     public ChannelAction consume(final ByteBuffer buffer) throws IOException {
-        return requestReader.receiveRequestBuffer(buffer) ? ChannelAction.CLOSE_INPUT : ChannelAction.KEEP_OPEN;
+        return httpReader.receiveBuffer(buffer) ? ChannelAction.CLOSE_INPUT : ChannelAction.KEEP_OPEN;
     }
 
 
@@ -109,7 +109,7 @@ public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable 
      * @throws IOException if something goes wrong during processing of the {@link HttpRequest}
      */
     public HttpRequest getHttpRequest() throws IOException {
-        return requestReader.getHttpRequest();
+        return httpReader.getHttpRequest();
     }
 
 

@@ -15,7 +15,7 @@ public class InboundSseEventImpl extends SseEventImpl implements InboundSseEvent
     }
 
 
-    void setData(final String data) {
+    public void setData(final String data) {
         this.data = data;
     }
 
@@ -51,6 +51,12 @@ public class InboundSseEventImpl extends SseEventImpl implements InboundSseEvent
     public <T> T readData(final GenericType<T> type, final MediaType mediaType) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+
+    @Override
+    public String toString() {
+        return "InboundSseEventImpl [data=" + data + ", getId()=" + getId() + ", getName()=" + getName() + ", getComment()=" + getComment() + ", getReconnectDelay()=" + getReconnectDelay() + "]";
     }
 
 }

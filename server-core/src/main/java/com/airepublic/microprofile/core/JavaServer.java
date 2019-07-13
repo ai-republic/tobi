@@ -2,12 +2,12 @@ package com.airepublic.microprofile.core;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -29,6 +29,7 @@ import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
+import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
@@ -98,8 +99,8 @@ public class JavaServer {
 
                                         if (!openPorts.contains(Integer.valueOf(port))) {
                                             final ServerSocketChannel serverSocket = ServerSocketChannel.open();
-                                            serverSocket.bind(new InetSocketAddress(host, port));
                                             serverSocket.configureBlocking(false);
+                                            serverSocket.bind(new InetSocketAddress(host, port));
 
                                             final SelectionKey key = serverSocket.register(selector, SelectionKey.OP_ACCEPT);
 
@@ -218,8 +219,13 @@ public class JavaServer {
         }
 
         try {
-            final SessionContainer sessionContainer = serverContext.getCdiContainer().select(SessionContainer.class).get();
-            sessionContainer.startSession(moduleForKey.get(connectionKey), channel, Collections.emptyMap(), false);
+            channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
+            channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+            channel.configureBlocking(false);
+
+            final SessionContainer sc = CDI.current().select(SessionContainer.class).get();
+
+            sc.startSession(moduleForKey.get(connectionKey), () -> channel, new SessionAttributes(), false);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error creating session", e);
         } finally {
