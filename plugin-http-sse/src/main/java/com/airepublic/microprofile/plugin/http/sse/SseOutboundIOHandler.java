@@ -41,7 +41,6 @@ public class SseOutboundIOHandler implements IIOHandler {
     @Inject
     private SseEventSink sseEventSink;
     private final AtomicBoolean isHandshakeRead = new AtomicBoolean(false);
-    private final AtomicBoolean isHandshakeDone = new AtomicBoolean(false);
     private Object serviceObject;
     private Method serviceMethod;
     private long delayInMs = 0L;
@@ -94,7 +93,6 @@ public class SseOutboundIOHandler implements IIOHandler {
         final HttpResponse response = new HttpResponse(HttpStatus.OK, headers);
 
         session.addToWriteBuffer(response.getHeaderBuffer());
-        isHandshakeDone.set(true);
     }
 
 
@@ -118,7 +116,7 @@ public class SseOutboundIOHandler implements IIOHandler {
                 }
             }
 
-            serviceMethod.invoke(serviceObject, (Object[]) null);
+            serviceMethod.invoke(serviceObject, objs);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Could not invoke SSE outbound producer method: " + serviceMethod, e);
         }

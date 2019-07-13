@@ -20,6 +20,7 @@ import javax.net.ssl.SSLSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.sse.InboundSseEvent;
 import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.Sse;
@@ -36,8 +37,6 @@ import com.airepublic.microprofile.util.http.common.HttpRequest;
 @Path("/sse")
 public class SseSample {
     @Inject
-    private SseEventSink sink;
-    @Inject
     private Sse sse;
     private int counter = 0;
     private static ByteBuffer unprocessedBuffer;
@@ -46,7 +45,7 @@ public class SseSample {
     @Produces("text/event-stream")
     @Path("/produce")
     @SseRepeat(delay = 1, unit = TimeUnit.SECONDS, maxTimes = 5)
-    public void produce() {
+    public void produce(@Context final SseEventSink sink) {
 
         final String[] words = new String[] { "Hello", "World", "from", "the", "SSE" };
         final OutboundSseEvent event = sse.newEventBuilder().name("MyEvent").reconnectDelay(1000L).data(words[counter % 5]).build();

@@ -28,6 +28,16 @@ public class SseEventSinkImpl implements SseEventSink, Serializable {
     private IServerSession session;
 
 
+    public SseEventSinkImpl() {
+        // TODO Auto-generated constructor stub
+    }
+
+
+    public SseEventSinkImpl(final IServerSession session) {
+        this.session = session;
+    }
+
+
     @Override
     public boolean isClosed() {
         return closed.get();
@@ -70,8 +80,10 @@ public class SseEventSinkImpl implements SseEventSink, Serializable {
 
     @Override
     public void close() {
-        closed.set(true);
-        session.close();
+        if (!isClosed()) {
+            closed.set(true);
+            session.close();
+        }
     }
 
 }
