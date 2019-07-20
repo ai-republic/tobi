@@ -29,6 +29,15 @@ public interface IServicePlugin {
 
 
     /**
+     * Gets the priority by which the {@link IServicePlugin} is queries when trying to determine the
+     * {@link IIOHandler}.
+     * 
+     * @return the priority
+     */
+    int getPriority();
+
+
+    /**
      * Tries to determine if the plugin can handle the initial (unwrapped) {@link ByteBuffer} and
      * map it to an {@link IIOHandler}.
      * 

@@ -26,6 +26,8 @@ public class SessionContainer {
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
     @Inject
+    private RequestScopedContext requestScopedContext;
+    @Inject
     private SessionScopedContext sessionScopedContext;
 
 
@@ -33,12 +35,12 @@ public class SessionContainer {
     public Future<IServerSession> startSession(final IServerModule module, final Supplier<SocketChannel> channelSupplier, final SessionAttributes sessionAttributes, final boolean isClient) {
         ServerSession session = null;
         final long sessionId = SESSION_ID_GENERATOR.incrementAndGet();
-        final SessionContext sessionContext = new SessionContext(sessionId);
 
         try {
             logger.info("Starting session #" + sessionId + " for module " + module.getName());
 
-            sessionScopedContext.activate(sessionContext);
+            requestScopedContext.activate(new RequestContext(sessionId));
+            sessionScopedContext.activate(new SessionContext(sessionId));
 
             session = CDI.current().select(ServerSession.class).get();
 
@@ -54,6 +56,7 @@ public class SessionContainer {
         } finally {
             session.close();
             sessionScopedContext.deactivate();
+            requestScopedContext.deactivate();
             logger.info("Session #" + sessionId + " for module '" + module.getName() + "' destroyed!");
         }
 

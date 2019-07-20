@@ -71,6 +71,12 @@ public class SsePlugin implements IServicePlugin {
 
 
     @Override
+    public int getPriority() {
+        return 100;
+    }
+
+
+    @Override
     public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException {
 
         Class<? extends IIOHandler> handlerClass = null;
@@ -134,12 +140,6 @@ public class SsePlugin implements IServicePlugin {
     public void initPlugin(final IServerModule module) {
         this.module = module;
 
-        final String defaultContextPath = config.getValue(CONTEXT_PATH, String.class);
-
-        if (defaultContextPath == null) {
-            throw new IllegalArgumentException("Configuration did not specify the '" + CONTEXT_PATH + "'!");
-        }
-
         logger.info("Searching for SSE applications...");
 
         // check if there is an Application class with an @ApplicationPath annotation
@@ -159,68 +159,35 @@ public class SsePlugin implements IServicePlugin {
             }
 
             if (contextPath == null || contextPath.isBlank()) {
-                contextPath = defaultContextPath;
+                contextPath = "/";
             }
 
             logger.info("Determined context-path for SSE plugin: " + app.getName() + " -> " + contextPath);
 
-            Object appImpl = null;
-            try {
-                appImpl = serverContext.getCdiContainer().select(app).get();
-            } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Failed to instantiate SSE Application class!", e);
-            }
-
-            if (appImpl != null) {
-                try {
-                    if (app.getMethod("getClasses") != null) {
-                        for (final Class<?> resource : (Class[]) app.getMethod("getClasses").invoke(appImpl)) {
-                            try {
-                                addResource(contextPath, resource);
-                            } catch (final Exception e) {
-                                logger.log(Level.SEVERE, "Failed to add SSE resource: " + resource.getName());
-                            }
-                        }
-                    }
-                } catch (final Exception e) {
-                    // ignore
-                }
-                try {
-                    if (app.getMethod("getSingletons") != null) {
-                        for (final Object resource : (Object[]) app.getMethod("getSingletons").invoke(appImpl)) {
-                            try {
-                                addResource(contextPath, resource.getClass());
-                            } catch (final Exception e) {
-                                logger.log(Level.SEVERE, "Failed to add SSE resource: " + resource.getClass().getName());
-                            }
-                        }
-                    }
-                } catch (final Exception e) {
-                    // ignore
-                }
-            }
         } else {
+            contextPath = "/";
             logger.info("Found SSE application: \n\t[]");
-            logger.info("Searching for SSE resources...");
-            contextPath = defaultContextPath;
-            // find all resources with a @Path annotation
-            final Set<Class<?>> resources = findResourceClasses();
-            logger.info("Found SSE Resources:\n\t" + resources);
-
-            if (resources != null) {
-                for (final Class<?> resource : resources) {
-                    try {
-                        addResource(contextPath, resource);
-                    } catch (final Exception e) {
-                        logger.log(Level.SEVERE, "Failed to add SSE resource: " + resource.getName());
-                    }
-                }
-            }
-
-            // use the configured or default context path
             logger.info("Determined context-path for SSE resources: " + contextPath);
         }
 
+        logger.info("Searching for SSE resources...");
+        // find all resources with a @Path annotation
+        final Set<Class<?>> resources = findResourceClasses();
+        logger.info("Found SSE Resources:");
+
+        if (resources != null) {
+            for (final Class<?> resource : resources) {
+                logger.info("\t" + resource.getName());
+
+                try {
+                    addResource(contextPath, resource);
+                } catch (final Exception e) {
+                    logger.log(Level.SEVERE, "Failed to add SSE resource: " + resource.getName());
+                }
+            }
+        }
+
+        // use the configured or default context path
         logger.info("Finished configuring SSE server!");
     }
 
@@ -258,6 +225,8 @@ public class SsePlugin implements IServicePlugin {
                 }
             }
 
+            rootPath = rootPath.replace("//", "/");
+
             // check for Consumes annotated methods
             for (final Method method : Reflections.getAnnotatedMethods(resource, Produces.class, Consumes.class)) {
                 String subPath = "";
@@ -291,7 +260,7 @@ public class SsePlugin implements IServicePlugin {
                         addMapping(rootPath + subPath, SseOutboundIOHandler.class);
                         sseMethodMapping.add(rootPath + subPath, method);
 
-                        logger.info("Added SSE mapping for outbounded SSE events: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
+                        logger.info("\t\tAdded SSE mapping for outbounded SSE events: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
                     } else {
                         try {
                             if (method.isAnnotationPresent(SseUri.class)) {
@@ -313,7 +282,7 @@ public class SsePlugin implements IServicePlugin {
 
                                 eventSource.open();
 
-                                logger.info("Added SSE mapping for inbounded SSE events: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
+                                logger.info("\t\tAdded SSE mapping for inbounded SSE events: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
                             } else {
                                 logger.warning("SSE inbound event method is lacking the SseUri annotation to define the source of the events - it will not receive any events!");
                             }

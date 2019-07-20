@@ -13,11 +13,11 @@ module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
     requires jakarta.inject;
     requires java.annotation;
 
-    requires java.xml.bind;
-
-    // requires transitive resteasy.jaxb.provider;
     requires transitive java.ws.rs;
-    requires transitive resteasy.jaxrs;
+    requires resteasy.jaxrs;
+    requires resteasy.cdi;
+    requires org.jboss.logging;
+    requires java.naming;
 
     provides IServicePlugin with RestEasyPlugin;
 

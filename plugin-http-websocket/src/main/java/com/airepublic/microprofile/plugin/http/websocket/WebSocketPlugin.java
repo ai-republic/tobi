@@ -70,6 +70,12 @@ public class WebSocketPlugin implements IServicePlugin {
 
 
     @Override
+    public int getPriority() {
+        return 200;
+    }
+
+
+    @Override
     public void onSessionCreate(final IServerSession session) {
     }
 

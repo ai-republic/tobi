@@ -1,4 +1,6 @@
-module com.airepublic.microprofile.samplw {
+import javax.ws.rs.sse.Sse;
+
+module com.airepublic.microprofile.sample {
     exports com.airepublic.microprofile.javaserver.boot;
     exports com.airepublic.microprofile.sample;
 
@@ -7,7 +9,7 @@ module com.airepublic.microprofile.samplw {
     requires transitive com.airepublic.microprofile.module.http;
     requires transitive com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
     requires transitive com.airepublic.microprofile.plugin.http.websocket;
-    requires transitive com.airepublic.microprofile.plugin.http.sse;
+    // requires transitive com.airepublic.microprofile.plugin.http.sse;
     requires transitive com.airepublic.microprofile.feature.cdi.weld;
     requires transitive com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.feature.mp.faulttolerance;
@@ -27,6 +29,13 @@ module com.airepublic.microprofile.samplw {
     requires org.eclipse.jetty.websocket.client;
     requires org.eclipse.jetty.websocket.common;
     requires org.eclipse.jetty.util;
+
+    requires transitive java.ws.rs;
+    requires transitive resteasy.jaxrs;
+    requires transitive resteasy.cdi;
+    requires java.activation;
+
+    uses Sse;
 
     opens com.airepublic.microprofile.sample;
     opens com.airepublic.microprofile.client;

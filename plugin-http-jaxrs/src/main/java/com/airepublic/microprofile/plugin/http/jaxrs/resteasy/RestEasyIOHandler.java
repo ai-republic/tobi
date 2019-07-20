@@ -7,11 +7,22 @@ import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.sse.SseEventSink;
 
-import org.jboss.resteasy.core.Dispatcher;
+import org.jboss.resteasy.core.ResourceInvoker;
+import org.jboss.resteasy.core.ResourceMethodInvoker;
+import org.jboss.resteasy.core.ResourceMethodRegistry;
 import org.jboss.resteasy.core.SynchronousDispatcher;
 import org.jboss.resteasy.core.ThreadLocalResteasyProviderFactory;
+import org.jboss.resteasy.plugins.providers.sse.SseEventOutputImpl;
+import org.jboss.resteasy.plugins.providers.sse.SseEventProvider;
+import org.jboss.resteasy.plugins.server.resourcefactory.POJOResourceFactory;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.metadata.DefaultResourceClass;
+import org.jboss.resteasy.spi.metadata.DefaultResourceMethod;
+import org.jboss.resteasy.spi.metadata.ResourceClass;
 
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
@@ -27,8 +38,6 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
     private Logger logger;
     @Inject
     private IServerContext serverContext;
-    protected SynchronousDispatcher dispatcher;
-    protected ResteasyProviderFactory providerFactory;
     private RestEasyHttpContextBuilder contextBuilder;
     private String contextPath;
     private HttpResponse response;
@@ -36,30 +45,18 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
 
     @PostConstruct
     public void init() {
-        if (serverContext.hasAttribute("JAX-RS")) {
-            contextBuilder = (RestEasyHttpContextBuilder) serverContext.getAttribute("JAX-RS");
+        if (serverContext.hasAttribute(RestEasyPlugin.CONTEXT_BUILDER)) {
+            contextBuilder = (RestEasyHttpContextBuilder) serverContext.getAttribute(RestEasyPlugin.CONTEXT_BUILDER);
         } else {
             throw new IllegalStateException(RestEasyHttpContextBuilder.class.getSimpleName() + " has not been set in the server-context under JAX-RS key!");
         }
 
-        setDispatcher(contextBuilder.getDeployment().getDispatcher());
-        setProviderFactory(contextBuilder.getDeployment().getProviderFactory());
         contextPath = contextBuilder.getPath();
     }
 
 
     @Override
     public void onSessionClose() {
-    }
-
-
-    public void setDispatcher(final Dispatcher dispatcher) {
-        this.dispatcher = SynchronousDispatcher.class.cast(dispatcher);
-    }
-
-
-    public void setProviderFactory(final ResteasyProviderFactory providerFactory) {
-        this.providerFactory = providerFactory;
     }
 
 
@@ -76,16 +73,36 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
                 final ResteasyProviderFactory defaultInstance = ResteasyProviderFactory.getInstance();
 
                 if (defaultInstance instanceof ThreadLocalResteasyProviderFactory) {
-                    ThreadLocalResteasyProviderFactory.push(providerFactory);
+                    ThreadLocalResteasyProviderFactory.push(contextBuilder.getDeployment().getProviderFactory());
                 }
 
                 response = new HttpResponse(HttpStatus.OK);
 
                 try {
+                    // create the Resteasy request and response wrappers
                     final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, this);
-                    final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(getHttpRequest(), restEasyHttpResponse, dispatcher, contextPath);
+                    final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(getHttpRequest(), restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
 
-                    dispatcher.invoke(restEasyHttpRequest, restEasyHttpResponse);
+                    // add them to the context
+                    ResteasyProviderFactory.getContextDataMap().put(HttpRequest.class, restEasyHttpRequest);
+                    ResteasyProviderFactory.getContextDataMap().put(org.jboss.resteasy.spi.HttpResponse.class, restEasyHttpResponse);
+
+                    // provide a SSE event sink
+                    final SseEventSink sseEventSink = new SseEventOutputImpl(new SseEventProvider());
+                    ResteasyProviderFactory.getContextDataMap().put(SseEventSink.class, sseEventSink);
+
+                    final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
+
+                    if (invoker != null) {
+                        restEasyHttpRequest.setAttribute(invoker.getClass().getName(), invoker);
+
+                        final ResourceClass resourceClass = new DefaultResourceClass(invoker.getMethod().getDeclaringClass(), restEasyHttpRequest.getUri().getPath());
+                        final POJOResourceFactory rf = new POJOResourceFactory(resourceClass);
+                        final ResourceMethodInvoker methodInvoker = new ResourceMethodInvoker(new DefaultResourceMethod(resourceClass, invoker.getMethod(), invoker.getMethod()), contextBuilder.getDeployment().getInjectorFactory(), rf, contextBuilder.getDeployment().getProviderFactory());
+                        restEasyHttpRequest.setAttribute(ResourceMethodInvoker.class.getName(), methodInvoker);
+                    }
+
+                    contextBuilder.getDeployment().getDispatcher().invoke(restEasyHttpRequest, restEasyHttpResponse);
 
                     // write headers and body to HttpResponse
                     restEasyHttpResponse.mergeToResponse();
@@ -94,6 +111,11 @@ public class RestEasyIOHandler extends AbstractHttpIOHandler {
 
                     if (contentType == null) {
                         response.getHeaders().add(HttpHeaders.CONTENT_TYPE, determineContentType(response.getBody()));
+                    }
+
+                    // fix a bug in Resteasy which returns a 404 for SSE
+                    if (contentType.equals(MediaType.SERVER_SENT_EVENTS) && response.getStatus() == HttpStatus.NOT_FOUND && response.getBody() != null) {
+                        response.withStatus(HttpStatus.SUCCESS);
                     }
 
                 } catch (final Exception ex) {

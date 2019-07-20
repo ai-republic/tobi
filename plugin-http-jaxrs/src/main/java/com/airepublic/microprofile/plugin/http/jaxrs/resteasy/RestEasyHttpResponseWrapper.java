@@ -19,13 +19,18 @@ public class RestEasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpR
     private final ByteArrayOutputStream rawOutputStream = new ByteArrayOutputStream();
     private OutputStream outputStream = rawOutputStream;
     private boolean committed = false;
-    private final RestEasyIOHandler handler;
+    private RestEasyIOHandler handler;
 
 
     public RestEasyHttpResponseWrapper(final HttpResponse response, final RestEasyIOHandler handler) {
         this.response = response;
         this.handler = handler;
         response.getHeaders().entrySet().forEach(e -> e.getValue().forEach(v -> responseHeaders.add(e.getKey(), v)));
+    }
+
+
+    public void setIOHandler(final RestEasyIOHandler handler) {
+        this.handler = handler;
     }
 
 

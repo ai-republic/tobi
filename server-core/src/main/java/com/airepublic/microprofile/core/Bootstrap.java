@@ -12,7 +12,7 @@ import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
 import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
 
 public class Bootstrap {
-    private static final Logger LOG = new SerializableLogger(Bootstrap.class.getName());
+    private static final Logger LOG = new SerializableLogger(Level.INFO, Bootstrap.class.getName());
 
 
     private void startServer(final SeContainer cdiContainer) throws IOException {
@@ -45,6 +45,7 @@ public class Bootstrap {
             new Bootstrap().startServer(cdiContainer);
         } catch (final Exception e) {
             LOG.log(Level.SEVERE, "Failed to start server: ", e);
+            e.printStackTrace();
         }
     }
 }

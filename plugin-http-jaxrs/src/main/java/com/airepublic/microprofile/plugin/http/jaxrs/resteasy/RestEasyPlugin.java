@@ -17,7 +17,17 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import org.eclipse.microprofile.config.Config;
+import org.jboss.resteasy.cdi.CdiInjectorFactory;
+import org.jboss.resteasy.core.ResourceInvoker;
+import org.jboss.resteasy.core.ResourceMethodInvoker;
+import org.jboss.resteasy.core.ResourceMethodRegistry;
+import org.jboss.resteasy.core.SynchronousDispatcher;
+import org.jboss.resteasy.plugins.server.resourcefactory.POJOResourceFactory;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.resteasy.spi.metadata.DefaultResourceClass;
+import org.jboss.resteasy.spi.metadata.DefaultResourceMethod;
+import org.jboss.resteasy.spi.metadata.ResourceBuilder;
+import org.jboss.resteasy.spi.metadata.ResourceClass;
 
 import com.airepublic.microprofile.core.spi.DetermineStatus;
 import com.airepublic.microprofile.core.spi.IIOHandler;
@@ -30,19 +40,22 @@ import com.airepublic.microprofile.core.spi.Reflections;
 import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
+import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
+import com.airepublic.microprofile.util.http.common.Headers;
+import com.airepublic.microprofile.util.http.common.HttpRequest;
+import com.airepublic.microprofile.util.http.common.HttpResponse;
+import com.airepublic.microprofile.util.http.common.HttpStatus;
 
 public class RestEasyPlugin implements IServicePlugin {
+    public static final String CONTEXT_BUILDER = "http.jaxrs.resteasy.ContextBuilder";
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
-    public final static String CONTEXT_PATH = "jax-rs.context.path";
-    @Inject
-    private Config config;
     @Inject
     private IServerContext serverContext;
     private String contextPath;
     private final Set<String> mappings = new HashSet<>();
+    private RestEasyHttpContextBuilder contextBuilder;
 
 
     @Override
@@ -58,25 +71,65 @@ public class RestEasyPlugin implements IServicePlugin {
 
 
     @Override
+    public int getPriority() {
+        return 300;
+    }
+
+
+    @Override
     public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException {
-        final String path = HttpBufferUtils.getUriPath(buffer);
 
-        if (path == null) {
-            return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
-        }
+        final AsyncHttpReader httpReader = new AsyncHttpReader();
+        buffer.mark();
 
-        final Class<? extends IIOHandler> handlerClass = findMapping(path);
+        try {
+            if (httpReader.receiveBuffer(buffer)) {
+                final HttpResponse response = new HttpResponse(HttpStatus.OK);
+                final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, null);
+                final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(httpReader.getHttpRequest(), restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
+                final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
 
-        if (handlerClass != null) {
-            try {
-                final IIOHandler handler = CDI.current().select(handlerClass).get();
+                if (invoker != null) {
+                    restEasyHttpRequest.setAttribute(invoker.getClass().getName(), invoker);
 
-                return new Pair<>(DetermineStatus.TRUE, handler);
-            } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Could not instantiate handler: " + handlerClass, e);
-                throw new IOException("Could not initialize handler: " + handlerClass, e);
+                    final ResourceClass resourceClass = new DefaultResourceClass(invoker.getMethod().getDeclaringClass(), restEasyHttpRequest.getUri().getPath());
+                    final POJOResourceFactory rf = new POJOResourceFactory(resourceClass);
+                    final ResourceMethodInvoker methodInvoker = new ResourceMethodInvoker(new DefaultResourceMethod(resourceClass, invoker.getMethod(), invoker.getMethod()), contextBuilder.getDeployment().getInjectorFactory(), rf, contextBuilder.getDeployment().getProviderFactory());
+                    restEasyHttpRequest.setAttribute(ResourceMethodInvoker.class.getName(), methodInvoker);
+
+                    try {
+                        final RestEasyIOHandler handler = CDI.current().select(RestEasyIOHandler.class).get();
+                        return new Pair<>(DetermineStatus.TRUE, handler);
+                    } catch (final Exception e) {
+                        logger.log(Level.SEVERE, "Could not instantiate handler: " + RestEasyIOHandler.class, e);
+                        throw new IOException("Could not initialize handler: " + RestEasyIOHandler.class, e);
+                    }
+                }
+
+            } else {
+                return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
             }
+        } finally {
+            buffer.reset();
         }
+
+        // final String path = HttpBufferUtils.getUriPath(buffer);
+        // if (path == null) {
+        // return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
+        // }
+        //
+        // final Class<? extends IIOHandler> handlerClass = findMapping(path);
+        //
+        // if (handlerClass != null) {
+        // try {
+        // final IIOHandler handler = CDI.current().select(handlerClass).get();
+        //
+        // return new Pair<>(DetermineStatus.TRUE, handler);
+        // } catch (final Exception e) {
+        // logger.log(Level.SEVERE, "Could not instantiate handler: " + handlerClass, e);
+        // throw new IOException("Could not initialize handler: " + handlerClass, e);
+        // }
+        // }
 
         return new Pair<>(DetermineStatus.FALSE, null);
     }
@@ -93,6 +146,12 @@ public class RestEasyPlugin implements IServicePlugin {
 
 
     protected Class<? extends IIOHandler> findMapping(final String path) {
+        final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(new RestEasyHttpRequestWrapper(new HttpRequest("GET " + path + " HTTP/1.1", new Headers()), new RestEasyHttpResponseWrapper(new HttpResponse(), null), (SynchronousDispatcher) contextBuilder.deployment.getDispatcher(), path));
+
+        if (invoker != null) {
+            return RestEasyIOHandler.class;
+        }
+
         for (final String registerdPath : mappings) {
             if (path.startsWith(registerdPath)) {
                 return RestEasyIOHandler.class;
@@ -105,20 +164,16 @@ public class RestEasyPlugin implements IServicePlugin {
 
     @Override
     public void initPlugin(final IServerModule module) {
-        final String defaultContextPath = config.getValue(CONTEXT_PATH, String.class);
 
-        if (defaultContextPath == null) {
-            throw new IllegalArgumentException("Configuration did not specify the '" + CONTEXT_PATH + "'!");
-        }
-
-        final RestEasyHttpContextBuilder contextBuilder = new RestEasyHttpContextBuilder();
+        contextBuilder = new RestEasyHttpContextBuilder();
+        contextBuilder.getDeployment().setInjectorFactory(new CdiInjectorFactory(CDI.current().getBeanManager()));
+        contextBuilder.getDeployment().setRegistry(new ResourceMethodRegistry(ResteasyProviderFactory.getInstance()));
+        final ResourceBuilder resourceBuilder = new ResourceBuilder();
 
         logger.info("Searching for JAX-RS applications...");
 
         // check if there is an Application class with an @ApplicationPath annotation
         final Class<?> app = findApplicationClass();
-
-        String contextPath = null;
 
         if (app != null) {
             logger.info("Found JAX-RS application: " + app.getName());
@@ -133,77 +188,43 @@ public class RestEasyPlugin implements IServicePlugin {
             }
 
             if (contextPath == null || contextPath.isBlank()) {
-                contextPath = defaultContextPath;
+                contextPath = "/";
             }
 
             contextBuilder.setPath(contextPath);
             logger.info("Determined context-path for JAX-RS application: " + app.getName() + " -> " + contextPath);
 
-            this.contextPath = contextPath;
+        } else {
+            logger.info("Found JAX-RS application: \n\t[]");
+        }
 
-            Object appImpl = null;
+        logger.info("Searching for JAX-RS resources...");
+        contextPath = "/";
+        // find all resources with a @Path annotation
+        final Set<Class<?>> resources = findResourceClasses();
 
-            try {
-                appImpl = CDI.current().select(app).get();
-            } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Failed to instantiate JAX-RS Application class!", e);
-            }
+        if (resources != null) {
+            logger.info("Found JAX-RS Resources:");
+            for (final Class<?> resource : resources) {
+                logger.info("\t" + resource.getName());
 
-            if (appImpl != null) {
                 try {
-                    if (app.getMethod("getClasses") != null) {
-                        for (final Class<?> resource : (Class[]) app.getMethod("getClasses").invoke(appImpl)) {
-                            try {
-                                addResource(contextPath, resource);
-                            } catch (final Exception e) {
-                                logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName());
-                            }
-                        }
-                    }
+                    addResource(contextPath, resource);
+                    contextBuilder.getDeployment().getScannedResourceClasses().add(resource.getName());
                 } catch (final Exception e) {
-                    // ignore
-                }
-                try {
-                    if (app.getMethod("getSingletons") != null) {
-                        for (final Object resource : (Object[]) app.getMethod("getSingletons").invoke(appImpl)) {
-                            try {
-                                addResource(contextPath, resource.getClass());
-                            } catch (final Exception e) {
-                                logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getClass().getName());
-                            }
-                        }
-                    }
-                } catch (final Exception e) {
-                    // ignore
+                    logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName(), e);
                 }
             }
         } else {
-            logger.info("Found JAX-RS application: \n\t[]");
-            logger.info("Searching for JAX-RS resources...");
-            contextPath = defaultContextPath;
-            // find all resources with a @Path annotation
-            final Set<Class<?>> resources = findResourceClasses();
-            logger.info("Found JAX-RS Resources:\n\t" + resources);
-
-            if (resources != null) {
-                for (final Class<?> resource : resources) {
-                    try {
-                        addResource(contextPath, resource);
-                        contextBuilder.getDeployment().getScannedResourceClasses().add(resource.getName());
-                    } catch (final Exception e) {
-                        logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName());
-                    }
-                }
-            }
-
-            // use the configured or default context path
-            contextBuilder.setPath(contextPath);
-            logger.info("Determined context-path for JAX-RS resources: " + contextPath);
-            this.contextPath = contextPath;
+            logger.info("Found JAX-RS Resources:\n\t[]");
         }
 
+        // use the configured or default context path
+        contextBuilder.setPath(contextPath);
+        logger.info("Determined context-path for JAX-RS resources: " + contextPath);
+
         contextBuilder.bind();
-        serverContext.setAttribute("JAX-RS", contextBuilder);
+        serverContext.setAttribute(CONTEXT_BUILDER, contextBuilder);
         logger.info("Finished configuring JAX-RS server!");
     }
 
@@ -218,10 +239,6 @@ public class RestEasyPlugin implements IServicePlugin {
      */
     void addResource(final String contextPath, final Class<?> resource) throws Exception {
         try {
-            if (isSseResource(resource)) {
-                return;
-            }
-
             String rootPath = "";
 
             // check if Path annotation is present on class
@@ -241,11 +258,14 @@ public class RestEasyPlugin implements IServicePlugin {
                 }
             }
 
+            rootPath = rootPath.replace("//", "/");
+
             addMapping(rootPath);
-            logger.info("Adding JAX-RS mapping for: " + resource.getName() + " -> " + rootPath);
+            logger.info("\t\tAdding JAX-RS mapping for: " + resource.getName() + " -> " + rootPath);
 
             // check for Path annotated methods
             for (final Method method : Reflections.getAnnotatedMethods(resource, Path.class)) {
+                // if (!isSseResource(resource, method)) {
                 String subPath = "";
 
                 try {
@@ -259,7 +279,8 @@ public class RestEasyPlugin implements IServicePlugin {
                 }
 
                 addMapping(rootPath + subPath);
-                logger.info("Adding JAX-RS mapping for: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
+                logger.info("\t\tAdding JAX-RS mapping for: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
+                // }
             }
         } catch (final Exception e) {
             // otherwise use the configured or default context-path
@@ -267,30 +288,24 @@ public class RestEasyPlugin implements IServicePlugin {
     }
 
 
-    boolean isSseResource(final Class<?> resource) {
-        boolean sseMethodFound = true;
+    boolean isSseResource(final Class<?> resource, final Method method) {
+        boolean sseMethodFound = false;
 
         // check for SSE Produces annotated methods (mimetype text/event-stream)
-        for (final Method method : Reflections.getAnnotatedMethods(resource, Produces.class)) {
-            final Produces annotation = method.getAnnotation(Produces.class);
-            sseMethodFound = Stream.of(annotation.value()).anyMatch(s -> s.equals("text/event-stream"));
+        final Produces producesAnnotation = method.getAnnotation(Produces.class);
 
-            if (sseMethodFound) {
-                return true;
-            }
+        if (producesAnnotation != null) {
+            sseMethodFound = Stream.of(producesAnnotation.value()).anyMatch(v -> v.equals("text/event-stream"));
         }
 
         // check for SSE Consumes annotated methods (mimetype text/event-stream)
-        for (final Method method : Reflections.getAnnotatedMethods(resource, Consumes.class)) {
-            final Consumes annotation = method.getAnnotation(Consumes.class);
-            sseMethodFound = Stream.of(annotation.value()).anyMatch(s -> s.equals("text/event-stream"));
+        final Consumes consumesAnnotation = method.getAnnotation(Consumes.class);
 
-            if (sseMethodFound) {
-                return true;
-            }
+        if (!sseMethodFound && consumesAnnotation != null) {
+            sseMethodFound = Stream.of(consumesAnnotation.value()).anyMatch(v -> v.equals("text/event-stream"));
         }
 
-        return false;
+        return sseMethodFound;
     }
 
 

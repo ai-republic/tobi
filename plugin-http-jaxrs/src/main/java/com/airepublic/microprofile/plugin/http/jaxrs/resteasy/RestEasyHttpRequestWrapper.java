@@ -27,7 +27,7 @@ public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRe
     private final HttpRequest request;
     private final String contextPath;
     private final ResteasyAsynchronousContext restEasyContext;
-    private final Map<String, Object> context = new HashMap<>();
+    private final Map<String, Object> attributes = new HashMap<>();
 
 
     public RestEasyHttpRequestWrapper(final HttpRequest request, final org.jboss.resteasy.spi.HttpResponse response, final SynchronousDispatcher dispatcher, final String contextPath) {
@@ -155,19 +155,19 @@ public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRe
 
     @Override
     public Object getAttribute(final String attribute) {
-        return context.get(attribute);
+        return attributes.get(attribute);
     }
 
 
     @Override
     public void setAttribute(final String name, final Object value) {
-        context.put(name, value);
+        attributes.put(name, value);
     }
 
 
     @Override
     public void removeAttribute(final String name) {
-        context.remove(name);
+        attributes.remove(name);
     }
 
 

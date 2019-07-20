@@ -1,17 +1,23 @@
 
 package com.airepublic.microprofile.sample;
 
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.QueryParam;
 
+import com.airepublic.microprofile.core.spi.IServerSession;
+
 @Path("/service")
-public final class Service {
+public class Service {
+    @Inject
+    private IServerSession session;
+
 
     @GET
     public String getStuff(@QueryParam("hello") final String hello) {
-        return "get " + hello;
+        return "get " + hello + " session#" + session.getId();
     }
 
 

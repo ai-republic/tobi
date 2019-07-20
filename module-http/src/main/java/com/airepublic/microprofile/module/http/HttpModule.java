@@ -6,9 +6,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -48,7 +48,7 @@ public class HttpModule implements IServerModule {
     @Inject
     @LoggerConfig(level = LogLevel.FINE)
     private Logger logger;
-    private final Set<IServicePlugin> servicePlugins = new HashSet<>();
+    private final Set<IServicePlugin> servicePlugins = new TreeSet<>((p1, p2) -> Integer.compare(p1.getPriority(), p2.getPriority()));
     @Inject
     @ConfigProperty(name = PORT)
     private Integer port;
@@ -71,11 +71,6 @@ public class HttpModule implements IServerModule {
     private IServerContext serverContext;
     private SSLContext sslContext;
     private int readBufferSize = 16 * 1024;
-
-
-    protected IServerContext getServerContext() {
-        return serverContext;
-    }
 
 
     @Override

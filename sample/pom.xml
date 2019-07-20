@@ -23,21 +23,25 @@
 			<artifactId>server-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>module-http</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>plugin-http-jaxrs</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>plugin-http-sse</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+		
+<!-- 		<dependency> -->
+<!-- 			<groupId>com.ai-republic.microprofile</groupId> -->
+<!-- 			<artifactId>plugin-http-sse</artifactId> -->
+<!-- 			<version>${project.version}</version> -->
+<!-- 		</dependency> -->
+		
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>plugin-http-websocket</artifactId>
@@ -49,25 +53,25 @@
 			<artifactId>feature-cdi-weld</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-faulttolerance</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-health</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-jwtauth</artifactId>
@@ -79,31 +83,31 @@
 			<artifactId>feature-mp-metrics</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-openapi</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-opentracing</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 <!-- 		<dependency> -->
 <!-- 			<groupId>com.ai-republic.microprofile</groupId> -->
 <!-- 			<artifactId>feature-mp-restclient</artifactId> -->
 <!-- 			<version>${project.version}</version> -->
 <!-- 		</dependency> -->
-		
+
 		<dependency>
 			<groupId>org.eclipse.jetty.websocket</groupId>
 			<artifactId>websocket-client</artifactId>
 			<version>9.4.15.v20190215</version>
 		</dependency>
-		
+
 	</dependencies>
 
 </project>

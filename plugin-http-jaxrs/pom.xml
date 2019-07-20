@@ -16,7 +16,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jackson.version>2.9.8</jackson.version>
 		<jaxrs.version>2.1.5</jaxrs.version>
-		<resteasy.version>3.5.0.Final</resteasy.version>
+		<resteasy.version>3.6.3.Final</resteasy.version>
 	</properties>
 
 	<dependencyManagement>
@@ -56,20 +56,35 @@
 		<dependency>
 			<groupId>org.jboss.resteasy</groupId>
 			<artifactId>resteasy-jaxrs</artifactId>
-			<version>3.6.3.Final</version>
+			<version>${resteasy.version}</version>
 			<exclusions>
-				<exclusion>
-					<groupId>org.jboss.spec.javax.ws.rs</groupId>
-					<artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
-				</exclusion>
 				<exclusion>
 					<groupId>org.jboss.spec.javax.annotation</groupId>
 					<artifactId>
 						jboss-annotations-api_1.3_spec
 					</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>org.jboss.spec.javax.ws.rs</groupId>
+					<artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-cdi</artifactId>
+            <version>${resteasy.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.jboss.spec.javax.ws.rs</groupId>
+					<artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.jboss.spec.javax.xml.bind</groupId>
+					<artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+				</exclusion>
+			</exclusions>
+        </dependency>
 	</dependencies>
 
 
