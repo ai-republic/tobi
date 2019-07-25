@@ -1,4 +1,4 @@
-package com.airepublic.microprofile.plugin.http.sse;
+package com.airepublic.microprofile.plugin.http.sse.api;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -9,10 +9,18 @@ import java.util.concurrent.TimeUnit;
 
 @Retention(RUNTIME)
 @Target(METHOD)
-public @interface SseRepeat {
+public @interface SseProducer {
+    /**
+     * The path for this producer to listen on.
+     * 
+     * @return the path
+     */
+    String path();
+
+
     /**
      * The delay before the call to the producer method will be repeated. The default is 1. The
-     * effective delay is calculated using the {@link SseRepeat#unit()} parameter.
+     * effective delay is calculated using the {@link SseProducer#unit()} parameter.
      * 
      * @return the delay
      */
@@ -20,7 +28,7 @@ public @interface SseRepeat {
 
 
     /**
-     * The {@link TimeUnit} for the {@link SseRepeat#delay()} parameter. Default is
+     * The {@link TimeUnit} for the {@link SseProducer#delay()} parameter. Default is
      * {@link TimeUnit#SECONDS}.
      * 
      * @return the {@link TimeUnit}
@@ -30,10 +38,10 @@ public @interface SseRepeat {
 
     /**
      * Specified how often the SSE producer method should be called before the connection is closed.
-     * Default is 1 time. A value of -1 means forever.
+     * A value of -1 means forever. Default is -1 (forever).
      * 
      * @return the maximum number of times the producer method can be called before the connection
      *         is closed
      */
-    long maxTimes() default 1L;
+    long maxTimes() default -1L;
 }

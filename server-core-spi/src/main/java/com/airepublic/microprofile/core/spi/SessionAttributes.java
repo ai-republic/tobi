@@ -7,6 +7,15 @@ public class SessionAttributes {
     private final Map<String, Object> attributes = new HashMap<>();
 
 
+    public SessionAttributes() {
+    }
+
+
+    public SessionAttributes(final SessionAttributes copy) {
+        attributes.putAll(copy.attributes);
+    }
+
+
     public void set(final String key, final Object value) {
         attributes.put(key, value);
     }

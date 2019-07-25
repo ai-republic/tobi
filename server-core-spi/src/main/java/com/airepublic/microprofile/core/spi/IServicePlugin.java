@@ -1,7 +1,5 @@
 package com.airepublic.microprofile.core.spi;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Set;
 
 /**
@@ -11,7 +9,7 @@ import java.util.Set;
  * @author Torsten Oltmanns
  *
  */
-public interface IServicePlugin {
+public interface IServicePlugin extends AutoCloseable {
     /**
      * Gets the name of the plugin.
      * 
@@ -38,16 +36,13 @@ public interface IServicePlugin {
 
 
     /**
-     * Tries to determine if the plugin can handle the initial (unwrapped) {@link ByteBuffer} and
-     * map it to an {@link IIOHandler}.
-     * 
-     * @param buffer the initial {@link ByteBuffer}
-     * @param sessionAttributes the {@link SessionAttributes}
-     * @return the {@link Pair} of DetermineStatus representing whether it could map a hander or not
-     *         or might need more data in the buffer to determine the {@link IIOHandler}
-     * @throws IOException if something goes wrong
+     * Tries to determine if this plugin provides a {@link IIOHandler} which can handle the
+     * {@link IRequest}.
+     *
+     * @param request the {@link IRequest}
+     * @return the {@link IIOHandler}
      */
-    Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException;
+    IIOHandler determineIoHandler(IRequest request);
 
 
     /**
@@ -56,14 +51,5 @@ public interface IServicePlugin {
      * @param module the {@link IServerModule}
      */
     void initPlugin(IServerModule module);
-
-
-    /**
-     * Called when an {@link IServerSession} is created to add plugin specific attributes to the
-     * session.
-     * 
-     * @param session the {@link IServerSession}
-     */
-    void onSessionCreate(IServerSession session);
 
 }

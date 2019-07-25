@@ -2,6 +2,7 @@ package com.airepublic.microprofile.sample;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
@@ -43,15 +44,13 @@ public class EchoServer {
     @Timeout
     @OnMessage
     public String onMessage(final String message, final Session session) {
-        System.out.println("onMessage: " + message);
-        switch (message) {
-            case "quit":
-                try {
-                    session.close(new CloseReason(CloseCodes.NORMAL_CLOSURE, "Game ended"));
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
-            break;
+        logger.info("onMessage: " + message);
+        if (message.equals("quit")) {
+            try {
+                session.close(new CloseReason(CloseCodes.NORMAL_CLOSURE, "Game ended"));
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         id++;
         return String.format("%d:%s", id, message);
@@ -62,22 +61,22 @@ public class EchoServer {
     @OnMessage
     public void onMessage(final byte[] bytes, final Session session) {
         try {
-            System.out.println("onMessage (b): " + new String(bytes, "UTF-8"));
+            logger.info("onMessage (b): " + new String(bytes, "UTF-8"));
         } catch (final UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 
 
     @OnError
     public void onError(final Session session, final Throwable t) {
-        t.printStackTrace();
+        if (session.isOpen()) {
+            logger.log(Level.WARNING, "WebSocket encountered error: " + t.getLocalizedMessage());
+        }
     }
 
 
     @OnClose
     public void onClose(final Session session, final CloseReason closeReason) {
-        System.out.println("Closed: " + session.getId() + " -> " + closeReason);
+        logger.info("Closed: " + session.getId() + " -> " + closeReason);
     }
 }

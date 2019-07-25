@@ -230,6 +230,16 @@ public class Reflections {
     }
 
 
+    public static Set<Class<?>> findClassesWithAnnotations(final Class<? extends Annotation>... annotations) {
+        return ALL_CLASSES.parallelStream().filter(c -> Stream.of(annotations).anyMatch(annotation -> getClassWithAnnotation(c, annotation) != null)).collect(Collectors.toSet());
+    }
+
+
+    public static Set<Class<?>> findClassesWithMethodAnnotations(final Class<? extends Annotation>... annotations) {
+        return ALL_CLASSES.parallelStream().filter(c -> !getAnnotatedMethods(c, annotations).isEmpty()).collect(Collectors.toSet());
+    }
+
+
     public static Class<?> getClassWithAnnotation(final Class<?> clazz, final Class<? extends Annotation> annotation) {
         if (clazz.isAnnotationPresent(annotation)) {
             return clazz;
@@ -298,7 +308,7 @@ public class Reflections {
     public static Set<Method> getAnnotatedMethods(final Class<?> clazz, final Class<? extends Annotation>... annotationClasses) {
         try {
             return Stream.of(clazz.getMethods()).filter(m -> Stream.of(annotationClasses).anyMatch(m::isAnnotationPresent)).collect(Collectors.toSet());
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             LOG.log(Level.SEVERE, "Error finding " + annotationClasses + " annotation methods on class: " + clazz, e);
             return Collections.emptySet();
         }

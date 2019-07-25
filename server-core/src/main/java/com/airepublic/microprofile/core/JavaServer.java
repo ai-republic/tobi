@@ -2,7 +2,6 @@ package com.airepublic.microprofile.core;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -27,9 +26,10 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
+import com.airepublic.microprofile.core.spi.IChannelProcessor;
 import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
@@ -219,13 +219,20 @@ public class JavaServer {
         }
 
         try {
-            channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-            channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-            channel.configureBlocking(false);
+            final IServerModule module = moduleForKey.get(connectionKey);
+            IServerSession session = serverContext.getServerSession(channel.getRemoteAddress());
 
-            final SessionContainer sc = CDI.current().select(SessionContainer.class).get();
+            if (session == null) {
+                session = CDI.current().select(IServerSession.class).get();
+            }
 
-            sc.startSession(moduleForKey.get(connectionKey), () -> channel, new SessionAttributes(), false);
+            final IChannelProcessor processor = CDI.current().select(IChannelProcessor.class).get();
+            processor.prepare(session, module, channel, null);
+            module.accept(processor);
+
+            // final SessionContainer sc = CDI.current().select(SessionContainer.class).get();
+            // sc.startSession(moduleForKey.get(connectionKey), () -> channel, new
+            // SessionAttributes(), false);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error creating session", e);
         } finally {

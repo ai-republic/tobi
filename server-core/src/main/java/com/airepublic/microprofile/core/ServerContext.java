@@ -1,12 +1,13 @@
 package com.airepublic.microprofile.core;
 
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.se.SeContainer;
@@ -17,6 +18,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.SessionContext;
 
 @ApplicationScoped
 public class ServerContext implements IServerContext {
@@ -30,31 +32,29 @@ public class ServerContext implements IServerContext {
     @ConfigProperty(name = WORKER_COUNT, defaultValue = DEFAULT_WORKER_COUNT)
     private int workerCount;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
-    private final Queue<ServerSession> openSessions = new ConcurrentLinkedQueue<>();
+    private final Map<SocketAddress, IServerSession> openSessions = new ConcurrentHashMap<>();
+    private final Map<Long, SessionContext> sessionContexts = new ConcurrentHashMap<>();
     private SeContainer cdiContainer;
     private final Set<IServerModule> modules = new HashSet<>();
 
 
-    @Override
-    public IServerContext setAttribute(final String key, final Object value) {
+    public ServerContext setAttribute(final String key, final Object value) {
         attributes.put(key, value);
         return this;
     }
 
 
-    @Override
     public Object getAttribute(final String key) {
         return attributes.get(key);
     }
 
 
-    @Override
     public boolean hasAttribute(final String key) {
         return attributes.containsKey(key);
     }
 
 
-    IServerContext addModule(final IServerModule module) {
+    ServerContext addModule(final IServerModule module) {
         if (!modules.contains(module)) {
             modules.add(module);
         }
@@ -73,53 +73,71 @@ public class ServerContext implements IServerContext {
     }
 
 
-    @Override
     public String getHost() {
         return host;
     }
 
 
-    IServerContext setHost(final String host) {
+    ServerContext setHost(final String host) {
         this.host = host;
         return this;
     }
 
 
-    @Override
     public int getWorkerCount() {
         return workerCount;
     }
 
 
-    IServerContext setWorkerCount(final int workerCount) {
+    ServerContext setWorkerCount(final int workerCount) {
         this.workerCount = workerCount;
         return this;
     }
 
 
-    void addServerSession(final ServerSession session) {
-        openSessions.add(session);
+    void addServerSession(final SocketAddress remoteAddress, final IServerSession session) {
+        openSessions.put(remoteAddress, session);
     }
 
 
-    void removeServerSession(final IServerSession session) {
-        openSessions.remove(session);
+    void removeServerSession(final IServerSession session) throws IOException {
+        openSessions.remove(session.getChannel().getRemoteAddress());
     }
 
 
-    Queue<ServerSession> getOpenServerSessions() {
-        return openSessions;
+    public IServerSession getServerSession(final SocketAddress remoteAddress) {
+        return openSessions.get(remoteAddress);
     }
 
 
-    @Override
+    Collection<IServerSession> getOpenServerSessions() {
+        return Collections.unmodifiableCollection(openSessions.values());
+    }
+
+
+    public void addSessionContext(final Long sessionId, final SessionContext sessionContext) {
+        sessionContexts.put(sessionId, sessionContext);
+    }
+
+
+    public SessionContext getSessionContext(final Long sessionId) {
+        return sessionContexts.get(sessionId);
+    }
+
+
+    public void removeSessionContext(final Long sessionId) {
+        sessionContexts.remove(sessionId);
+    }
+
+
     public SeContainer getCdiContainer() {
         return cdiContainer;
     }
 
 
-    IServerContext setCdiContainer(final SeContainer cdiContainer) {
+    ServerContext setCdiContainer(final SeContainer cdiContainer) {
         this.cdiContainer = cdiContainer;
         return this;
     }
+
 }

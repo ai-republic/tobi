@@ -39,7 +39,8 @@ import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
  */
 public abstract class PojoEndpointBase extends Endpoint {
 
-    private final Logger log = new SerializableLogger(PojoEndpointBase.class.getName()); // must not be
+    private final Logger log = new SerializableLogger(PojoEndpointBase.class.getName()); // must not
+                                                                                         // be
     // static
     private static final StringManager sm = StringManager.getManager(PojoEndpointBase.class);
 
@@ -125,10 +126,7 @@ public abstract class PojoEndpointBase extends Endpoint {
             log.log(Level.SEVERE, sm.getString("pojoEndpointBase.onError", pojo.getClass().getName()), throwable);
         } else {
             try {
-                methodMapping.getOnError().invoke(
-                        pojo,
-                        methodMapping.getOnErrorArgs(pathParameters, session,
-                                throwable));
+                methodMapping.getOnError().invoke(pojo, methodMapping.getOnErrorArgs(pathParameters, session, throwable));
             } catch (final Throwable t) {
                 ExceptionUtils.handleThrowable(t);
                 log.log(Level.SEVERE, sm.getString("pojoEndpointBase.onErrorFail", pojo.getClass().getName()), t);

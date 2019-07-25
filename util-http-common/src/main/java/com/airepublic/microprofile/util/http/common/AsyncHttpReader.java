@@ -99,7 +99,6 @@ public class AsyncHttpReader {
 
                     if (line != null) {
                         line = line.strip();
-                        System.out.println(line);
 
                         // check if line is empty
                         if (line.isBlank()) {
@@ -144,5 +143,13 @@ public class AsyncHttpReader {
         final ByteBuffer body = BufferUtil.combineBuffers(requestBuffers);
         body.position(0);
         return body;
+    }
+
+
+    public void clear() {
+        requestBuffers.clear();
+        httpRequest = null;
+        httpResponse = null;
+        fullyRead = false;
     }
 }

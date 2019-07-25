@@ -1,11 +1,13 @@
-package com.airepublic.microprofile.module.http;
+package com.airepublic.microprofile.util.http.common;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -22,13 +24,53 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
-import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
-
 public class SslSupport {
-    private final static Logger LOG = new SerializableLogger(Level.INFO, SslSupport.class.getName());
+    private final static Logger LOG = Logger.getLogger(SslSupport.class.getName());
     private final static ExecutorService executorService = Executors.newSingleThreadExecutor();
     private static int applicationBufferSize = 16 * 1024;
     private static int packetBufferSize = 16 * 1024;
+
+
+    public static SSLContext createClientSSLContext() throws IOException {
+        return createSSLContext(true, null, null, null, null);
+    }
+
+
+    public static SSLContext createServerSSLContext(final String keystoreFile, final String keystorePassword, final String truststoreFile, final String truststorePassword) throws IOException {
+        return createSSLContext(false, keystoreFile, keystorePassword, truststoreFile, truststorePassword);
+    }
+
+
+    static SSLContext createSSLContext(final boolean isClient, final String keystoreFile, final String keystorePassword, final String truststoreFile, final String truststorePassword) throws IOException {
+        final SSLContext sslContext;
+        try {
+            sslContext = SSLContext.getInstance("SSL");
+
+            try {
+                if (isClient) {
+                    // create client context
+                    sslContext.init(null, null, null);
+                } else {
+                    // create server context
+                    final KeyManager[] keyManagers = createKeyManagers(keystoreFile, truststorePassword, keystorePassword);
+                    final TrustManager[] trustManagers = createTrustManagers(truststoreFile, truststorePassword);
+                    sslContext.init(keyManagers, trustManagers, new SecureRandom());
+                }
+            } catch (final Exception e) {
+                throw new IOException("Could not get initialize SSLContext!", e);
+            }
+
+            final SSLSession dummySession = sslContext.createSSLEngine().getSession();
+            setApplicationBufferSize(dummySession.getApplicationBufferSize());
+            setPacketBufferSize(dummySession.getPacketBufferSize());
+            dummySession.invalidate();
+
+        } catch (final Exception e) {
+            throw new IOException("Could not get instance of SSLContext!", e);
+        }
+
+        return sslContext;
+    }
 
 
     /**
@@ -41,7 +83,7 @@ public class SslSupport {
      * @return {@link KeyManager} array that will be used to initiate the {@link SSLContext}.
      * @throws Exception
      */
-    static KeyManager[] createKeyManagers(final String filepath, final String keystorePassword, final String keyPassword) throws Exception {
+    public static KeyManager[] createKeyManagers(final String filepath, final String keystorePassword, final String keyPassword) throws Exception {
         final KeyStore keyStore = KeyStore.getInstance("JKS");
         final InputStream keyStoreIS = new FileInputStream(filepath);
 
@@ -68,7 +110,7 @@ public class SslSupport {
      * @return {@link TrustManager} array, that will be used to initiate the {@link SSLContext}.
      * @throws Exception
      */
-    static TrustManager[] createTrustManagers(final String filepath, final String keystorePassword) throws Exception {
+    public static TrustManager[] createTrustManagers(final String filepath, final String keystorePassword) throws Exception {
         final KeyStore trustStore = KeyStore.getInstance("JKS");
         final InputStream trustStoreIS = new FileInputStream(filepath);
 
@@ -210,8 +252,8 @@ public class SslSupport {
                     try {
                         result = engine.wrap(myAppData, packetBuffer);
                         handshakeStatus = result.getHandshakeStatus();
-                    } catch (final SSLException sslException) {
-                        LOG.log(Level.SEVERE, "A problem was encountered while processing the data that caused the SSLEngine to abort. Will try to properly close connection...");
+                    } catch (final SSLException e) {
+                        LOG.log(Level.SEVERE, "A problem was encountered while processing the data that caused the SSLEngine to abort. Will try to properly close connection...", e);
                         engine.closeOutbound();
                         handshakeStatus = engine.getHandshakeStatus();
                         break;
@@ -374,4 +416,130 @@ public class SslSupport {
     public static int getApplicationBufferSize() {
         return applicationBufferSize;
     }
+
+
+    public static ByteBuffer unwrap(final SSLEngine sslEngine, final SocketChannel channel, final ByteBuffer buffer) throws IOException {
+        if (sslEngine == null) {
+            return buffer;
+        }
+
+        final ByteBuffer unwrapBuffer = ByteBuffer.allocate(buffer.capacity());
+
+        final SSLEngineResult result = sslEngine.unwrap(buffer, unwrapBuffer);
+
+        switch (result.getStatus()) {
+            case OK:
+                unwrapBuffer.flip();
+                return unwrapBuffer;
+            case BUFFER_OVERFLOW:
+                return SslSupport.enlargeApplicationBuffer(sslEngine, unwrapBuffer);
+            case BUFFER_UNDERFLOW:
+                return SslSupport.handleBufferUnderflow(sslEngine, buffer);
+            case CLOSED:
+                LOG.fine("Closing SSL connection...");
+                closeConnection(channel, sslEngine);
+                return null;
+            default:
+                throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+        }
+    }
+
+
+    public static ByteBuffer[] wrap(final SSLEngine sslEngine, final ByteBuffer... buffers) throws IOException {
+        if (sslEngine == null) {
+            return buffers;
+        }
+
+        final ByteBuffer[] wrappedBuffers = new ByteBuffer[buffers.length];
+
+        for (int i = 0; i < buffers.length; i++) {
+            final ByteBuffer buffer = buffers[i];
+            boolean retry = false;
+
+            do {
+                ByteBuffer wrappedBuffer = ByteBuffer.allocate(SslSupport.getPacketBufferSize());
+                final SSLEngineResult result = sslEngine.wrap(buffer, wrappedBuffer);
+                retry = false;
+
+                switch (result.getStatus()) {
+                    case OK:
+                        wrappedBuffer.flip();
+                        wrappedBuffers[i] = wrappedBuffer;
+                    break;
+                    case BUFFER_OVERFLOW:
+                        wrappedBuffer = SslSupport.enlargePacketBuffer(sslEngine, wrappedBuffer);
+                        retry = true;
+                    break;
+                    case BUFFER_UNDERFLOW:
+                        throw new SSLException("Buffer underflow occured after a wrap. I don't think we should ever get here.");
+                    case CLOSED:
+                        return null;
+                    default:
+                        throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
+                }
+            } while (retry);
+        }
+
+        return wrappedBuffers;
+    }
+
+
+    public static SSLEngine clientSSLHandshake(final SSLContext sslContext, final SocketChannel channel, final URI uri) throws IOException {
+        SSLEngine sslEngine;
+        boolean success = false;
+
+        try {
+            final String host = uri.getHost();
+            Integer port = uri.getPort();
+
+            if (port == null || port == -1) {
+                port = 443;
+            }
+
+            if (host == null || port == null) {
+                throw new IOException("Peer host and port not specified for client SSL connection!");
+            }
+
+            sslEngine = sslContext.createSSLEngine(host, port);
+
+            sslEngine.setUseClientMode(true);
+            sslEngine.beginHandshake();
+
+            success = SslSupport.doHandshake(channel, sslEngine);
+        } catch (final Exception e) {
+            throw new IOException("Could not perform SSL handshake!", e);
+        }
+
+        if (!success) {
+            channel.close();
+            throw new IOException("Connection closed due to handshake failure.");
+        }
+
+        return sslEngine;
+    }
+
+
+    public static SSLEngine serverSSLHandshake(final SSLContext sslContext, final SocketChannel channel) throws IOException {
+        SSLEngine sslEngine;
+        boolean success = false;
+
+        try {
+            sslEngine = sslContext.createSSLEngine();
+
+            sslEngine.setUseClientMode(false);
+            sslEngine.beginHandshake();
+
+            success = SslSupport.doHandshake(channel, sslEngine);
+        } catch (final Exception e) {
+            throw new IOException("Could not perform SSL handshake!", e);
+        }
+
+        if (!success) {
+            channel.close();
+            throw new IOException("Connection closed due to handshake failure.");
+        }
+
+        return sslEngine;
+    }
+
 }

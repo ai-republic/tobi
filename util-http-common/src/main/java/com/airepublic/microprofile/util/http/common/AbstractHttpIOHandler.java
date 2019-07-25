@@ -6,11 +6,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 
-import javax.enterprise.context.SessionScoped;
-import javax.inject.Inject;
-
 import com.airepublic.microprofile.core.spi.ChannelAction;
 import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
 
@@ -24,26 +22,39 @@ import com.airepublic.microprofile.core.spi.IServicePlugin;
  * @author Torsten Oltmanns
  *
  */
-@SessionScoped
 public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable {
     private static final long serialVersionUID = 1L;
-    private final AsyncHttpReader httpReader = new AsyncHttpReader();
-    @Inject
+    private IRequest request;
     private IServerSession session;
 
 
     /**
-     * The default implementation forwards the buffer to the {@link AsyncHttpReader} to parse
-     * the {@link HttpRequest}.<br/>
-     * Once it has read the {@link HttpRequest} completely it will send a
-     * {@link ChannelAction#CLOSE_INPUT} otherwise a {@link ChannelAction#KEEP_OPEN}.
+     * Gets the current {@link IServerSession}.
      * 
-     * @param buffer the {@link ByteBuffer} read from the incoming stream
-     * @throws IOException if something goes wrong during processing of the {@link ByteBuffer}
+     * @return the {@link IServerSession}
      */
     @Override
-    public ChannelAction consume(final ByteBuffer buffer) throws IOException {
-        return httpReader.receiveBuffer(buffer) ? ChannelAction.CLOSE_INPUT : ChannelAction.KEEP_OPEN;
+    public IServerSession getSession() {
+        return session;
+    }
+
+
+    @Override
+    public void setSession(final IServerSession session) {
+        this.session = session;
+    }
+
+
+    /**
+     * The default implementation will just send a {@link ChannelAction#CLOSE_INPUT}.
+     * 
+     * @param request the {@link IRequest} read from the incoming stream
+     * @throws IOException if something goes wrong during processing
+     */
+    @Override
+    public ChannelAction consume(final IRequest request) throws IOException {
+        this.request = request;
+        return ChannelAction.CLOSE_INPUT;
     }
 
 
@@ -58,7 +69,7 @@ public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable 
     public void produce() throws IOException {
         final HttpResponse response = getHttpResponse();
 
-        session.addToWriteBuffer(response.getHeaderBuffer(), response.getBody());
+        session.getChannelProcessor().addToWriteBuffer(response.getHeaderBuffer(), response.getBody());
     }
 
 
@@ -109,7 +120,7 @@ public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable 
      * @throws IOException if something goes wrong during processing of the {@link HttpRequest}
      */
     public HttpRequest getHttpRequest() throws IOException {
-        return httpReader.getHttpRequest();
+        return (HttpRequest) request;
     }
 
 
@@ -129,7 +140,7 @@ public abstract class AbstractHttpIOHandler implements IIOHandler, Serializable 
      */
     @Override
     public void handleClosedInput() throws IOException {
-        session.getSelectionKey().interestOpsOr(SelectionKey.OP_WRITE);
+        session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOpsOr(SelectionKey.OP_WRITE);
     }
 
 }

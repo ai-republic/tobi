@@ -1,7 +1,7 @@
 package com.airepublic.microprofile.core.spi;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.Set;
 
 /**
@@ -50,58 +50,23 @@ public interface IServerModule {
 
 
     /**
-     * Callback method to perform initial tasks once a new connection has been accepted by the
-     * server, e.g. create a SSLEngine and handshake.
+     * Called if when an incoming request was made to the server port and the module should accept
+     * the {@link SocketChannel} and process the request.
      * 
-     * @param session the {@link IServerSession}
-     * @param isClient flag whether the channel is a client or server channel
-     * @throws IOException if something goes wrong
+     * @param processor the {@link IChannelProcessor}
+     * @throws IOException if the channel cannot be accepted
      */
-    void onSessionOpen(IServerSession session, boolean isClient) throws IOException;
+    void accept(final IChannelProcessor processor) throws IOException;
 
 
     /**
-     * Callback method to perform final tasks before the session is closed, e.g. close a SSLEngine.
-     * 
-     * @param session the {@link IServerSession}
+     * Tries to determine which registered {@link IIOHandler} can handle the {@link IRequest}.
+     *
+     * @param request the {@link IRequest}
+     * @return the {@link IIOHandler}
      * @throws IOException if something goes wrong
      */
-    void onSessionClose(IServerSession session) throws IOException;
-
-
-    /**
-     * Callback to unwrap a freshly read {@link ByteBuffer}.
-     * 
-     * @param session the {@link IServerSession}
-     * @param buffer the {@link ByteBuffer}
-     * @return the unwrapped or same {@link ByteBuffer} if unwrapping is not needed
-     * @throws IOException if something goes wrong
-     */
-    ByteBuffer unwrap(IServerSession session, ByteBuffer buffer) throws IOException;
-
-
-    /**
-     * Callback to wrap {@link ByteBuffer}s ready for writing.
-     * 
-     * @param session the {@link IServerSession}
-     * @param buffers the {@link ByteBuffer}s
-     * @return the wrapped or same {@link ByteBuffer}s if wrapping is not needed
-     * @throws IOException if something goes wrong
-     */
-    ByteBuffer[] wrap(IServerSession session, ByteBuffer... buffers) throws IOException;
-
-
-    /**
-     * Tries to determine if the module can handle the initial (unwrapped) {@link ByteBuffer} and
-     * map it to an {@link IIOHandler}.
-     * 
-     * @param sessionAttributes the {@link SessionAttributes}
-     * @param buffer the initial {@link ByteBuffer}
-     * @return the {@link Pair} of DetermineStatus representing whether it could map a hander or not
-     *         or might need more data in the buffer to determine the {@link IIOHandler}
-     * @throws IOException if something goes wrong
-     */
-    Pair<DetermineStatus, IIOHandler> determineIoHandler(final SessionAttributes sessionAttributes, final ByteBuffer buffer) throws IOException;
+    IIOHandler determineIoHandler(IRequest request) throws IOException;
 
 
     /**

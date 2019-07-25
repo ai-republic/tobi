@@ -96,6 +96,11 @@
 			<artifactId>feature-mp-restclient</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>plugin-http-sse</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

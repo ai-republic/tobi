@@ -15,12 +15,12 @@ import java.util.Objects;
  *
  */
 public class BufferUtil {
-    public static String readLine(final ByteBuffer buf, final Charset charset) throws IOException {
+    public static String readLine(final ByteBuffer buffer, final Charset charset) throws IOException {
         byte cur = ' ';
 
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            while (buf.hasRemaining()) {
-                cur = buf.get();
+            while (buffer.hasRemaining()) {
+                cur = buffer.get();
 
                 bos.write(cur);
 

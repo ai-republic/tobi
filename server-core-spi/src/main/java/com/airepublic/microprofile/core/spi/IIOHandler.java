@@ -5,39 +5,54 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 
-import javax.enterprise.context.SessionScoped;
-
 /**
  * The IO-handler is the central part for consuming and producing data for the connection.
  * 
  * @author Torsten Oltmanns
  *
  */
-@SessionScoped
 public interface IIOHandler extends Serializable {
+
+    /**
+     * Gets the current {@link IServerSession}.
+     * 
+     * @return the {@link IServerSession}
+     */
+    IServerSession getSession();
+
+
+    /**
+     * Sets the current {@link IServerSession}.
+     * 
+     * @param session the {@link IServerSession}
+     */
+    void setSession(IServerSession session);
+
 
     /**
      * Called whenever there is data available from the incoming stream.
      * 
-     * @param buffer the {@link ByteBuffer} read from the incoming stream
+     * @param request the {@link IRequest} read from the incoming stream
      * @return the {@link ChannelAction} that should be performed after consuming this
-     *         {@link ByteBuffer}
+     *         {@link IRequest}
      * @throws IOException if an exception occurs during processing the buffer
      */
-    ChannelAction consume(ByteBuffer buffer) throws IOException;
+    ChannelAction consume(IRequest request) throws IOException;
 
 
     /**
      * Called when the outgoing stream is ready to write data.<br/>
-     * NOTE: outgoing {@link ByteBuffer}s can be queue to the sessions write-buffer-queue.
+     * NOTE: outgoing {@link ByteBuffer}s can be queued to the {@link IServerSession}
+     * write-buffer-queue.
      * 
+     * @param session the {@link IServerSession}
      * @throws IOException if producing data fails
      */
     void produce() throws IOException;
 
 
     /**
-     * This method is called by the {@link IServerSession} if there is an exception while reading
+     * This method is called by the {@link IChannelProcessor} if there is an exception while reading
      * from the incoming stream. In this case {@link IIOHandler#consume(ByteBuffer)} will not be
      * called.
      * 

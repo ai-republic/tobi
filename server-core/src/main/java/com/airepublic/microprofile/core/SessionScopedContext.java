@@ -7,6 +7,8 @@ import javax.enterprise.context.spi.AlterableContext;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
 
+import com.airepublic.microprofile.core.spi.SessionContext;
+
 public class SessionScopedContext implements AlterableContext {
     private final static ThreadLocal<SessionContext> sessionContext = new ThreadLocal<>();
 

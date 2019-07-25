@@ -1,4 +1,6 @@
+import com.airepublic.microprofile.core.spi.IChannelEncoder;
 import com.airepublic.microprofile.core.spi.IServerModule;
+import com.airepublic.microprofile.module.http.HttpChannelEncoder;
 import com.airepublic.microprofile.module.http.HttpModule;
 
 module com.airepublic.microprofile.module.http {
@@ -14,6 +16,7 @@ module com.airepublic.microprofile.module.http {
     requires java.annotation;
 
     provides IServerModule with HttpModule;
+    provides IChannelEncoder with HttpChannelEncoder;
 
     opens com.airepublic.microprofile.module.http;
 }

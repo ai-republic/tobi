@@ -1,6 +1,8 @@
+import com.airepublic.microprofile.core.ChannelProcessor;
 import com.airepublic.microprofile.core.ServerContext;
 import com.airepublic.microprofile.core.ServerSession;
 import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
+import com.airepublic.microprofile.core.spi.IChannelProcessor;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServerSession;
@@ -30,4 +32,5 @@ module com.airepublic.microprofile.core {
 
     provides IServerSession with ServerSession;
     provides IServerContext with ServerContext;
+    provides IChannelProcessor with ChannelProcessor;
 }

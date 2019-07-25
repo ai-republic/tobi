@@ -1,12 +1,12 @@
 package com.airepublic.microprofile.plugin.http.websocket;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
@@ -15,20 +15,17 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import org.eclipse.microprofile.config.Config;
 
-import com.airepublic.microprofile.core.spi.DetermineStatus;
 import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerModule;
-import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.core.spi.Pair;
 import com.airepublic.microprofile.core.spi.Reflections;
-import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsSci;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsServerContainer;
-import com.airepublic.microprofile.util.http.common.HttpBufferUtils;
+import com.airepublic.microprofile.util.http.common.HttpRequest;
 import com.airepublic.microprofile.util.http.common.pathmatcher.MappingResult;
 
 public class WebSocketPlugin implements IServicePlugin {
@@ -76,32 +73,24 @@ public class WebSocketPlugin implements IServicePlugin {
 
 
     @Override
-    public void onSessionCreate(final IServerSession session) {
-    }
-
-
-    @Override
-    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException {
-        final String path = HttpBufferUtils.getUriPath(buffer);
+    public IIOHandler determineIoHandler(final IRequest request) {
+        final String path = ((HttpRequest) request).getPath();
 
         if (path == null) {
-            return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
+            return null;
         }
 
         final Class<? extends IIOHandler> handlerClass = findMapping(path);
 
         if (handlerClass != null) {
             try {
-                final IIOHandler handler = serverContext.getCdiContainer().select(handlerClass).get();
-
-                return new Pair<>(DetermineStatus.TRUE, handler);
+                return CDI.current().select(handlerClass).get();
             } catch (final Exception e) {
                 logger.log(Level.SEVERE, "Could not instantiate handler: " + handlerClass, e);
-                throw new IOException("Could not initialize handler: " + handlerClass, e);
             }
         }
 
-        return new Pair<>(DetermineStatus.FALSE, null);
+        return null;
     }
 
 
@@ -133,5 +122,11 @@ public class WebSocketPlugin implements IServicePlugin {
         classes.addAll(Reflections.findClassesExtending(ServerApplicationConfig.class));
 
         return classes;
+    }
+
+
+    @Override
+    public void close() throws Exception {
+        webSocketContainer.destroy();
     }
 }

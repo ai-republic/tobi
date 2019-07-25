@@ -1,4 +1,4 @@
-package com.airepublic.microprofile.core;
+package com.airepublic.microprofile.core.spi;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +53,7 @@ public class SessionContext {
     }
 
 
-    protected void destroy(final Contextual<Object> contextual) {
+    public void destroy(final Contextual<Object> contextual) {
         try {
 
             final CreationalContext<Object> creationalContext = creationalContexts.remove(contextual);

@@ -9,7 +9,7 @@ module com.airepublic.microprofile.sample {
     requires transitive com.airepublic.microprofile.module.http;
     requires transitive com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
     requires transitive com.airepublic.microprofile.plugin.http.websocket;
-    // requires transitive com.airepublic.microprofile.plugin.http.sse;
+    requires transitive com.airepublic.microprofile.plugin.http.sse;
     requires transitive com.airepublic.microprofile.feature.cdi.weld;
     requires transitive com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.feature.mp.faulttolerance;
@@ -30,9 +30,9 @@ module com.airepublic.microprofile.sample {
     requires org.eclipse.jetty.websocket.common;
     requires org.eclipse.jetty.util;
 
-    requires transitive java.ws.rs;
-    requires transitive resteasy.jaxrs;
-    requires transitive resteasy.cdi;
+    requires java.ws.rs;
+    requires resteasy.jaxrs;
+    requires resteasy.cdi;
     requires java.activation;
 
     uses Sse;

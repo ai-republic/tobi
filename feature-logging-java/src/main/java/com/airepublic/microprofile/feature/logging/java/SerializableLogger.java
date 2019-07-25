@@ -6,11 +6,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import javax.enterprise.context.SessionScoped;
-
 /**
  * A {@link Logger} which is {@link Serializable}. This logger can also be injected everywhere
- * including in a passivation scoped context like a {@link SessionScoped} context.
+ * including in a passivation scoped context like a SessionScoped context.
  * 
  * @author Torsten Oltmanns
  *

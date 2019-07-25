@@ -1,8 +1,6 @@
 package com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -26,22 +24,16 @@ import org.jboss.resteasy.plugins.server.resourcefactory.POJOResourceFactory;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.resteasy.spi.metadata.DefaultResourceClass;
 import org.jboss.resteasy.spi.metadata.DefaultResourceMethod;
-import org.jboss.resteasy.spi.metadata.ResourceBuilder;
 import org.jboss.resteasy.spi.metadata.ResourceClass;
 
-import com.airepublic.microprofile.core.spi.DetermineStatus;
 import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerModule;
-import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.core.spi.Pair;
 import com.airepublic.microprofile.core.spi.Reflections;
-import com.airepublic.microprofile.core.spi.SessionAttributes;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
-import com.airepublic.microprofile.util.http.common.Headers;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
 import com.airepublic.microprofile.util.http.common.HttpResponse;
 import com.airepublic.microprofile.util.http.common.HttpStatus;
@@ -77,88 +69,37 @@ public class RestEasyPlugin implements IServicePlugin {
 
 
     @Override
-    public Pair<DetermineStatus, IIOHandler> determineIoHandler(final ByteBuffer buffer, final SessionAttributes sessionAttributes) throws IOException {
-
-        final AsyncHttpReader httpReader = new AsyncHttpReader();
-        buffer.mark();
-
+    public IIOHandler determineIoHandler(final IRequest request) {
         try {
-            if (httpReader.receiveBuffer(buffer)) {
-                final HttpResponse response = new HttpResponse(HttpStatus.OK);
-                final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, null);
-                final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(httpReader.getHttpRequest(), restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
-                final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
+            final HttpResponse response = new HttpResponse(HttpStatus.OK);
+            final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, null);
+            final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper((HttpRequest) request, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
+            final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
 
-                if (invoker != null) {
-                    restEasyHttpRequest.setAttribute(invoker.getClass().getName(), invoker);
+            if (invoker != null) {
+                restEasyHttpRequest.setAttribute(invoker.getClass().getName(), invoker);
 
-                    final ResourceClass resourceClass = new DefaultResourceClass(invoker.getMethod().getDeclaringClass(), restEasyHttpRequest.getUri().getPath());
-                    final POJOResourceFactory rf = new POJOResourceFactory(resourceClass);
-                    final ResourceMethodInvoker methodInvoker = new ResourceMethodInvoker(new DefaultResourceMethod(resourceClass, invoker.getMethod(), invoker.getMethod()), contextBuilder.getDeployment().getInjectorFactory(), rf, contextBuilder.getDeployment().getProviderFactory());
-                    restEasyHttpRequest.setAttribute(ResourceMethodInvoker.class.getName(), methodInvoker);
+                final ResourceClass resourceClass = new DefaultResourceClass(invoker.getMethod().getDeclaringClass(), restEasyHttpRequest.getUri().getPath());
+                final POJOResourceFactory rf = new POJOResourceFactory(resourceClass);
+                final ResourceMethodInvoker methodInvoker = new ResourceMethodInvoker(new DefaultResourceMethod(resourceClass, invoker.getMethod(), invoker.getMethod()), contextBuilder.getDeployment().getInjectorFactory(), rf, contextBuilder.getDeployment().getProviderFactory());
+                restEasyHttpRequest.setAttribute(ResourceMethodInvoker.class.getName(), methodInvoker);
 
-                    try {
-                        final RestEasyIOHandler handler = CDI.current().select(RestEasyIOHandler.class).get();
-                        return new Pair<>(DetermineStatus.TRUE, handler);
-                    } catch (final Exception e) {
-                        logger.log(Level.SEVERE, "Could not instantiate handler: " + RestEasyIOHandler.class, e);
-                        throw new IOException("Could not initialize handler: " + RestEasyIOHandler.class, e);
-                    }
+                try {
+                    final RestEasyIOHandler handler = CDI.current().select(RestEasyIOHandler.class).get();
+                    return handler;
+                } catch (final Exception e) {
+                    logger.log(Level.SEVERE, "Could not instantiate handler: " + RestEasyIOHandler.class, e);
                 }
-
-            } else {
-                return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
             }
-        } finally {
-            buffer.reset();
+        } catch (final Exception e) {
         }
 
-        // final String path = HttpBufferUtils.getUriPath(buffer);
-        // if (path == null) {
-        // return new Pair<>(DetermineStatus.NEED_MORE_DATA, null);
-        // }
-        //
-        // final Class<? extends IIOHandler> handlerClass = findMapping(path);
-        //
-        // if (handlerClass != null) {
-        // try {
-        // final IIOHandler handler = CDI.current().select(handlerClass).get();
-        //
-        // return new Pair<>(DetermineStatus.TRUE, handler);
-        // } catch (final Exception e) {
-        // logger.log(Level.SEVERE, "Could not instantiate handler: " + handlerClass, e);
-        // throw new IOException("Could not initialize handler: " + handlerClass, e);
-        // }
-        // }
-
-        return new Pair<>(DetermineStatus.FALSE, null);
-    }
-
-
-    @Override
-    public void onSessionCreate(final IServerSession session) {
+        return null;
     }
 
 
     public void addMapping(final String path) {
         mappings.add(path);
-    }
-
-
-    protected Class<? extends IIOHandler> findMapping(final String path) {
-        final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(new RestEasyHttpRequestWrapper(new HttpRequest("GET " + path + " HTTP/1.1", new Headers()), new RestEasyHttpResponseWrapper(new HttpResponse(), null), (SynchronousDispatcher) contextBuilder.deployment.getDispatcher(), path));
-
-        if (invoker != null) {
-            return RestEasyIOHandler.class;
-        }
-
-        for (final String registerdPath : mappings) {
-            if (path.startsWith(registerdPath)) {
-                return RestEasyIOHandler.class;
-            }
-        }
-
-        return null;
     }
 
 
@@ -168,7 +109,6 @@ public class RestEasyPlugin implements IServicePlugin {
         contextBuilder = new RestEasyHttpContextBuilder();
         contextBuilder.getDeployment().setInjectorFactory(new CdiInjectorFactory(CDI.current().getBeanManager()));
         contextBuilder.getDeployment().setRegistry(new ResourceMethodRegistry(ResteasyProviderFactory.getInstance()));
-        final ResourceBuilder resourceBuilder = new ResourceBuilder();
 
         logger.info("Searching for JAX-RS applications...");
 
@@ -332,4 +272,10 @@ public class RestEasyPlugin implements IServicePlugin {
         return classes;
     }
 
+
+    @Override
+    public void close() throws Exception {
+        contextBuilder.getDeployment().stop();
+        contextBuilder.cleanup();
+    }
 }

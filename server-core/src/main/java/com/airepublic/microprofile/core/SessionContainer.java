@@ -14,9 +14,8 @@ import javax.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 import com.airepublic.microprofile.core.spi.IServerModule;
-import com.airepublic.microprofile.core.spi.IServerSession;
-import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.core.spi.SessionAttributes;
+import com.airepublic.microprofile.core.spi.SessionContext;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
 
@@ -32,7 +31,7 @@ public class SessionContainer {
 
 
     @Asynchronous
-    public Future<IServerSession> startSession(final IServerModule module, final Supplier<SocketChannel> channelSupplier, final SessionAttributes sessionAttributes, final boolean isClient) {
+    public Future<ServerSession> startSession(final IServerModule module, final Supplier<SocketChannel> channelSupplier, final SessionAttributes sessionAttributes, final boolean isClient) {
         ServerSession session = null;
         final long sessionId = SESSION_ID_GENERATOR.incrementAndGet();
 
@@ -43,18 +42,9 @@ public class SessionContainer {
             sessionScopedContext.activate(new SessionContext(sessionId));
 
             session = CDI.current().select(ServerSession.class).get();
-
-            session.open(module, channelSupplier.get(), sessionAttributes, isClient);
-
-            for (final IServicePlugin plugin : module.getServicePlugins()) {
-                plugin.onSessionCreate(session);
-            }
-
-            session.handleIO();
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error creating session", e);
         } finally {
-            session.close();
             sessionScopedContext.deactivate();
             requestScopedContext.deactivate();
             logger.info("Session #" + sessionId + " for module '" + module.getName() + "' destroyed!");

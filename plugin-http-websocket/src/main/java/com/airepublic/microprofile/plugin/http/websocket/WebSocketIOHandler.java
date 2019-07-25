@@ -29,6 +29,7 @@ import javax.websocket.server.ServerEndpointConfig.Configurator;
 
 import com.airepublic.microprofile.core.spi.ChannelAction;
 import com.airepublic.microprofile.core.spi.IIOHandler;
+import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
@@ -38,7 +39,6 @@ import com.airepublic.microprofile.plugin.http.websocket.server.WsFrameServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsHttpUpgradeHandler;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsRemoteEndpointImplServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsServerContainer;
-import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
 import com.airepublic.microprofile.util.http.common.HttpRequest;
 import com.airepublic.microprofile.util.http.common.pathmatcher.MappingResult;
 
@@ -49,11 +49,10 @@ public class WebSocketIOHandler implements IIOHandler {
     private Logger logger;
     @Inject
     private IServerContext serverContext;
-    @Inject
     private IServerSession session;
     private static WsServerContainer webSocketContainer;
     private boolean handshakeDone = false;
-    private final AsyncHttpReader httpRequestReader = new AsyncHttpReader();
+    private ServerEndpointConfig serverEndpointConfig;
 
 
     @PostConstruct
@@ -63,43 +62,42 @@ public class WebSocketIOHandler implements IIOHandler {
 
 
     @Override
-    public ChannelAction consume(final ByteBuffer buffer) throws IOException {
+    public IServerSession getSession() {
+        return session;
+    }
+
+
+    @Override
+    public void setSession(final IServerSession session) {
+        this.session = session;
+    }
+
+
+    @Override
+    public ChannelAction consume(final IRequest request) throws IOException {
         ChannelAction action = ChannelAction.KEEP_OPEN;
 
         // check if handshake request has been fully received and handshake has been processed
-        if (!httpRequestReader.isFullyRead() && !handshakeDone) {
+        if (!handshakeDone) {
             try {
-                if (httpRequestReader.receiveBuffer(buffer)) {
-                    doHandshake();
-                }
-            } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Error receiving websocket upgrade request and handshake!", e);
-                action = ChannelAction.CLOSE_ALL;
-            }
-        } else if (httpRequestReader.isFullyRead() && !handshakeDone) {
-            // otherwise if request is fully read but handshake somehow not then do try
-            // handshake now
-            try {
-                doHandshake();
+                final HttpRequest httpRequest = (HttpRequest) request;
+                doHandshake(httpRequest);
             } catch (final Exception e) {
                 logger.log(Level.SEVERE, "Error performing websocket handshake!", e);
                 action = ChannelAction.CLOSE_ALL;
             }
         } else {
             try {
-                System.out.println(buffer);
-                final MappingResult<ServerEndpointConfig> mapping = webSocketContainer.getMapping().findMapping(httpRequestReader.getHttpRequest().getPath());
-
-                if (mapping != null) {
-                    final Set<Session> sessions = webSocketContainer.getOpenSessions(mapping.getMappedObject().getPath());
+                if (serverEndpointConfig != null) {
+                    final Set<Session> sessions = webSocketContainer.getOpenSessions(serverEndpointConfig.getPath());
 
                     if (!sessions.isEmpty()) {
                         final WsSession wsSession = (WsSession) sessions.iterator().next();
-                        ((WsFrameServer) wsSession.getWsFrame()).onDataAvailable(buffer);
+                        ((WsFrameServer) wsSession.getWsFrame()).onDataAvailable(request.getPayload());
                     }
                 }
             } catch (final Exception e) {
-                throw new IOException("Websocket request failed: " + httpRequestReader.getHttpRequest(), e);
+                throw new IOException("Websocket request failed: " + request, e);
             }
         }
 
@@ -107,13 +105,16 @@ public class WebSocketIOHandler implements IIOHandler {
     }
 
 
-    private void doHandshake() throws IOException, URISyntaxException {
-        final HttpRequest request = httpRequestReader.getHttpRequest();
+    private void doHandshake(final HttpRequest request) throws IOException, URISyntaxException {
         final MappingResult<ServerEndpointConfig> mapping = webSocketContainer.getMapping().findMapping(request.getPath());
+        serverEndpointConfig = mapping.getMappedObject();
+
         final WsHttpUpgradeHandler handler = new WsHttpUpgradeHandler();
-        final ByteBuffer response = UpgradeUtil.doUpgrade(webSocketContainer, request.getUri(), request.getHeaders(), request.getUserPrincipal(), mapping.getMappedObject(), mapping.getPathParams(), handler);
-        session.addToWriteBuffer(response);
+        final ByteBuffer response = UpgradeUtil.doUpgrade(webSocketContainer, request.getUri(), request.getHeaders(), request.getUserPrincipal(), serverEndpointConfig, mapping.getPathParams(), handler);
+        session.getChannel().write(response);
         handshakeDone = true;
+
+        session.getChannelProcessor().setChannelEncoder(new WebSocketEncoder(getSession()));
 
         initWebSocket(handler);
     }
@@ -154,6 +155,13 @@ public class WebSocketIOHandler implements IIOHandler {
                     } else {
                         session.addToWriteBuffer(handler, buffers);
                     }
+                }
+
+
+                @Override
+                protected void doClose() {
+                    super.doClose();
+                    session.close();
                 }
             };
 
@@ -271,6 +279,9 @@ public class WebSocketIOHandler implements IIOHandler {
             ((CompletionHandler<Long, Void>) handler).failed(t, null);
         }
 
+        if (!getSession().getChannel().isOpen()) {
+            return ChannelAction.CLOSE_ALL;
+        }
         return ChannelAction.KEEP_OPEN;
     }
 

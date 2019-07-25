@@ -5,8 +5,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.security.Principal;
+import java.util.Map;
+import java.util.Objects;
 
-public class HttpRequest {
+import com.airepublic.microprofile.core.spi.IRequest;
+
+public class HttpRequest implements IRequest {
     private String host;
     private int port = -1;
     private String method;
@@ -57,7 +61,7 @@ public class HttpRequest {
     }
 
 
-    public String getRequestLine() throws UnsupportedEncodingException {
+    public String getRequestLine() {
         return (getMethod() != null ? getMethod() : "GET") + " " + (getPath() != null && !getPath().isBlank() ? getPath() : "/") + (getQuery() != null ? "?" + getQuery() : "") + " " + (getVersion() != null ? getVersion() : "HTTP/1.1");
     }
 
@@ -105,6 +109,18 @@ public class HttpRequest {
         }
 
         return ByteBuffer.wrap(str.toString().getBytes());
+    }
+
+
+    @Override
+    public Map<?, ?> getAttributes() {
+        return headers;
+    }
+
+
+    @Override
+    public ByteBuffer getPayload() {
+        return getBody();
     }
 
 
@@ -244,4 +260,31 @@ public class HttpRequest {
         return null;
     }
 
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(body, headers, host, method, path, port, query, scheme, version);
+    }
+
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final HttpRequest other = (HttpRequest) obj;
+        return Objects.equals(body, other.body) && Objects.equals(headers, other.headers) && Objects.equals(host, other.host) && Objects.equals(method, other.method) && Objects.equals(path, other.path) && port == other.port && Objects.equals(query, other.query) && Objects.equals(scheme, other.scheme) && Objects.equals(version, other.version);
+    }
+
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + getRequestLine() + "]";
+    }
 }

@@ -21,4 +21,13 @@ public interface IServerContext {
 
     SeContainer getCdiContainer();
 
+
+    SessionContext getSessionContext(Long sessionId);
+
+
+    void addSessionContext(Long sessionId, SessionContext sessionContext);
+
+
+    void removeSessionContext(Long sessionId);
+
 }
