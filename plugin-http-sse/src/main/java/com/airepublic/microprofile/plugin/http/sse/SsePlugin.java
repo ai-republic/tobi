@@ -16,18 +16,21 @@ import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.sse.api.ISseRegistry;
+import com.airepublic.http.sse.api.ISseService;
+import com.airepublic.http.sse.api.ProducerEntry;
+import com.airepublic.http.sse.api.SseConsumer;
+import com.airepublic.http.sse.api.SseProducer;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.core.spi.Reflections;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.plugin.http.sse.api.SseConsumer;
-import com.airepublic.microprofile.plugin.http.sse.api.SseProducer;
-import com.airepublic.microprofile.plugin.http.sse.api.SseRegistry;
-import com.airepublic.microprofile.plugin.http.sse.api.SseService;
-import com.airepublic.microprofile.util.http.common.HttpRequest;
+import com.airepublic.microprofile.module.http.HttpChannelEncoder;
+import com.airepublic.reflections.Reflections;
 
 @Named
 public class SsePlugin implements IServicePlugin {
@@ -38,11 +41,10 @@ public class SsePlugin implements IServicePlugin {
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
     public final static String CONTEXT_PATH = "jax-rs.context.path";
-    private IServerModule module;
     @Inject
-    private SseRegistry sseRegistry;
+    private ISseRegistry sseRegistry;
     @Inject
-    private SseService sseService;
+    private ISseService sseService;
 
 
     @Override
@@ -64,18 +66,20 @@ public class SsePlugin implements IServicePlugin {
 
 
     @Override
-    public IIOHandler determineIoHandler(final IRequest request) {
+    public IIOHandler determineIoHandler(final Request request) {
 
         final Class<? extends IIOHandler> handlerClass = null;
+        final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+        httpRequest.setBody(request.getPayload());
 
-        final String path = ((HttpRequest) request).getPath();
-        final Method serviceMethod = sseRegistry.getSseProducer(path);
+        final String path = httpRequest.getPath();
+        final ProducerEntry producerEntry = sseRegistry.getSseProducer(path);
 
-        if (serviceMethod != null) {
+        if (producerEntry != null) {
             try {
                 final SseOutboundIOHandler handler = CDI.current().select(SseOutboundIOHandler.class).get();
-                handler.setServiceMethod(serviceMethod);
-                handler.setServiceObject(sseRegistry.getObject(path));
+                handler.setServiceObject(producerEntry.getObject());
+                handler.setServiceMethod(producerEntry.getMethod());
 
                 return handler;
             } catch (final Exception e) {
@@ -89,7 +93,6 @@ public class SsePlugin implements IServicePlugin {
 
     @Override
     public void initPlugin(final IServerModule module) {
-        this.module = module;
 
         logger.info("Searching for SSE resources...");
 
@@ -117,8 +120,8 @@ public class SsePlugin implements IServicePlugin {
 
 
     /**
-     * Adds mapping for JAX-RS resource by scanning the specified resource for {@link Path}
-     * annotations.
+     * Adds SSE resources by scanning the specified resource for {@link SseProducer} or
+     * {@link SseConsumer} annotations.
      * 
      * @param resource the resource class to scan
      * @throws Exception
@@ -131,7 +134,7 @@ public class SsePlugin implements IServicePlugin {
 
                 if (method.isAnnotationPresent(SseProducer.class)) {
                     final SseProducer annotation = method.getAnnotation(SseProducer.class);
-                    sseRegistry.addSseProducer(annotation.path(), resource, method);
+                    sseRegistry.registerSseProducer(annotation.path(), resource, method);
 
                     logger.info("\t\tAdded SSE mapping for outbounded SSE events: " + resource.getName() + ":" + method.getName() + " -> " + annotation.path());
                 } else if (method.isAnnotationPresent(SseConsumer.class)) {
@@ -148,7 +151,7 @@ public class SsePlugin implements IServicePlugin {
                             }
                         });
 
-                        sseRegistry.addSseConsumer(uri, sseConsumer);
+                        sseRegistry.registerSseConsumer(uri, sseConsumer);
 
                         logger.info("\t\tAdded SSE mapping for inbounded SSE events: " + resource.getName() + ":" + method.getName() + " -> " + uri);
                     } catch (final Exception e) {

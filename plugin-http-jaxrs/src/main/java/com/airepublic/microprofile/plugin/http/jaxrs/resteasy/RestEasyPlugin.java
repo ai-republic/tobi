@@ -26,17 +26,19 @@ import org.jboss.resteasy.spi.metadata.DefaultResourceClass;
 import org.jboss.resteasy.spi.metadata.DefaultResourceMethod;
 import org.jboss.resteasy.spi.metadata.ResourceClass;
 
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.common.HttpResponse;
+import com.airepublic.http.common.HttpStatus;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.core.spi.Reflections;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.util.http.common.HttpRequest;
-import com.airepublic.microprofile.util.http.common.HttpResponse;
-import com.airepublic.microprofile.util.http.common.HttpStatus;
+import com.airepublic.microprofile.module.http.HttpChannelEncoder;
+import com.airepublic.reflections.Reflections;
 
 public class RestEasyPlugin implements IServicePlugin {
     public static final String CONTEXT_BUILDER = "http.jaxrs.resteasy.ContextBuilder";
@@ -69,11 +71,13 @@ public class RestEasyPlugin implements IServicePlugin {
 
 
     @Override
-    public IIOHandler determineIoHandler(final IRequest request) {
+    public IIOHandler determineIoHandler(final Request request) {
         try {
             final HttpResponse response = new HttpResponse(HttpStatus.OK);
             final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, null);
-            final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper((HttpRequest) request, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
+            final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+            httpRequest.setBody(request.getPayload());
+            final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
             final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
 
             if (invoker != null) {

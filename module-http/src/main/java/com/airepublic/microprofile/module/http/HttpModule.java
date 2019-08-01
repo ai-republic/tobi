@@ -17,15 +17,15 @@ import javax.net.ssl.SSLContext;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import com.airepublic.http.common.SslSupport;
 import com.airepublic.microprofile.core.spi.IChannelProcessor;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
 import com.airepublic.microprofile.core.spi.SessionConstants;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.util.http.common.SslSupport;
 
 @ApplicationScoped
 public class HttpModule implements IServerModule {
@@ -147,13 +147,24 @@ public class HttpModule implements IServerModule {
 
 
     @Override
+    public void close() throws IOException {
+        for (final IServicePlugin plugin : servicePlugins) {
+            try {
+                plugin.close();
+            } catch (final Exception e) {
+            }
+        }
+    }
+
+
+    @Override
     public int getReadBufferSize() {
         return readBufferSize;
     }
 
 
     @Override
-    public IIOHandler determineIoHandler(final IRequest request) throws IOException {
+    public IIOHandler determineIoHandler(final Request request) throws IOException {
         return servicePlugins.stream().map(plugin -> plugin.determineIoHandler(request)).filter(plugin -> plugin != null).findFirst().orElse(defaultIOHandler);
     }
 

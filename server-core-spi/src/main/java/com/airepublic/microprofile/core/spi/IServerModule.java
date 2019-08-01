@@ -1,5 +1,6 @@
 package com.airepublic.microprofile.core.spi;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
@@ -10,7 +11,7 @@ import java.util.Set;
  * @author Torsten Oltmanns
  *
  */
-public interface IServerModule {
+public interface IServerModule extends Closeable {
     /**
      * The name of the server module.
      * 
@@ -60,13 +61,13 @@ public interface IServerModule {
 
 
     /**
-     * Tries to determine which registered {@link IIOHandler} can handle the {@link IRequest}.
+     * Tries to determine which registered {@link IIOHandler} can handle the {@link Request}.
      *
-     * @param request the {@link IRequest}
+     * @param request the {@link Request}
      * @return the {@link IIOHandler}
      * @throws IOException if something goes wrong
      */
-    IIOHandler determineIoHandler(IRequest request) throws IOException;
+    IIOHandler determineIoHandler(Request request) throws IOException;
 
 
     /**

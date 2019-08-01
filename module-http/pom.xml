@@ -28,11 +28,6 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
-			<artifactId>util-http-common</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -40,6 +35,11 @@
 			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-logging-java</artifactId>
 			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic</groupId>
+			<artifactId>http-common</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>

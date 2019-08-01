@@ -8,7 +8,7 @@ module com.airepublic.microprofile.module.http {
 
     requires com.airepublic.microprofile.feature.mp.config;
     requires transitive com.airepublic.microprofile.core.spi;
-    requires transitive com.airepublic.microprofile.util.http.common;
+    requires com.airepublic.http.common;
     requires com.airepublic.microprofile.feature.logging.java;
 
     requires jakarta.enterprise.cdi.api;

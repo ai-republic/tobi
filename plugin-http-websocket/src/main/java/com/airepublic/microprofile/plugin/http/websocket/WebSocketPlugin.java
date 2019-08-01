@@ -15,18 +15,20 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import org.eclipse.microprofile.config.Config;
 
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.common.pathmatcher.MappingResult;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.core.spi.Reflections;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
+import com.airepublic.microprofile.module.http.HttpChannelEncoder;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsSci;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsServerContainer;
-import com.airepublic.microprofile.util.http.common.HttpRequest;
-import com.airepublic.microprofile.util.http.common.pathmatcher.MappingResult;
+import com.airepublic.reflections.Reflections;
 
 public class WebSocketPlugin implements IServicePlugin {
     @Inject
@@ -73,8 +75,11 @@ public class WebSocketPlugin implements IServicePlugin {
 
 
     @Override
-    public IIOHandler determineIoHandler(final IRequest request) {
-        final String path = ((HttpRequest) request).getPath();
+    public IIOHandler determineIoHandler(final Request request) {
+        final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+        httpRequest.setBody(request.getPayload());
+
+        final String path = httpRequest.getPath();
 
         if (path == null) {
             return null;

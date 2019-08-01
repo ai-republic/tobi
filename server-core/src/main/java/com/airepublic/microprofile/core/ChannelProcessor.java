@@ -24,7 +24,7 @@ import com.airepublic.microprofile.core.spi.IChannelEncoder;
 import com.airepublic.microprofile.core.spi.IChannelEncoder.Status;
 import com.airepublic.microprofile.core.spi.IChannelProcessor;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.core.spi.IServerModule;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.Pair;
@@ -199,10 +199,10 @@ public class ChannelProcessor implements IChannelProcessor {
                 // buffer.reset();
                 // Thread.sleep(3000);
 
-                final Pair<Status, IRequest> result = channelEncoder.decode(buffer);
+                final Pair<Status, Request> result = channelEncoder.decode(buffer);
 
                 if (result.getValue1() == Status.FULLY_READ) {
-                    final IRequest request = result.getValue2();
+                    final Request request = result.getValue2();
 
                     if (getIoHandler() == null) {
                         setIoHandler(module.determineIoHandler(request));

@@ -3,15 +3,15 @@ package com.airepublic.microprofile.core.spi;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SessionAttributes {
+public class Attributes {
     private final Map<String, Object> attributes = new HashMap<>();
 
 
-    public SessionAttributes() {
+    public Attributes() {
     }
 
 
-    public SessionAttributes(final SessionAttributes copy) {
+    public Attributes(final Attributes copy) {
         attributes.putAll(copy.attributes);
     }
 

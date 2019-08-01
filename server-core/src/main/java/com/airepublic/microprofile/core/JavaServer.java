@@ -51,6 +51,14 @@ public class JavaServer {
         if (!initialized.get()) {
             synchronized (initialized) {
                 if (!initialized.get()) {
+                    // add shutdown hook to clean up resources
+                    Runtime.getRuntime().addShutdownHook(new Thread() {
+                        @Override
+                        public void run() {
+                            JavaServer.this.stop();
+                        }
+                    });
+
                     try {
                         serverContext.setCdiContainer(cdiContainer);
 
@@ -156,6 +164,7 @@ public class JavaServer {
                 }
             }
         }
+
         while (running.get()) {
             selector.select();
             final Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -175,6 +184,8 @@ public class JavaServer {
 
             }
         }
+
+        stop();
 
         return null;
     }
@@ -200,6 +211,13 @@ public class JavaServer {
             try {
                 serverSocket.close();
             } catch (final IOException e) {
+            }
+        }
+
+        for (final IServerModule module : moduleForKey.values()) {
+            try {
+                module.close();
+            } catch (final Exception e) {
             }
         }
     }

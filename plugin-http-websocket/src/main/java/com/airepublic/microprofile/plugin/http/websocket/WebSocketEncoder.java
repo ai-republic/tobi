@@ -2,42 +2,18 @@ package com.airepublic.microprofile.plugin.http.websocket;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Map;
 
 import javax.net.ssl.SSLEngine;
 
+import com.airepublic.http.common.SslSupport;
 import com.airepublic.microprofile.core.spi.IChannelEncoder;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerSession;
 import com.airepublic.microprofile.core.spi.Pair;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.core.spi.SessionConstants;
-import com.airepublic.microprofile.util.http.common.SslSupport;
 
 public class WebSocketEncoder implements IChannelEncoder {
     private final IServerSession session;
-
-    public static class WebSocketRequest implements IRequest {
-        private final ByteBuffer buffer;
-
-
-        public WebSocketRequest(final ByteBuffer buffer) {
-            this.buffer = buffer;
-        }
-
-
-        @Override
-        public Map<?, ?> getAttributes() {
-            return Collections.emptyMap();
-        }
-
-
-        @Override
-        public ByteBuffer getPayload() {
-            return buffer;
-        }
-
-    }
 
 
     public WebSocketEncoder(final IServerSession session) {
@@ -46,10 +22,10 @@ public class WebSocketEncoder implements IChannelEncoder {
 
 
     @Override
-    public Pair<Status, IRequest> decode(final ByteBuffer buffer) throws IOException {
+    public Pair<Status, Request> decode(final ByteBuffer buffer) throws IOException {
         final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_SSL_ENGINE, SSLEngine.class);
         final ByteBuffer unwrappedBuffer = SslSupport.unwrap(sslEngine, session.getChannel(), buffer);
-        return new Pair<>(Status.FULLY_READ, new WebSocketRequest(unwrappedBuffer));
+        return new Pair<>(Status.FULLY_READ, new Request(unwrappedBuffer));
     }
 
 

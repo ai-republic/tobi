@@ -27,7 +27,6 @@
 		<module>server-core</module>
 		<module>server-core-spi</module>
 		<module>module-http</module>
-		<module>util-http-common</module>
 		<module>plugin-http-jaxrs</module>
 		<module>plugin-http-sse</module>
 		<module>plugin-http-websocket</module>

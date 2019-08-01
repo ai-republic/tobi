@@ -22,8 +22,6 @@ module com.airepublic.microprofile.core {
     requires java.annotation;
     requires jakarta.interceptor.api;
 
-    requires java.net.http;
-
     opens com.airepublic.microprofile.core;
 
     uses IServerModule;

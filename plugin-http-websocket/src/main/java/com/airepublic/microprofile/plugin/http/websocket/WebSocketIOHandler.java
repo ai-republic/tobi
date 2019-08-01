@@ -27,20 +27,22 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.common.pathmatcher.MappingResult;
 import com.airepublic.microprofile.core.spi.ChannelAction;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerContext;
 import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
+import com.airepublic.microprofile.module.http.HttpChannelEncoder;
 import com.airepublic.microprofile.plugin.http.websocket.server.UpgradeUtil;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsFrameServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsHttpUpgradeHandler;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsRemoteEndpointImplServer;
 import com.airepublic.microprofile.plugin.http.websocket.server.WsServerContainer;
-import com.airepublic.microprofile.util.http.common.HttpRequest;
-import com.airepublic.microprofile.util.http.common.pathmatcher.MappingResult;
 
 public class WebSocketIOHandler implements IIOHandler {
     private static final long serialVersionUID = 1L;
@@ -74,13 +76,14 @@ public class WebSocketIOHandler implements IIOHandler {
 
 
     @Override
-    public ChannelAction consume(final IRequest request) throws IOException {
+    public ChannelAction consume(final Request request) throws IOException {
         ChannelAction action = ChannelAction.KEEP_OPEN;
 
         // check if handshake request has been fully received and handshake has been processed
         if (!handshakeDone) {
             try {
-                final HttpRequest httpRequest = (HttpRequest) request;
+                final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+                httpRequest.setBody(request.getPayload());
                 doHandshake(httpRequest);
             } catch (final Exception e) {
                 logger.log(Level.SEVERE, "Error performing websocket handshake!", e);

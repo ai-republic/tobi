@@ -11,17 +11,19 @@ import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.net.ssl.SSLEngine;
 
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.sse.api.SseEvent;
+import com.airepublic.http.sse.api.SseProducer;
+import com.airepublic.http.sse.impl.SseService;
 import com.airepublic.microprofile.core.spi.ChannelAction;
 import com.airepublic.microprofile.core.spi.IIOHandler;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.IServerSession;
+import com.airepublic.microprofile.core.spi.Request;
 import com.airepublic.microprofile.core.spi.SessionConstants;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
-import com.airepublic.microprofile.plugin.http.sse.api.SseEvent;
-import com.airepublic.microprofile.plugin.http.sse.api.SseProducer;
-import com.airepublic.microprofile.plugin.http.sse.api.SseService;
-import com.airepublic.microprofile.util.http.common.HttpRequest;
+import com.airepublic.microprofile.module.http.HttpChannelEncoder;
 
 public class SseOutboundIOHandler implements IIOHandler {
     private static final long serialVersionUID = 1L;
@@ -52,12 +54,12 @@ public class SseOutboundIOHandler implements IIOHandler {
 
 
     @Override
-    public ChannelAction consume(final IRequest request) throws IOException {
+    public ChannelAction consume(final Request request) throws IOException {
         if (isHandshakeRead.compareAndSet(false, true)) {
             try {
-                final HttpRequest httpRequest = (HttpRequest) request;
-
                 if (serviceMethod == null || serviceObject == null) {
+                    final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+
                     throw new IOException("URI path " + httpRequest.getPath() + " was not be mapped to a SSE method!");
                 }
 
@@ -70,7 +72,7 @@ public class SseOutboundIOHandler implements IIOHandler {
                 final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_SSL_ENGINE, SSLEngine.class);
 
                 // respond to the handshake request
-                sseService.handshake(session.getChannel(), sslEngine);
+                sseService.sendHandshakeResponse(session.getChannel(), sslEngine);
 
                 // register to produce events only
                 session.getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);

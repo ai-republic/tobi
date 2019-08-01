@@ -33,13 +33,13 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
+import com.airepublic.http.common.pathmatcher.PathMapping;
+import com.airepublic.http.common.pathmatcher.TemplatePathMatch;
 import com.airepublic.microprofile.plugin.http.websocket.SimpleInstanceManager;
 import com.airepublic.microprofile.plugin.http.websocket.WsSession;
 import com.airepublic.microprofile.plugin.http.websocket.WsWebSocketContainer;
 import com.airepublic.microprofile.plugin.http.websocket.pojo.PojoMethodMapping;
 import com.airepublic.microprofile.plugin.http.websocket.util.res.StringManager;
-import com.airepublic.microprofile.util.http.common.pathmatcher.PathMapping;
-import com.airepublic.microprofile.util.http.common.pathmatcher.TemplatePathMatch;
 
 /**
  * Provides a per class loader (i.e. per web application) instance of a ServerContainer. Web

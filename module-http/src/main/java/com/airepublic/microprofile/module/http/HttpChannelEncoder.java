@@ -7,14 +7,17 @@ import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import com.airepublic.http.common.AsyncHttpReader;
+import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.common.SslSupport;
+import com.airepublic.microprofile.core.spi.Attributes;
 import com.airepublic.microprofile.core.spi.IChannelEncoder;
-import com.airepublic.microprofile.core.spi.IRequest;
 import com.airepublic.microprofile.core.spi.Pair;
-import com.airepublic.microprofile.util.http.common.AsyncHttpReader;
-import com.airepublic.microprofile.util.http.common.HttpRequest;
-import com.airepublic.microprofile.util.http.common.SslSupport;
+import com.airepublic.microprofile.core.spi.Request;
 
 public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
+    public static final String HEADERS = "http.headers";
+    public static final String REQUEST_LINE = "http.request.requestLine";
     private SSLEngine sslEngine;
     private boolean isSecure;
     private SocketChannel channel;
@@ -42,7 +45,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
 
 
     @Override
-    public Pair<Status, IRequest> decode(ByteBuffer buffer) throws IOException {
+    public Pair<Status, Request> decode(ByteBuffer buffer) throws IOException {
         if (isSecure) {
             buffer = SslSupport.unwrap(sslEngine, channel, buffer);
         }
@@ -50,7 +53,12 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
         if (httpReader.receiveBuffer(buffer)) {
             final HttpRequest request = httpReader.getHttpRequest();
             httpReader.clear();
-            return new Pair<>(Status.FULLY_READ, request);
+
+            final Attributes attributes = new Attributes();
+            attributes.set(REQUEST_LINE, request.getRequestLine());
+            attributes.set(HEADERS, request.getHeaders());
+            final Request wrapped = new Request(attributes, request.getBody());
+            return new Pair<>(Status.FULLY_READ, wrapped);
         }
 
         return new Pair<>(Status.NEED_MORE_DATA, null);

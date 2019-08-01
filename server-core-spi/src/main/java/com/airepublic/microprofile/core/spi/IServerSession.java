@@ -38,6 +38,6 @@ public interface IServerSession extends Serializable, AutoCloseable, SessionCons
     <T> T getAttribute(String key, Class<T> type);
 
 
-    SessionAttributes getSessionAttributes();
+    Attributes getSessionAttributes();
 
 }

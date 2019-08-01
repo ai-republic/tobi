@@ -32,12 +32,12 @@ public interface IIOHandler extends Serializable {
     /**
      * Called whenever there is data available from the incoming stream.
      * 
-     * @param request the {@link IRequest} read from the incoming stream
+     * @param request the {@link Request} read from the incoming stream
      * @return the {@link ChannelAction} that should be performed after consuming this
-     *         {@link IRequest}
+     *         {@link Request}
      * @throws IOException if an exception occurs during processing the buffer
      */
-    ChannelAction consume(IRequest request) throws IOException;
+    ChannelAction consume(Request request) throws IOException;
 
 
     /**

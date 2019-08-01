@@ -5,9 +5,11 @@ module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
     exports com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 
     requires transitive com.airepublic.microprofile.core.spi;
-    requires transitive com.airepublic.microprofile.util.http.common;
+    requires transitive com.airepublic.http.common;
+    requires com.airepublic.microprofile.module.http;
     requires com.airepublic.microprofile.feature.mp.config;
     requires com.airepublic.microprofile.feature.logging.java;
+    requires com.airepublic.reflections;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;

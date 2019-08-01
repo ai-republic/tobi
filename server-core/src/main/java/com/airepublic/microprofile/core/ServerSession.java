@@ -7,13 +7,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.airepublic.microprofile.core.spi.IChannelProcessor;
 import com.airepublic.microprofile.core.spi.IServerSession;
-import com.airepublic.microprofile.core.spi.SessionAttributes;
+import com.airepublic.microprofile.core.spi.Attributes;
 
 public class ServerSession implements IServerSession {
     private static final long serialVersionUID = 1L;
     private static AtomicLong SESSION_ID_GENERATOR = new AtomicLong();
     private final String id = "" + SESSION_ID_GENERATOR.incrementAndGet();
-    private final SessionAttributes attributes = new SessionAttributes();
+    private final Attributes attributes = new Attributes();
     private transient IChannelProcessor channelProcessor;
 
 
@@ -86,7 +86,7 @@ public class ServerSession implements IServerSession {
 
 
     @Override
-    public SessionAttributes getSessionAttributes() {
+    public Attributes getSessionAttributes() {
         return attributes;
     }
 }

@@ -9,9 +9,9 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 
-import com.airepublic.microprofile.util.http.common.Headers;
-import com.airepublic.microprofile.util.http.common.HttpResponse;
-import com.airepublic.microprofile.util.http.common.HttpStatus;
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpResponse;
+import com.airepublic.http.common.HttpStatus;
 
 public class RestEasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpResponse {
     private final HttpResponse response;

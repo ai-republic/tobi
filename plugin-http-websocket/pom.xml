@@ -27,6 +27,11 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ai-republic.microprofile</groupId>
+			<artifactId>module-http</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.microprofile</groupId>
 			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -35,6 +40,17 @@
 			<artifactId>feature-logging-java</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ai-republic</groupId>
+			<artifactId>reflections</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic</groupId>
+			<artifactId>http-common</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		
 
 		<!-- Websocket -->
 		<dependency>

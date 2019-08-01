@@ -10,7 +10,7 @@ public interface IChannelEncoder {
     }
 
 
-    Pair<Status, IRequest> decode(ByteBuffer buffer) throws IOException;
+    Pair<Status, Request> decode(ByteBuffer buffer) throws IOException;
 
 
     ByteBuffer[] encode(ByteBuffer... buffers) throws IOException;

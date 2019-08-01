@@ -14,7 +14,7 @@ import javax.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 import com.airepublic.microprofile.core.spi.IServerModule;
-import com.airepublic.microprofile.core.spi.SessionAttributes;
+import com.airepublic.microprofile.core.spi.Attributes;
 import com.airepublic.microprofile.core.spi.SessionContext;
 import com.airepublic.microprofile.feature.logging.java.LogLevel;
 import com.airepublic.microprofile.feature.logging.java.LoggerConfig;
@@ -31,7 +31,7 @@ public class SessionContainer {
 
 
     @Asynchronous
-    public Future<ServerSession> startSession(final IServerModule module, final Supplier<SocketChannel> channelSupplier, final SessionAttributes sessionAttributes, final boolean isClient) {
+    public Future<ServerSession> startSession(final IServerModule module, final Supplier<SocketChannel> channelSupplier, final Attributes sessionAttributes, final boolean isClient) {
         ServerSession session = null;
         final long sessionId = SESSION_ID_GENERATOR.incrementAndGet();
 

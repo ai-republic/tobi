@@ -21,9 +21,11 @@ module com.airepublic.microprofile.plugin.http.websocket {
     opens com.airepublic.microprofile.plugin.http.websocket.util.threads;
 
     requires com.airepublic.microprofile.core.spi;
+    requires com.airepublic.microprofile.module.http;
     requires com.airepublic.microprofile.feature.logging.java;
     requires com.airepublic.microprofile.feature.mp.config;
-    requires com.airepublic.microprofile.util.http.common;
+    requires com.airepublic.reflections;
+    requires com.airepublic.http.common;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
