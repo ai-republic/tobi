@@ -33,7 +33,7 @@ public class WebSocketEncoder implements IChannelEncoder {
     public ByteBuffer[] encode(final ByteBuffer... buffers) throws IOException {
         final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_SSL_ENGINE, SSLEngine.class);
 
-        return SslSupport.wrap(sslEngine, buffers);
+        return SslSupport.wrap(sslEngine, session.getChannel(), buffers);
     }
 
 

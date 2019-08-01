@@ -68,7 +68,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     @Override
     public ByteBuffer[] encode(ByteBuffer... buffers) throws IOException {
         if (isSecure) {
-            buffers = SslSupport.wrap(sslEngine, buffers);
+            buffers = SslSupport.wrap(sslEngine, channel, buffers);
         }
 
         return buffers;
