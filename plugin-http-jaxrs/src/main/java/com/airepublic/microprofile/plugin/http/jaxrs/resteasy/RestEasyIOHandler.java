@@ -159,6 +159,9 @@ public class RestEasyIOHandler implements IIOHandler {
                     if (invoker != null) {
                         restEasyHttpRequest.setAttribute(invoker.getClass().getName(), invoker);
 
+                        // TODO set path parameters and query parameters on resteasyrequest uriinfo
+                        ParamsParser.parse(restEasyHttpRequest, invoker.getMethod(), contextBuilder.getPath());
+
                         final ResourceClass resourceClass = new DefaultResourceClass(invoker.getMethod().getDeclaringClass(), restEasyHttpRequest.getUri().getPath());
                         final POJOResourceFactory rf = new POJOResourceFactory(resourceClass);
                         final ResourceMethodInvoker methodInvoker = new ResourceMethodInvoker(new DefaultResourceMethod(resourceClass, invoker.getMethod(), invoker.getMethod()), contextBuilder.getDeployment().getInjectorFactory(), rf, contextBuilder.getDeployment().getProviderFactory());
@@ -170,16 +173,25 @@ public class RestEasyIOHandler implements IIOHandler {
                     // write headers and body to HttpResponse
                     restEasyHttpResponse.mergeToResponse();
 
-                    final String contentType = response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE);
+                    String contentType = response.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE);
 
                     if (contentType == null) {
-                        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, determineContentType(response.getBody()));
+                        contentType = determineContentType(response.getBody());
+                        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, contentType);
                     }
 
                     // fix a bug in Resteasy which returns a 404 for SSE
-                    if (contentType.equals(MediaType.SERVER_SENT_EVENTS) && response.getStatus() == HttpStatus.NOT_FOUND && response.getBody() != null) {
+                    if (contentType != null && contentType.equals(MediaType.SERVER_SENT_EVENTS) && response.getStatus() == HttpStatus.NOT_FOUND && response.getBody() != null) {
                         response.withStatus(HttpStatus.SUCCESS);
                     }
+
+                    final ByteBuffer buffer = response.getBody();
+                    buffer.mark();
+                    final byte[] bytes = new byte[buffer.remaining()];
+                    buffer.get(bytes);
+                    buffer.reset();
+
+                    logger.info(httpRequest.getRequestLine() + " -> " + new String(bytes));
 
                 } catch (final Exception ex) {
                     logger.log(Level.SEVERE, "Error submitting JAX-RS response!", ex);

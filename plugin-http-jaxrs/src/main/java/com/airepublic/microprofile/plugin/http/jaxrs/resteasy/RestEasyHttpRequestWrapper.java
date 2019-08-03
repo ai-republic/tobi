@@ -1,5 +1,6 @@
 package com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,6 +29,8 @@ public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRe
     private final String contextPath;
     private final ResteasyAsynchronousContext restEasyContext;
     private final Map<String, Object> attributes = new HashMap<>();
+    private InputStream is;
+    private ResteasyUriInfo uriInfo;
 
 
     public RestEasyHttpRequestWrapper(final HttpRequest request, final org.jboss.resteasy.spi.HttpResponse response, final SynchronousDispatcher dispatcher, final String contextPath) {
@@ -59,20 +62,33 @@ public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRe
 
     @Override
     public InputStream getInputStream() {
-        return null;
+        if (is == null) {
+            final byte[] buf = new byte[request.getBody().remaining()];
+
+            request.getBody().mark();
+            request.getBody().get(buf);
+            request.getBody().reset();
+
+            is = new ByteArrayInputStream(buf);
+        }
+
+        return is;
     }
 
 
     @Override
     public void setInputStream(final InputStream stream) {
-        // TODO Auto-generated method stub
-
+        is = stream;
     }
 
 
     @Override
     public ResteasyUriInfo getUri() {
-        return extractUriInfo(request);
+        if (uriInfo == null) {
+            uriInfo = extractUriInfo(request);
+        }
+
+        return uriInfo;
     }
 
 

@@ -60,7 +60,7 @@ public class JavaServer {
                     });
 
                     try {
-                        serverContext.setCdiContainer(cdiContainer);
+                        // serverContext.setCdiContainer(cdiContainer);
 
                         selector = Selector.open();
                         final String host = serverContext.getHost();

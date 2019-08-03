@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.se.SeContainer;
 import javax.inject.Inject;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -34,21 +33,23 @@ public class ServerContext implements IServerContext {
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final Map<SocketAddress, IServerSession> openSessions = new ConcurrentHashMap<>();
     private final Map<Long, SessionContext> sessionContexts = new ConcurrentHashMap<>();
-    private SeContainer cdiContainer;
     private final Set<IServerModule> modules = new HashSet<>();
 
 
+    @Override
     public ServerContext setAttribute(final String key, final Object value) {
         attributes.put(key, value);
         return this;
     }
 
 
+    @Override
     public Object getAttribute(final String key) {
         return attributes.get(key);
     }
 
 
+    @Override
     public boolean hasAttribute(final String key) {
         return attributes.containsKey(key);
     }
@@ -73,6 +74,7 @@ public class ServerContext implements IServerContext {
     }
 
 
+    @Override
     public String getHost() {
         return host;
     }
@@ -84,6 +86,7 @@ public class ServerContext implements IServerContext {
     }
 
 
+    @Override
     public int getWorkerCount() {
         return workerCount;
     }
@@ -115,29 +118,21 @@ public class ServerContext implements IServerContext {
     }
 
 
+    @Override
     public void addSessionContext(final Long sessionId, final SessionContext sessionContext) {
         sessionContexts.put(sessionId, sessionContext);
     }
 
 
+    @Override
     public SessionContext getSessionContext(final Long sessionId) {
         return sessionContexts.get(sessionId);
     }
 
 
+    @Override
     public void removeSessionContext(final Long sessionId) {
         sessionContexts.remove(sessionId);
-    }
-
-
-    public SeContainer getCdiContainer() {
-        return cdiContainer;
-    }
-
-
-    ServerContext setCdiContainer(final SeContainer cdiContainer) {
-        this.cdiContainer = cdiContainer;
-        return this;
     }
 
 }

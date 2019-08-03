@@ -1,7 +1,5 @@
 package com.airepublic.microprofile.core.spi;
 
-import javax.enterprise.inject.se.SeContainer;
-
 public interface IServerContext {
 
     IServerContext setAttribute(String key, Object value);
@@ -17,9 +15,6 @@ public interface IServerContext {
 
 
     int getWorkerCount();
-
-
-    SeContainer getCdiContainer();
 
 
     SessionContext getSessionContext(Long sessionId);

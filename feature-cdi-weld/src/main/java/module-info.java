@@ -1,10 +1,7 @@
-import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
-import com.airepublic.microprofile.feature.cdi.weld.CDIServiceProviderImpl;
-
 module com.airepublic.microprofile.feature.cdi.weld {
     exports com.airepublic.microprofile.feature.cdi.weld;
 
-    requires com.airepublic.microprofile.core.spi;
+    // requires com.airepublic.microprofile.core.spi;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
@@ -16,7 +13,7 @@ module com.airepublic.microprofile.feature.cdi.weld {
     requires transitive weld.core.impl;
     requires transitive jdk.unsupported;
 
-    provides ICDIServiceProvider with CDIServiceProviderImpl;
+    // provides ICDIServiceProvider with CDIServiceProviderImpl;
 
     opens com.airepublic.microprofile.feature.cdi.weld;
 }

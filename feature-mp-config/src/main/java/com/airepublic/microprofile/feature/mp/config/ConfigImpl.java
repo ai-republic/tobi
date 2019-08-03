@@ -53,6 +53,9 @@ public class ConfigImpl implements Config {
 
     @SuppressWarnings("unchecked")
     public <T> T convert(final String propertyValue, final Class<T> propertyType) {
+        if (propertyValue == null) {
+            return null;
+        }
 
         if (propertyType.isArray()) {
             final List<String> propertyValues = parse(propertyValue);

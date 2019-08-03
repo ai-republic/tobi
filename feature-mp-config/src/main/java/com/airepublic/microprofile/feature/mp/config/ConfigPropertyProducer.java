@@ -29,7 +29,13 @@ public class ConfigPropertyProducer {
             if (field.getType() == Optional.class) {
                 if (t == null) {
                     final ParameterizedType pt = (ParameterizedType) field.getGenericType();
-                    return (T) Optional.of(((ConfigImpl) config).convert(cp.defaultValue(), (Class<?>) pt.getActualTypeArguments()[0]));
+                    final String defaultValue = cp.defaultValue();
+
+                    if (defaultValue == null || defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                        return null;
+                    }
+
+                    return (T) Optional.of(((ConfigImpl) config).convert(defaultValue, (Class<?>) pt.getActualTypeArguments()[0]));
                 }
 
                 return (T) Optional.of(t);
@@ -38,7 +44,13 @@ public class ConfigPropertyProducer {
                 return (T) provider;
             } else {
                 if (t == null) {
-                    return (T) ((ConfigImpl) config).convert(cp.defaultValue(), field.getType());
+                    final String defaultValue = cp.defaultValue();
+
+                    if (defaultValue == null || defaultValue.equals(ConfigProperty.UNCONFIGURED_VALUE)) {
+                        return null;
+                    }
+
+                    return (T) ((ConfigImpl) config).convert(defaultValue, field.getType());
                 }
 
                 return t;

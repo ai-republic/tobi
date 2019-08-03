@@ -14,6 +14,7 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Application;
 
 import org.jboss.resteasy.cdi.CdiInjectorFactory;
 import org.jboss.resteasy.core.ResourceInvoker;
@@ -48,7 +49,6 @@ public class RestEasyPlugin implements IServicePlugin {
     @Inject
     private IServerContext serverContext;
     private String contextPath;
-    private final Set<String> mappings = new HashSet<>();
     private RestEasyHttpContextBuilder contextBuilder;
 
 
@@ -102,22 +102,21 @@ public class RestEasyPlugin implements IServicePlugin {
     }
 
 
-    public void addMapping(final String path) {
-        mappings.add(path);
-    }
-
-
     @Override
     public void initPlugin(final IServerModule module) {
 
         contextBuilder = new RestEasyHttpContextBuilder();
         contextBuilder.getDeployment().setInjectorFactory(new CdiInjectorFactory(CDI.current().getBeanManager()));
         contextBuilder.getDeployment().setRegistry(new ResourceMethodRegistry(ResteasyProviderFactory.getInstance()));
+        contextBuilder.getDeployment().getProviderClasses().add(ObjectMapperContextResolver.class.getName());
 
         logger.info("Searching for JAX-RS applications...");
+        final Set<Class<?>> resourceClasses = new HashSet<>();
 
         // check if there is an Application class with an @ApplicationPath annotation
         final Class<?> app = findApplicationClass();
+
+        contextPath = "/";
 
         if (app != null) {
             logger.info("Found JAX-RS application: " + app.getName());
@@ -138,34 +137,52 @@ public class RestEasyPlugin implements IServicePlugin {
             contextBuilder.setPath(contextPath);
             logger.info("Determined context-path for JAX-RS application: " + app.getName() + " -> " + contextPath);
 
+            final String path = contextPath;
+
+            // add application resources under the root application path
+            try {
+                final Application application = (Application) app.getConstructor().newInstance();
+                contextBuilder.getDeployment().setApplicationClass(app.getName());
+
+                application.getClasses().forEach(resource -> {
+                    try {
+                        // addResource(path, resource);
+                        resourceClasses.add(resource);
+                    } catch (final Exception e) {
+                        logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName(), e);
+                    }
+                });
+            } catch (final Exception e) {
+                logger.log(Level.SEVERE, "Failed to instantiate JAX-RS application: " + app.getName(), e);
+            }
+
         } else {
             logger.info("Found JAX-RS application: \n\t[]");
+
+            // use the configured or default context path
+            contextBuilder.setPath("/");
         }
 
+        // search for other non application-defined resources
         logger.info("Searching for JAX-RS resources...");
-        contextPath = "/";
         // find all resources with a @Path annotation
         final Set<Class<?>> resources = findResourceClasses();
 
         if (resources != null) {
             logger.info("Found JAX-RS Resources:");
-            for (final Class<?> resource : resources) {
+            resources.stream().filter(resource -> !resourceClasses.contains(resource)).forEach(resource -> {
                 logger.info("\t" + resource.getName());
 
                 try {
-                    addResource(contextPath, resource);
-                    contextBuilder.getDeployment().getScannedResourceClasses().add(resource.getName());
+                    addResource("/", resource);
+                    // contextBuilder.getDeployment().getScannedResourceClasses().add(resource.getName());
                 } catch (final Exception e) {
                     logger.log(Level.SEVERE, "Failed to add JAX-RS resource: " + resource.getName(), e);
                 }
-            }
+            });
         } else {
             logger.info("Found JAX-RS Resources:\n\t[]");
         }
-
-        // use the configured or default context path
-        contextBuilder.setPath(contextPath);
-        logger.info("Determined context-path for JAX-RS resources: " + contextPath);
 
         contextBuilder.bind();
         serverContext.setAttribute(CONTEXT_BUILDER, contextBuilder);
@@ -204,7 +221,6 @@ public class RestEasyPlugin implements IServicePlugin {
 
             rootPath = rootPath.replace("//", "/");
 
-            addMapping(rootPath);
             logger.info("\t\tAdding JAX-RS mapping for: " + resource.getName() + " -> " + rootPath);
 
             // check for Path annotated methods
@@ -222,7 +238,6 @@ public class RestEasyPlugin implements IServicePlugin {
                     e.printStackTrace();
                 }
 
-                addMapping(rootPath + subPath);
                 logger.info("\t\tAdding JAX-RS mapping for: " + resource.getName() + ":" + method.getName() + " -> " + rootPath + subPath);
                 // }
             }

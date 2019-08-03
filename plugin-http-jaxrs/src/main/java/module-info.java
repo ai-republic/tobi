@@ -1,4 +1,7 @@
+import javax.ws.rs.ext.ContextResolver;
+
 import com.airepublic.microprofile.core.spi.IServicePlugin;
+import com.airepublic.microprofile.plugin.http.jaxrs.resteasy.ObjectMapperContextResolver;
 import com.airepublic.microprofile.plugin.http.jaxrs.resteasy.RestEasyPlugin;
 
 module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
@@ -18,10 +21,18 @@ module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
     requires transitive java.ws.rs;
     requires resteasy.jaxrs;
     requires resteasy.cdi;
+    requires resteasy.jackson2.provider;
+
+    requires transitive com.fasterxml.jackson.annotation;
+    requires transitive com.fasterxml.jackson.core;
+    requires transitive com.fasterxml.jackson.databind;
+    requires transitive com.fasterxml.jackson.datatype.jsr310;
+
     requires org.jboss.logging;
     requires java.naming;
 
     provides IServicePlugin with RestEasyPlugin;
+    provides ContextResolver with ObjectMapperContextResolver;
 
     opens com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
 }
