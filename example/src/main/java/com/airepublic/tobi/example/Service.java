@@ -1,5 +1,5 @@
 
-package com.airepublic.tobi.sample;
+package com.airepublic.tobi.example;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;

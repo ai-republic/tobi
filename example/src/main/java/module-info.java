@@ -2,7 +2,7 @@ import javax.ws.rs.sse.Sse;
 
 module com.airepublic.tobi.sample {
     exports com.airepublic.tobi.javaserver.boot;
-    exports com.airepublic.tobi.sample;
+    exports com.airepublic.tobi.example;
 
     requires transitive com.airepublic.tobi.core;
     requires transitive com.airepublic.tobi.core.spi;
@@ -37,6 +37,6 @@ module com.airepublic.tobi.sample {
 
     uses Sse;
 
-    opens com.airepublic.tobi.sample;
+    opens com.airepublic.tobi.example;
     opens com.airepublic.tobi.client;
 }

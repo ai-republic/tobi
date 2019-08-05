@@ -1,4 +1,4 @@
-package com.airepublic.tobi.sample;
+package com.airepublic.tobi.example;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
