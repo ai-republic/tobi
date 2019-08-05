@@ -1,5 +1,5 @@
-module com.airepublic.microprofile.feature.mp.openapi {
-    requires transitive com.airepublic.microprofile.feature.mp.config;
+module com.airepublic.tobi.feature.mp.openapi {
+    requires transitive com.airepublic.tobi.feature.mp.config;
 
     requires transitive microprofile.openapi.api;
 

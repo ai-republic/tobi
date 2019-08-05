@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.ai-republic.microprofile</groupId>
-		<artifactId>parent</artifactId>
+		<groupId>com.ai-republic.tobi</groupId>
+		<artifactId>tobi-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
@@ -19,83 +19,88 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>server-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>module-http</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>plugin-http-jaxrs</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>plugin-http-sse</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>plugin-http-websocket</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-cdi-weld</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-faulttolerance</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-health</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-jwtauth</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-metrics</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-openapi</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.ai-republic.microprofile</groupId>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-opentracing</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.ai-republic</groupId>
+			<artifactId>logging-java</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 <!-- 		<dependency> -->
 <!-- 			<groupId>com.ai-republic.microprofile</groupId> -->
 <!-- 			<artifactId>feature-mp-restclient</artifactId> -->

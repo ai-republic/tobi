@@ -1,7 +1,7 @@
-module com.airepublic.microprofile.feature.cdi.weld {
-    exports com.airepublic.microprofile.feature.cdi.weld;
+module com.airepublic.tobi.feature.cdi.weld {
+    exports com.airepublic.tobi.feature.cdi.weld;
 
-    // requires com.airepublic.microprofile.core.spi;
+    // requires com.airepublic.tobi.core.spi;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
@@ -15,5 +15,5 @@ module com.airepublic.microprofile.feature.cdi.weld {
 
     // provides ICDIServiceProvider with CDIServiceProviderImpl;
 
-    opens com.airepublic.microprofile.feature.cdi.weld;
+    opens com.airepublic.tobi.feature.cdi.weld;
 }

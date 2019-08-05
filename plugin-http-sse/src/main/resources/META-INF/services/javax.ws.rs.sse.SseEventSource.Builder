@@ -1,1 +1,1 @@
-com.airepublic.microprofile.plugin.http.sse.SseEventSourceBuilder
+com.airepublic.tobi.plugin.http.sse.SseEventSourceBuilder

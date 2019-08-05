@@ -2,14 +2,14 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.Converter;
 
-import com.airepublic.microprofile.feature.mp.config.ConfigProviderResolverImpl;
+import com.airepublic.tobi.feature.mp.config.ConfigProviderResolverImpl;
 
-module com.airepublic.microprofile.feature.mp.config {
-    exports com.airepublic.microprofile.feature.mp.config;
+module com.airepublic.tobi.feature.mp.config {
+    exports com.airepublic.tobi.feature.mp.config;
 
+    requires com.airepublic.logging.java;
     requires transitive microprofile.config.api;
 
-    requires com.airepublic.microprofile.feature.logging.java;
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
     requires java.annotation;
@@ -20,5 +20,5 @@ module com.airepublic.microprofile.feature.mp.config {
 
     provides ConfigProviderResolver with ConfigProviderResolverImpl;
 
-    opens com.airepublic.microprofile.feature.mp.config;
+    opens com.airepublic.tobi.feature.mp.config;
 }

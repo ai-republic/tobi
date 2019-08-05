@@ -1,2 +1,2 @@
-com.airepublic.microprofile.feature.mp.faulttolerance.AsynchronousCheckExtension
-com.airepublic.microprofile.feature.mp.faulttolerance.FallbackAnnotationDecorator
+com.airepublic.tobi.feature.mp.faulttolerance.AsynchronousCheckExtension
+com.airepublic.tobi.feature.mp.faulttolerance.FallbackAnnotationDecorator

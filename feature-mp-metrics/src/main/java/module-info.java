@@ -1,5 +1,5 @@
-module com.airepublic.microprofile.feature.mp.metrics {
-    requires com.airepublic.microprofile.feature.mp.config;
+module com.airepublic.tobi.feature.mp.metrics {
+    requires com.airepublic.tobi.feature.mp.config;
 
     requires transitive microprofile.metrics.api;
 

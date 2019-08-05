@@ -26,7 +26,7 @@ import org.jboss.arquillian.test.spi.TestClass;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 
-import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
+import com.airepublic.logging.java.SerializableLogger;
 
 /**
  * A base ApplicationArchiveProcessor for illustrating use and simplifying common implementations.

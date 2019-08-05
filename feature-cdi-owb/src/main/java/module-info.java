@@ -1,10 +1,10 @@
-import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
-import com.airepublic.microprofile.feature.cdi.owb.CDIServiceProviderImpl;
+import com.airepublic.tobi.core.spi.ICDIServiceProvider;
+import com.airepublic.tobi.feature.cdi.owb.CDIServiceProviderImpl;
 
-module com.airepublic.microprofile.feature.cdi.owb {
-    exports com.airepublic.microprofile.feature.cdi.owb;
+module com.airepublic.tobi.feature.cdi.owb {
+    exports com.airepublic.tobi.feature.cdi.owb;
 
-    requires com.airepublic.microprofile.core.spi;
+    requires com.airepublic.tobi.core.spi;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;

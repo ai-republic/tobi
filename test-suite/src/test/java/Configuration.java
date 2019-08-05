@@ -12,8 +12,8 @@ import javax.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import com.airepublic.microprofile.feature.mp.jwtauth.ClaimsSet;
-import com.airepublic.microprofile.feature.mp.jwtauth.JWTUtil;
+import com.airepublic.tobi.feature.mp.jwtauth.ClaimsSet;
+import com.airepublic.tobi.feature.mp.jwtauth.JWTUtil;
 
 public class Configuration {
     @Inject

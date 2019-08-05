@@ -1,28 +1,28 @@
-import com.airepublic.microprofile.core.ChannelProcessor;
-import com.airepublic.microprofile.core.ServerContext;
-import com.airepublic.microprofile.core.ServerSession;
-import com.airepublic.microprofile.core.spi.ICDIServiceProvider;
-import com.airepublic.microprofile.core.spi.IChannelProcessor;
-import com.airepublic.microprofile.core.spi.IServerContext;
-import com.airepublic.microprofile.core.spi.IServerModule;
-import com.airepublic.microprofile.core.spi.IServerSession;
-import com.airepublic.microprofile.core.spi.IServicePlugin;
+import com.airepublic.tobi.core.ChannelProcessor;
+import com.airepublic.tobi.core.ServerContext;
+import com.airepublic.tobi.core.ServerSession;
+import com.airepublic.tobi.core.spi.ICDIServiceProvider;
+import com.airepublic.tobi.core.spi.IChannelProcessor;
+import com.airepublic.tobi.core.spi.IServerContext;
+import com.airepublic.tobi.core.spi.IServerModule;
+import com.airepublic.tobi.core.spi.IServerSession;
+import com.airepublic.tobi.core.spi.IServicePlugin;
 
-module com.airepublic.microprofile.core {
-    exports com.airepublic.microprofile.core;
-    exports com.airepublic.microprofile.core.util;
+module com.airepublic.tobi.core {
+    exports com.airepublic.tobi.core;
+    exports com.airepublic.tobi.core.util;
 
-    requires com.airepublic.microprofile.core.spi;
-    requires com.airepublic.microprofile.feature.mp.config;
-    requires com.airepublic.microprofile.feature.mp.faulttolerance;
-    requires com.airepublic.microprofile.feature.logging.java;
+    requires com.airepublic.tobi.core.spi;
+    requires com.airepublic.tobi.feature.mp.config;
+    requires com.airepublic.tobi.feature.mp.faulttolerance;
+    requires com.airepublic.logging.java;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
     requires java.annotation;
     requires jakarta.interceptor.api;
 
-    opens com.airepublic.microprofile.core;
+    opens com.airepublic.tobi.core;
 
     uses IServerModule;
     uses IServicePlugin;

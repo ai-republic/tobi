@@ -1,17 +1,17 @@
 import javax.ws.rs.ext.ContextResolver;
 
-import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.plugin.http.jaxrs.resteasy.ObjectMapperContextResolver;
-import com.airepublic.microprofile.plugin.http.jaxrs.resteasy.RestEasyPlugin;
+import com.airepublic.tobi.core.spi.IServicePlugin;
+import com.airepublic.tobi.plugin.http.jaxrs.resteasy.ObjectMapperContextResolver;
+import com.airepublic.tobi.plugin.http.jaxrs.resteasy.RestEasyPlugin;
 
-module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
-    exports com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
+module com.airepublic.tobi.plugin.http.jaxrs.resteasy {
+    exports com.airepublic.tobi.plugin.http.jaxrs.resteasy;
 
-    requires transitive com.airepublic.microprofile.core.spi;
+    requires transitive com.airepublic.tobi.core.spi;
     requires transitive com.airepublic.http.common;
-    requires com.airepublic.microprofile.module.http;
-    requires com.airepublic.microprofile.feature.mp.config;
-    requires com.airepublic.microprofile.feature.logging.java;
+    requires com.airepublic.tobi.module.http;
+    requires com.airepublic.tobi.feature.mp.config;
+    requires com.airepublic.logging.java;
     requires com.airepublic.reflections;
 
     requires jakarta.enterprise.cdi.api;
@@ -34,5 +34,5 @@ module com.airepublic.microprofile.plugin.http.jaxrs.resteasy {
     provides IServicePlugin with RestEasyPlugin;
     provides ContextResolver with ObjectMapperContextResolver;
 
-    opens com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
+    opens com.airepublic.tobi.plugin.http.jaxrs.resteasy;
 }

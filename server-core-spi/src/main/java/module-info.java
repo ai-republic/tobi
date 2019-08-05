@@ -1,7 +1,7 @@
-module com.airepublic.microprofile.core.spi {
-    exports com.airepublic.microprofile.core.spi;
+module com.airepublic.tobi.core.spi {
+    exports com.airepublic.tobi.core.spi;
 
-    requires com.airepublic.microprofile.feature.logging.java;
+    requires com.airepublic.logging.java;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;

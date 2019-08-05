@@ -1,15 +1,15 @@
-import com.airepublic.microprofile.core.spi.IChannelEncoder;
-import com.airepublic.microprofile.core.spi.IServerModule;
-import com.airepublic.microprofile.module.http.HttpChannelEncoder;
-import com.airepublic.microprofile.module.http.HttpModule;
+import com.airepublic.tobi.core.spi.IChannelEncoder;
+import com.airepublic.tobi.core.spi.IServerModule;
+import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.module.http.HttpModule;
 
-module com.airepublic.microprofile.module.http {
-    exports com.airepublic.microprofile.module.http;
+module com.airepublic.tobi.module.http {
+    exports com.airepublic.tobi.module.http;
 
-    requires com.airepublic.microprofile.feature.mp.config;
-    requires transitive com.airepublic.microprofile.core.spi;
+    requires com.airepublic.tobi.feature.mp.config;
+    requires transitive com.airepublic.tobi.core.spi;
     requires com.airepublic.http.common;
-    requires com.airepublic.microprofile.feature.logging.java;
+    requires com.airepublic.logging.java;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
@@ -18,5 +18,5 @@ module com.airepublic.microprofile.module.http {
     provides IServerModule with HttpModule;
     provides IChannelEncoder with HttpChannelEncoder;
 
-    opens com.airepublic.microprofile.module.http;
+    opens com.airepublic.tobi.module.http;
 }

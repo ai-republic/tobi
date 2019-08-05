@@ -1,15 +1,15 @@
-import com.airepublic.microprofile.core.spi.IServicePlugin;
-import com.airepublic.microprofile.plugin.http.sse.SsePlugin;
+import com.airepublic.tobi.core.spi.IServicePlugin;
+import com.airepublic.tobi.plugin.http.sse.SsePlugin;
 
-module com.airepublic.microprofile.plugin.http.sse {
-    exports com.airepublic.microprofile.plugin.http.sse;
+module com.airepublic.tobi.plugin.http.sse {
+    exports com.airepublic.tobi.plugin.http.sse;
 
-    requires transitive com.airepublic.microprofile.core.spi;
-    requires com.airepublic.microprofile.module.http;
-    requires com.airepublic.microprofile.feature.logging.java;
-    requires com.airepublic.microprofile.feature.mp.config;
+    requires transitive com.airepublic.tobi.core.spi;
+    requires com.airepublic.tobi.module.http;
+    requires com.airepublic.tobi.feature.mp.config;
     requires transitive com.airepublic.http.sse.api;
     requires transitive com.airepublic.http.sse.impl;
+    requires com.airepublic.logging.java;
     requires com.airepublic.reflections;
     requires com.airepublic.http.common;
 
@@ -21,9 +21,6 @@ module com.airepublic.microprofile.plugin.http.sse {
 
     provides IServicePlugin with SsePlugin;
 
-    opens com.airepublic.microprofile.plugin.http.sse;
-
-    requires weld.core.impl;
-    requires jdk.unsupported;
+    opens com.airepublic.tobi.plugin.http.sse;
 
 }

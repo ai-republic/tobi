@@ -1,8 +1,8 @@
-module com.airepublic.microprofile.feature.mp.jwtauth {
-    exports com.airepublic.microprofile.feature.mp.jwtauth;
+module com.airepublic.tobi.feature.mp.jwtauth {
+    exports com.airepublic.tobi.feature.mp.jwtauth;
 
-    requires com.airepublic.microprofile.feature.mp.config;
-    requires com.airepublic.microprofile.feature.logging.java;
+    requires com.airepublic.tobi.feature.mp.config;
+    requires com.airepublic.logging.java;
 
     requires transitive microprofile.jwt.auth.api;
 
@@ -14,6 +14,6 @@ module com.airepublic.microprofile.feature.mp.jwtauth {
     requires java.xml.bind;
     requires java.json;
 
-    opens com.airepublic.microprofile.feature.mp.jwtauth;
+    opens com.airepublic.tobi.feature.mp.jwtauth;
 
 }

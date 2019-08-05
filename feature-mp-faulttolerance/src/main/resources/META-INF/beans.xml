@@ -4,11 +4,11 @@
 	version="2.0" bean-discovery-mode="all">
 
 	<interceptors>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.AsynchronousInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.BulkheadInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.CircuitBreakerInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.FallbackInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.RetryInterceptor</class>
-		<class>com.airepublic.microprofile.feature.mp.faulttolerance.TimeoutInterceptor</class>
+		<class>com.airepublic.tobi.feature.mp.faulttolerance.AsynchronousInterceptor</class>
+		<class>com.airepublic.tobi.feature.mp.faulttolerance.BulkheadInterceptor</class>
+		<class>com.airepublic.tobi.feature.mp.faulttolerance.CircuitBreakerInterceptor</class>
+		<class>com.airepublic.tobi.feature.mp.faulttolerance.FallbackInterceptor</class>
+		<class>com.airepublic.tobi.feature.mp.faulttolerance.RetryInterceptor</class>
+		<class>com.airepublic.tobi.feature.mp.faulttolerance.TimeoutInterceptor</class>
 	</interceptors>
 </beans>

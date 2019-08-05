@@ -1,25 +1,25 @@
 import javax.ws.rs.sse.Sse;
 
-module com.airepublic.microprofile.sample {
-    exports com.airepublic.microprofile.javaserver.boot;
-    exports com.airepublic.microprofile.sample;
+module com.airepublic.tobi.sample {
+    exports com.airepublic.tobi.javaserver.boot;
+    exports com.airepublic.tobi.sample;
 
-    requires transitive com.airepublic.microprofile.core;
-    requires transitive com.airepublic.microprofile.core.spi;
-    requires transitive com.airepublic.microprofile.module.http;
-    requires transitive com.airepublic.microprofile.plugin.http.jaxrs.resteasy;
-    requires transitive com.airepublic.microprofile.plugin.http.websocket;
-    requires transitive com.airepublic.microprofile.plugin.http.sse;
-    requires transitive com.airepublic.microprofile.feature.cdi.weld;
-    requires transitive com.airepublic.microprofile.feature.mp.config;
-    requires transitive com.airepublic.microprofile.feature.mp.faulttolerance;
-    requires transitive com.airepublic.microprofile.feature.mp.health;
-    requires transitive com.airepublic.microprofile.feature.mp.jwtauth;
-    requires transitive com.airepublic.microprofile.feature.mp.metrics;
-    requires transitive com.airepublic.microprofile.feature.mp.openapi;
-    requires transitive com.airepublic.microprofile.feature.mp.opentracing;
-    // requires transitive com.airepublic.microprofile.feature.mp.restclient;
-    requires transitive com.airepublic.microprofile.feature.logging.java;
+    requires transitive com.airepublic.tobi.core;
+    requires transitive com.airepublic.tobi.core.spi;
+    requires transitive com.airepublic.tobi.module.http;
+    requires transitive com.airepublic.tobi.plugin.http.jaxrs.resteasy;
+    requires transitive com.airepublic.tobi.plugin.http.websocket;
+    requires transitive com.airepublic.tobi.plugin.http.sse;
+    requires transitive com.airepublic.tobi.feature.cdi.weld;
+    requires transitive com.airepublic.tobi.feature.mp.config;
+    requires transitive com.airepublic.tobi.feature.mp.faulttolerance;
+    requires transitive com.airepublic.tobi.feature.mp.health;
+    requires transitive com.airepublic.tobi.feature.mp.jwtauth;
+    requires transitive com.airepublic.tobi.feature.mp.metrics;
+    requires transitive com.airepublic.tobi.feature.mp.openapi;
+    requires transitive com.airepublic.tobi.feature.mp.opentracing;
+    // requires transitive com.airepublic.tobi.feature.mp.restclient;
+    requires transitive com.airepublic.logging.java;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;
@@ -37,6 +37,6 @@ module com.airepublic.microprofile.sample {
 
     uses Sse;
 
-    opens com.airepublic.microprofile.sample;
-    opens com.airepublic.microprofile.client;
+    opens com.airepublic.tobi.sample;
+    opens com.airepublic.tobi.client;
 }

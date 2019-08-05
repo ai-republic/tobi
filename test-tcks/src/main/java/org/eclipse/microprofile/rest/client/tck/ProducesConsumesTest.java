@@ -36,7 +36,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.testng.annotations.Test;
 
-import com.airepublic.microprofile.feature.logging.java.SerializableLogger;
+import com.airepublic.logging.java.SerializableLogger;
 
 /**
  * Tests that MP Rest Client's <code>@Produces</code> annotation affects the value transmitted in
