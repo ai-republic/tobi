@@ -114,12 +114,12 @@ http.ssl.port=8443
 Then just call:
 
 ```java
-Bootstrap.start();
+Tobi.start();
 ```
 
 to start your Tobi server. It will automatically discover all your resources.
 
 
 ### Example application
-An example can be found under the [example](https://www.github.com/ai-republic/tobi/example) project.
+An example can be found under the [example](https://github.com/ai-republic/tobi/tree/master/example) project.
 
