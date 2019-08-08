@@ -20,11 +20,11 @@ public class ParamsParser {
      * Parses path params from the resource {@link Path} method annotation and maps it to the URI
      * segment.
      *
-     * @param request the {@link RestEasyHttpRequestWrapper}
+     * @param request the {@link ResteasyHttpRequestWrapper}
      * @param method the {@link Method}
      * @param contextPath the context path of the {@link Application}
      */
-    public static void parse(final RestEasyHttpRequestWrapper request, final Method method, final String contextPath) {
+    public static void parse(final ResteasyHttpRequestWrapper request, final Method method, final String contextPath) {
         final List<PathSegment> uriPathSegments = request.getUri().getPathSegments();
 
         // segment class path

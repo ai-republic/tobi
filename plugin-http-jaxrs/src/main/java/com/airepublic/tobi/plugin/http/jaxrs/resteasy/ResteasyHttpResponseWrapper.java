@@ -13,24 +13,31 @@ import com.airepublic.http.common.Headers;
 import com.airepublic.http.common.HttpResponse;
 import com.airepublic.http.common.HttpStatus;
 
-public class RestEasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpResponse {
+/**
+ * The wrapper for the {@link HttpResponse} to a {@link org.jboss.resteasy.spi.HttpResponse}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
+public class ResteasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpResponse {
     private final HttpResponse response;
     private final MultivaluedHashMap<String, Object> responseHeaders = new MultivaluedHashMap<>();
     private final ByteArrayOutputStream rawOutputStream = new ByteArrayOutputStream();
     private OutputStream outputStream = rawOutputStream;
     private boolean committed = false;
-    private RestEasyIOHandler handler;
+    private final ResteasyIOHandler handler;
 
 
-    public RestEasyHttpResponseWrapper(final HttpResponse response, final RestEasyIOHandler handler) {
+    /**
+     * Constructor.
+     * 
+     * @param response the {@link HttpResponse} to be wrapped
+     * @param handler the {@link ResteasyIOHandler}
+     */
+    public ResteasyHttpResponseWrapper(final HttpResponse response, final ResteasyIOHandler handler) {
         this.response = response;
         this.handler = handler;
         response.getHeaders().entrySet().forEach(e -> e.getValue().forEach(v -> responseHeaders.add(e.getKey(), v)));
-    }
-
-
-    public void setIOHandler(final RestEasyIOHandler handler) {
-        this.handler = handler;
     }
 
 
@@ -107,6 +114,9 @@ public class RestEasyHttpResponseWrapper implements org.jboss.resteasy.spi.HttpR
     }
 
 
+    /**
+     * Merges the {@link org.jboss.resteasy.spi.HttpResponse} to the {@link HttpResponse}.
+     */
     public void mergeToResponse() {
         response.withHeaders(new Headers());
         responseHeaders.keySet().stream().forEach(key -> responseHeaders.get(key).stream().forEach(value -> response.getHeaders().add(key, value.toString())));

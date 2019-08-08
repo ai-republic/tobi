@@ -7,6 +7,12 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
+/**
+ * Implementation of the {@link ConfigProviderResolver}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class ConfigProviderResolverImpl extends ConfigProviderResolver {
     private final static Map<ClassLoader, Config> CONFIGS = new ConcurrentHashMap<>();
     private final Config defaultConfig = getBuilder().addDefaultSources().addDiscoveredSources().addDiscoveredConverters().build();

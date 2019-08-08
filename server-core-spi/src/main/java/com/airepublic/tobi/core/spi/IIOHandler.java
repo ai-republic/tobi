@@ -14,22 +14,6 @@ import java.nio.channels.CompletionHandler;
 public interface IIOHandler extends Serializable {
 
     /**
-     * Gets the current {@link IServerSession}.
-     * 
-     * @return the {@link IServerSession}
-     */
-    IServerSession getSession();
-
-
-    /**
-     * Sets the current {@link IServerSession}.
-     * 
-     * @param session the {@link IServerSession}
-     */
-    void setSession(IServerSession session);
-
-
-    /**
      * Called whenever there is data available from the incoming stream.
      * 
      * @param request the {@link Request} read from the incoming stream

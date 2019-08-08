@@ -1,5 +1,8 @@
 package com.airepublic.tobi.core.spi;
 
+import java.io.IOException;
+import java.net.SocketAddress;
+
 public interface IServerContext {
 
     IServerContext setAttribute(String key, Object value);
@@ -17,12 +20,21 @@ public interface IServerContext {
     int getWorkerCount();
 
 
-    SessionContext getSessionContext(Long sessionId);
+    void addServerSession(final SocketAddress remoteAddress, final IServerSession session);
 
 
-    void addSessionContext(Long sessionId, SessionContext sessionContext);
+    IServerSession getServerSession(final SocketAddress remoteAddress);
 
 
-    void removeSessionContext(Long sessionId);
+    void removeServerSession(final IServerSession session) throws IOException;
+
+
+    SessionContext getSessionContext(String sessionId);
+
+
+    void addSessionContext(String sessionId, SessionContext sessionContext);
+
+
+    void removeSessionContext(String sessionId);
 
 }

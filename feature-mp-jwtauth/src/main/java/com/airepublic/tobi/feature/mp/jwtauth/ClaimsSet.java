@@ -8,13 +8,32 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 
+/**
+ * An {@link Iterable} of {@link ClaimValue}s.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class ClaimsSet implements Iterable<ClaimValue<?>> {
     private final Set<ClaimValue<?>> claims = new HashSet<>();
 
 
+    /**
+     * Creates a {@link ClaimsSet}.
+     * 
+     * @param id the id
+     * @param iss the issuer
+     * @param sub the subject
+     * @param upn the upn
+     * @param groups the groups
+     * @param iat the issue date
+     * @param exp the expiry date
+     * @return the created {@link ClaimsSet}
+     */
     public static ClaimsSet create(final String id, final String iss, final String sub, final String upn, final Set<String> groups, final LocalDateTime iat, final LocalDateTime exp) {
         final ClaimsSet map = new ClaimsSet();
         map.add(Claims.jti, id);
@@ -30,6 +49,19 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
     }
 
 
+    /**
+     * Creates a {@link ClaimsSet}.
+     * 
+     * @param id the id
+     * @param iss the issuer
+     * @param sub the subject
+     * @param upn the upn
+     * @param groups the groups
+     * @param iat the issue date
+     * @param exp the expiry date
+     * @param otherClaims a map containing other {@link Claim}s to be added to the {@link ClaimsSet}
+     * @return the created {@link ClaimsSet}
+     */
     public static ClaimsSet create(final String id, final String iss, final String sub, final String upn, final Set<String> groups, final LocalDateTime iat, final LocalDateTime exp, final Map<Claims, Object> otherClaims) {
         final ClaimsSet map = create(id, iss, sub, upn, groups, iat, exp);
 
@@ -39,10 +71,21 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
     }
 
 
+    /**
+     * Constructor.
+     */
     private ClaimsSet() {
     }
 
 
+    /**
+     * Adds the {@link Claims} and its value.
+     * 
+     * @param <T> the Claim value type
+     * @param claim the {@link Claims}
+     * @param value the value
+     * @return this {@link ClaimsSet}
+     */
     public <T> ClaimsSet add(final Claims claim, final T value) {
         add(new ClaimValueImpl<>(claim.name(), value));
 
@@ -50,6 +93,14 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
     }
 
 
+    /**
+     * Adds the claim name and its value.
+     * 
+     * @param <T> the claim value type
+     * @param claimName the name of the claim
+     * @param value the value
+     * @return this {@link ClaimsSet}
+     */
     public <T> ClaimsSet add(final String claimName, final T value) {
         add(new ClaimValueImpl<>(claimName, value));
 
@@ -57,6 +108,13 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
     }
 
 
+    /**
+     * Adds the {@link ClaimValue}.
+     * 
+     * @param <T> the Claim value type
+     * @param claimValue the {@link ClaimValue}
+     * @return this {@link ClaimsSet}
+     */
     public <T> ClaimsSet add(final ClaimValue<T> claimValue) {
         claims.add(claimValue);
 
@@ -64,27 +122,58 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
     }
 
 
+    /**
+     * Checks whether the specified {@link Claims} name is registered.
+     * 
+     * @param claim the {@link Claims}
+     * @return true if registered in this set
+     */
     public boolean has(final Claims claim) {
         return has(claim.name());
     }
 
 
+    /**
+     * Checks whether the specified claim-name is registered.
+     * 
+     * @param claimName the claim-name
+     * @return true if registered in this set
+     */
     public boolean has(final String claimName) {
         return claims.stream().filter(c -> c.getName().equals(claimName)).findFirst().isPresent();
     }
 
 
+    /**
+     * Gets the {@link ClaimValue} for the specified {@link Claims}.
+     * 
+     * @param <T> the claim value type
+     * @param claim the {@link Claims}
+     * @return the {@link ClaimValue}
+     */
     public <T> ClaimValue<T> get(final Claims claim) {
         return get(claim.name());
     }
 
 
+    /**
+     * Gets the {@link ClaimValue} for the specified claim-name.
+     * 
+     * @param <T> the claim value type
+     * @param claimName the claim-name
+     * @return the {@link ClaimValue}
+     */
     @SuppressWarnings("unchecked")
     public <T> ClaimValue<T> get(final String claimName) {
         return (ClaimValue<T>) claims.stream().filter(c -> c.getName().equals(claimName)).findFirst().orElse(null);
     }
 
 
+    /**
+     * Gets an unmodifiable {@link Iterator} of all claims.
+     * 
+     * @return the {@link Iterator}
+     */
     @Override
     public Iterator<ClaimValue<?>> iterator() {
         return Collections.unmodifiableSet(claims).iterator();

@@ -19,54 +19,58 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
-public class WebSocketClient2 {
-    @ClientEndpoint
-    @WebSocket
-    public static class WebSocketEndpoint {
+/**
+ * A websocket client to connect to the server.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
+@ClientEndpoint
+@WebSocket
+public class WebSocketClientEndpoint {
 
-        @OnOpen
-        public void onOpen(final Session session, final EndpointConfig config) {
-            System.out.println("Open: " + session);
-        }
-
-
-        @OnMessage
-        @OnWebSocketMessage
-        public void onMessage(final String msg) {
-            System.out.println("Message: " + msg);
-        }
+    @OnOpen
+    public void onOpen(final Session session, final EndpointConfig config) {
+        System.out.println("Open: " + session);
+    }
 
 
-        @OnMessage
-        public void onBinary(final ByteBuffer bytes) {
-            System.out.println("Message: " + bytes);
-        }
+    @OnMessage
+    @OnWebSocketMessage
+    public void onMessage(final String msg) {
+        System.out.println("Message: " + msg);
+    }
 
 
-        @OnWebSocketMessage
-        public void onBinary(final byte[] bytes, final int offset, final int len) {
-            System.out.println("Message: " + bytes);
-        }
+    @OnMessage
+    public void onBinary(final ByteBuffer bytes) {
+        System.out.println("Message: " + bytes);
+    }
 
 
-        @OnWebSocketClose
-        public void onClose(final int code, final String closeReason) {
-            System.out.println("Close: " + closeReason);
-        }
+    @OnWebSocketMessage
+    public void onBinary(final byte[] bytes, final int offset, final int len) {
+        System.out.println("Message: " + bytes);
+    }
 
 
-        @OnError
-        @OnWebSocketError
-        public void onError(final Throwable ex) {
-            ex.printStackTrace();
-        }
+    @OnWebSocketClose
+    public void onClose(final int code, final String closeReason) {
+        System.out.println("Close: " + closeReason);
+    }
+
+
+    @OnError
+    @OnWebSocketError
+    public void onError(final Throwable ex) {
+        ex.printStackTrace();
     }
 
 
     public static void main(final String[] args) {
         final String destUri = "ws://localhost:8080/ws";
         final org.eclipse.jetty.websocket.client.WebSocketClient client = new org.eclipse.jetty.websocket.client.WebSocketClient();
-        final WebSocketEndpoint socket = new WebSocketEndpoint();
+        final WebSocketClientEndpoint endpoint = new WebSocketClientEndpoint();
 
         try {
             final URI echoUri = new URI(destUri);
@@ -75,7 +79,7 @@ public class WebSocketClient2 {
             client.setStopTimeout(Integer.MAX_VALUE);
             System.out.printf("Connecting to : %s%n", echoUri);
             client.start();
-            final Future<org.eclipse.jetty.websocket.api.Session> session = client.connect(socket, echoUri);
+            final Future<org.eclipse.jetty.websocket.api.Session> session = client.connect(endpoint, echoUri);
             final org.eclipse.jetty.websocket.api.Session wsSession = session.get(30, TimeUnit.MINUTES);
             wsSession.getRemote().sendString("Hello");
 

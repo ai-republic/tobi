@@ -18,6 +18,12 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>com.ai-republic.tobi</groupId>
+			<artifactId>server-core-spi</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	
+		<dependency>
 			<groupId>org.jboss.weld.se</groupId>
 			<artifactId>weld-se-core</artifactId>
 			<version>3.1.1.Final</version>

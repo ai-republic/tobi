@@ -29,6 +29,12 @@ import org.eclipse.microprofile.health.Readiness;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 
+/**
+ * Class to generate a Json response from {@link HealthCheck} instances.
+ * 
+ * @author Torsten
+ *
+ */
 public class HealthCheckResponeJson {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
@@ -45,6 +51,12 @@ public class HealthCheckResponeJson {
     private Instance<HealthCheck> readinessChecks;
 
 
+    /**
+     * Writes the {@link HealthCheckJson} to the specified {@link OutputStream}.
+     * 
+     * @param out the {@link OutputStream}
+     * @param health the {@link HealthCheckJson}
+     */
     public void generate(final OutputStream out, final HealthCheckJson health) {
         final JsonWriterFactory factory = Json.createWriterFactory(JSON_CONFIG);
         final JsonWriter writer = factory.createWriter(out);
@@ -54,11 +66,23 @@ public class HealthCheckResponeJson {
     }
 
 
+    /**
+     * Generates a {@link HealthCheckJson} of all annotated {@link Health}, {@link Liveness} and
+     * {@link Readiness} instances.
+     * 
+     * @return the {@link HealthCheckJson}
+     */
     public HealthCheckJson generate() {
         return toJson(healthChecks, livenessChecks, readinessChecks);
     }
 
 
+    /**
+     * Creates a {@link HealthCheckJson} for all the specified {@link HealthCheck} instances.
+     * 
+     * @param healthChecks the {@link HealthCheck} instances
+     * @return the {@link HealthCheckJson}
+     */
     @SafeVarargs
     private final HealthCheckJson toJson(final Instance<HealthCheck>... healthChecks) {
         final JsonArrayBuilder healthJsonArrayBuilder = Json.createArrayBuilder();
@@ -84,6 +108,12 @@ public class HealthCheckResponeJson {
     }
 
 
+    /**
+     * Creates a {@link HealthCheckJson} for the specified {@link HealthCheck}.
+     * 
+     * @param healthCheck the {@link HealthCheck}
+     * @return the {@link JsonObject}
+     */
     private JsonObject toJson(final HealthCheck healthCheck) {
         try {
             return toJson(healthCheck.call());
@@ -103,6 +133,12 @@ public class HealthCheckResponeJson {
     }
 
 
+    /**
+     * Creates a {@link JsonObject} for the specified {@link HealthCheckResponse}.
+     * 
+     * @param response the {@link HealthCheckResponse}
+     * @return the {@link JsonObject}
+     */
     private JsonObject toJson(final HealthCheckResponse response) {
         final JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("name", response.getName());

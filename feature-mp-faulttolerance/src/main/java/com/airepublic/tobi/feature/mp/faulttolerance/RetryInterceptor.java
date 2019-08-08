@@ -25,6 +25,13 @@ public class RetryInterceptor implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
+    /**
+     * Intercepts and processes the {@link Retry} annotation.
+     * 
+     * @param context the {@link InvocationContext}
+     * @return the method result
+     * @throws Exception if an error occurs
+     */
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Exception {
         final long startTime = System.currentTimeMillis();

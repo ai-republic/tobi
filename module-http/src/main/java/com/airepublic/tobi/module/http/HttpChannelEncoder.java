@@ -3,31 +3,54 @@ package com.airepublic.tobi.module.http;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import com.airepublic.http.common.AsyncHttpReader;
 import com.airepublic.http.common.HttpRequest;
 import com.airepublic.http.common.SslSupport;
+import com.airepublic.logging.java.LogLevel;
+import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.Attributes;
 import com.airepublic.tobi.core.spi.IChannelEncoder;
+import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
 import com.airepublic.tobi.core.spi.Request;
 
+/**
+ * Encodes/Decodes {@link ByteBuffer} of incoming/outgoing HTTP responses/requests. This includes
+ * SSL processing.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     public static final String HEADERS = "http.headers";
     public static final String REQUEST_LINE = "http.request.requestLine";
+
+    @Inject
+    @LoggerConfig(level = LogLevel.INFO)
+    private Logger logger;
+    @Inject
+    private IServerSession session;
     private SSLEngine sslEngine;
     private boolean isSecure;
     private SocketChannel channel;
     private final AsyncHttpReader httpReader = new AsyncHttpReader();
 
 
-    public HttpChannelEncoder() {
-    }
-
-
+    /**
+     * Initializes this encoder with the specified {@link SocketChannel} and {@link SSLContext}.
+     * 
+     * @param channel the {@link SocketChannel}
+     * @param sslContext the {@link SSLContext}
+     * @param isSecure whether the connection is secure
+     * @throws IOException if SSL handshaking fails
+     */
     public void init(final SocketChannel channel, final SSLContext sslContext, final boolean isSecure) throws IOException {
         this.channel = channel;
         this.isSecure = isSecure;
@@ -39,6 +62,11 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     }
 
 
+    /**
+     * Gets the {@link SSLEngine}.
+     * 
+     * @return the {@link SSLEngine}
+     */
     public SSLEngine getSslEngine() {
         return sslEngine;
     }
@@ -50,9 +78,15 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
             buffer = SslSupport.unwrap(sslEngine, channel, buffer);
         }
 
+        if (buffer == null) {
+            return new Pair<>(Status.CLOSED, null);
+        }
+
         if (httpReader.receiveBuffer(buffer)) {
             final HttpRequest request = httpReader.getHttpRequest();
             httpReader.clear();
+
+            logger.log(Level.INFO, "Processing session #" + session.getId() + " HTTP request: " + request.getRequestLine());
 
             final Attributes attributes = new Attributes();
             attributes.set(REQUEST_LINE, request.getRequestLine());

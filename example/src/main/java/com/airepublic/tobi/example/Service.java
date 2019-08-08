@@ -17,6 +17,12 @@ import javax.ws.rs.sse.SseEventSink;
 
 import com.airepublic.tobi.core.spi.IServerSession;
 
+/**
+ * Example JAX-RS resource.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @Path("/service")
 public class Service {
     @Inject
@@ -28,6 +34,9 @@ public class Service {
     private int counter = 0;
 
 
+    /**
+     * Initializes the {@link SseBroadcaster}.
+     */
     @PostConstruct
     public void init() {
         broadcaster = sse.newBroadcaster();

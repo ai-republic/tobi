@@ -32,19 +32,19 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 
+/**
+ * Utilities to handle reading of different {@link Charset} from strings, bytes or
+ * {@link ByteBuffer}s.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class CharsetUtils {
 
     /**
-     * Private constructor for real static class
-     */
-    private CharsetUtils() {
-    }
-
-    private static final CodingErrorAction codingErrorAction = CodingErrorAction.REPORT;
-
-
-    /*
-     * @return UTF-8 encoding in bytes
+     * Gets the string as UTF-8 encoded bytes.
+     * 
+     * @return the string as UTF-8 encoded bytes
      */
     public static byte[] utf8Bytes(final String s) {
         try {
@@ -55,8 +55,10 @@ public class CharsetUtils {
     }
 
 
-    /*
-     * @return ASCII encoding in bytes
+    /**
+     * Gets the string as ASCII encoded bytes.
+     * 
+     * @return the string as ASCII encoded bytes
      */
     public static byte[] asciiBytes(final String s) {
         try {
@@ -67,96 +69,53 @@ public class CharsetUtils {
     }
 
 
+    /**
+     * Creates a string from ASCII encoded bytes.
+     * 
+     * @param bytes the bytes
+     * @return the string
+     */
     public static String stringAscii(final byte[] bytes) {
-        return stringAscii(bytes, 0, bytes.length);
-    }
-
-
-    public static String stringAscii(final byte[] bytes, final int offset, final int length) {
         try {
-            return new String(bytes, offset, length, "ASCII");
+            return new String(bytes, "ASCII");
         } catch (final UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
     }
 
 
+    /**
+     * Creates a string from UTF-8 encoded bytes.
+     * 
+     * @param bytes the bytes
+     * @return the string
+     */
     public static String stringUtf8(final byte[] bytes) {
         return stringUtf8(ByteBuffer.wrap(bytes));
     }
 
 
-    public static String stringUtf8(final ByteBuffer bytes) {
+    /**
+     * Creates a string from UTF-8 encoded {@link ByteBuffer}.
+     * 
+     * @param buffer the {@link ByteBuffer}
+     * @return the string
+     */
+    public static String stringUtf8(final ByteBuffer buffer) {
         final CharsetDecoder decode = Charset.forName("UTF8").newDecoder();
-        decode.onMalformedInput(codingErrorAction);
-        decode.onUnmappableCharacter(codingErrorAction);
+        decode.onMalformedInput(CodingErrorAction.REPORT);
+        decode.onUnmappableCharacter(CodingErrorAction.REPORT);
+
         String s;
+
         try {
-            bytes.mark();
-            s = decode.decode(bytes).toString();
-            bytes.reset();
+            buffer.mark();
+            s = decode.decode(buffer).toString();
+            buffer.reset();
         } catch (final CharacterCodingException e) {
             throw new RuntimeException(e);
         }
+
         return s;
     }
-
-    /**
-     * Implementation of the "Flexible and Economical UTF-8 Decoder" algorithm by Björn Höhrmann
-     * (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/)
-     */
-    private static final int[] utf8d = {
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 00..1f
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 20..3f
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 40..5f
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 60..7f
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, // 80..9f
-            7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, // a0..bf
-            8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // c0..df
-            0xa, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x4, 0x3, 0x3, // e0..ef
-            0xb, 0x6, 0x6, 0x6, 0x5, 0x8, 0x8, 0x8, 0x8, 0x8, 0x8, 0x8, 0x8, 0x8, 0x8, 0x8, // f0..ff
-            0x0, 0x1, 0x2, 0x3, 0x5, 0x8, 0x7, 0x1, 0x1, 0x1, 0x4, 0x6, 0x1, 0x1, 0x1, 0x1, // s0..s0
-            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, // s1..s2
-            1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, // s3..s4
-            1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 1, // s5..s6
-            1, 3, 1, 1, 1, 1, 1, 3, 1, 3, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 // s7..s8
-    };
-
-
-    /**
-     * Check if the provided BytebBuffer contains a valid utf8 encoded string.
-     * <p>
-     * Using the algorithm "Flexible and Economical UTF-8 Decoder" by Björn Höhrmann
-     * (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/)
-     *
-     * @param data the ByteBuffer
-     * @param off offset (for performance reasons)
-     * @return does the ByteBuffer contain a valid utf8 encoded string
-     */
-    public static boolean isValidUTF8(final ByteBuffer data, final int off) {
-        final int len = data.remaining();
-        if (len < off) {
-            return false;
-        }
-        int state = 0;
-        for (int i = off; i < len; ++i) {
-            state = utf8d[256 + (state << 4) + utf8d[0xff & data.get(i)]];
-            if (state == 1) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-    /**
-     * Calling isValidUTF8 with offset 0
-     *
-     * @param data the ByteBuffer
-     * @return does the ByteBuffer contain a valid utf8 encoded string
-     */
-    public static boolean isValidUTF8(final ByteBuffer data) {
-        return isValidUTF8(data, 0);
-    }
-
 }

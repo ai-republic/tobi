@@ -6,7 +6,13 @@ import java.util.Set;
 
 import org.jboss.resteasy.spi.ResteasyConfiguration;
 
-public class RestEasyHttpConfiguration implements ResteasyConfiguration {
+/**
+ * Implementation of the {@link ResteasyConfiguration} interface.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
+public class ResteasyHttpConfiguration implements ResteasyConfiguration {
     private final Map<String, String> config = new HashMap<>();
 
 

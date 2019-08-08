@@ -17,6 +17,7 @@ import javax.websocket.server.ServerEndpoint;
 
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Contact;
@@ -25,12 +26,20 @@ import org.eclipse.microprofile.openapi.annotations.info.Info;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 
+/**
+ * Websocket server endpoint echoing the client messages.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @OpenAPIDefinition(info = @Info(title = "EchoServer", contact = @Contact(name = "Torsten Oltmanns"), version = "1.0"))
 @ServerEndpoint(value = "/ws")
 public class EchoServer {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
+    @Inject
+    private JsonWebToken jwt;
     private int id = 0;
 
 

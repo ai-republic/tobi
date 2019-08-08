@@ -12,10 +12,21 @@ import com.airepublic.tobi.core.spi.Pair;
 import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.core.spi.SessionConstants;
 
+/**
+ * The {@link IChannelEncoder} implementation for the websocket requests/responses supporting SSL.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class WebSocketEncoder implements IChannelEncoder {
     private final IServerSession session;
 
 
+    /**
+     * Constructor.
+     * 
+     * @param session the {@link IServerSession}
+     */
     public WebSocketEncoder(final IServerSession session) {
         this.session = session;
     }

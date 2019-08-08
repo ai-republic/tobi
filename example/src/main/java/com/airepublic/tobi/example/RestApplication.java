@@ -6,12 +6,21 @@ import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
+/**
+ * Example JAX-RS {@link Application}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @ApplicationPath("/api")
 public class RestApplication extends Application {
     private final Set<Class<?>> classes = new HashSet<>();
     private final Set<Object> singletons = new HashSet<>();
 
 
+    /**
+     * Constructor.
+     */
     public RestApplication() {
         classes.add(Service.class);
         classes.add(SseSample.class);

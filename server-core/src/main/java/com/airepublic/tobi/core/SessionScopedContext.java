@@ -19,8 +19,8 @@ public class SessionScopedContext implements AlterableContext {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual, final CreationalContext<T> creationalContext) {
         validateSession();
 
@@ -32,8 +32,8 @@ public class SessionScopedContext implements AlterableContext {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual) {
         validateSession();
         return (T) sessionContext.get().getBean((Contextual<Object>) contextual);

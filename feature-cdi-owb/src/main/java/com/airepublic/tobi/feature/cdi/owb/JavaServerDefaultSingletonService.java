@@ -7,6 +7,12 @@ import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.corespi.DefaultSingletonService;
 import org.apache.webbeans.util.Asserts;
 
+/**
+ * OWB {@link DefaultSingletonService} implementation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class JavaServerDefaultSingletonService extends DefaultSingletonService {
     /**
      * Keys --> ClassLoaders Values --> WebBeansContext

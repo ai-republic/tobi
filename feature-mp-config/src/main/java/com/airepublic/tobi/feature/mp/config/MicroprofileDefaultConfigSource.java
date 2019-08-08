@@ -27,6 +27,9 @@ public class MicroprofileDefaultConfigSource implements ConfigSource {
     private final Map<String, String> properties = new HashMap<>();
 
 
+    /**
+     * Constructor.
+     */
     public MicroprofileDefaultConfigSource() {
         try {
             final URL url = getClass().getClassLoader().getResource("META-INF/microprofile-config.properties");

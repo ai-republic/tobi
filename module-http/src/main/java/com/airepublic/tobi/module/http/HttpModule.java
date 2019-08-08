@@ -7,11 +7,11 @@ import java.nio.channels.SelectionKey;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 
@@ -22,11 +22,26 @@ import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IIOHandler;
-import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
+import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.core.spi.SessionConstants;
 
+/**
+ * The module for handling HTTP/S requests and responses. The module can be configured with
+ * following properties using the microprofile configuration:
+ * <ul>
+ * <li><code>http.port</code> - the port to use for HTTP</li>
+ * <li><code>http.ssl.port</code> - the port to use for HTTPS</li>
+ * <li><code>http.keystore.file</code> - the path to the keystore file</li>
+ * <li><code>http.keystore.password</code> - the password to the keystore file</li>
+ * <li><code>http.truststore.file</code> - the path to the truststore file</li>
+ * <li><code>http.truststore.password</code> - the password to the truststore file</li>
+ * </ul>
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @ApplicationScoped
 public class HttpModule implements IServerModule {
     public final static String PORT = "http.port";
@@ -60,9 +75,11 @@ public class HttpModule implements IServerModule {
     private SSLContext clientSslContext;
     private SSLContext serverSslContext;
     private int readBufferSize = 16 * 1024;
-    private final HttpIOHandler defaultIOHandler = new HttpIOHandler();
 
 
+    /**
+     * Initializes the {@link SSLContext}s.
+     */
     @PostConstruct
     public void init() {
 
@@ -135,14 +152,12 @@ public class HttpModule implements IServerModule {
             isSecure = true;
         }
 
-        final HttpChannelEncoder channelEncoder = new HttpChannelEncoder();
+        final HttpChannelEncoder channelEncoder = CDI.current().select(HttpChannelEncoder.class).get();
         channelEncoder.init(processor.getChannel(), getServerSslContext(), isSecure);
         processor.getSession().setAttribute(SessionConstants.SESSION_SSL_ENGINE, channelEncoder.getSslEngine());
         processor.setChannelEncoder(channelEncoder);
         processor.getChannel().getRemoteAddress();
         processor.getChannel().register(processor.getSelector(), SelectionKey.OP_READ);
-
-        ForkJoinPool.commonPool().submit(processor);
     }
 
 
@@ -165,15 +180,32 @@ public class HttpModule implements IServerModule {
 
     @Override
     public IIOHandler determineIoHandler(final Request request) throws IOException {
-        return servicePlugins.stream().map(plugin -> plugin.determineIoHandler(request)).filter(plugin -> plugin != null).findFirst().orElse(defaultIOHandler);
+        IIOHandler handler = servicePlugins.stream().map(plugin -> plugin.determineIoHandler(request)).filter(plugin -> plugin != null).findFirst().orElse(null);
+
+        if (handler == null) {
+            handler = CDI.current().select(HttpIOHandler.class).get();
+            logger.info("No handler found for '" + request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE) + "'. Using default handler: " + handler.getClass().getSimpleName());
+        }
+
+        return handler;
     }
 
 
+    /**
+     * Gets the {@link SSLContext} initialized for server connections.
+     * 
+     * @return the {@link SSLContext}
+     */
     SSLContext getServerSslContext() {
         return serverSslContext;
     }
 
 
+    /**
+     * Gets the {@link SSLContext} initialized for client connections.
+     * 
+     * @return the {@link SSLContext}
+     */
     SSLContext getClientSslContext() {
         return clientSslContext;
     }

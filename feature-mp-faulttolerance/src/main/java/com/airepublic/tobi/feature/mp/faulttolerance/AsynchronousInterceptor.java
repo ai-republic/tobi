@@ -29,6 +29,14 @@ public class AsynchronousInterceptor implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
+    /**
+     * Intercepts the {@link Asynchronous} annotation and executes the method in a
+     * {@link ForkJoinPool}.
+     * 
+     * @param context the {@link InvocationContext}
+     * @return the result of the method (a {@link CompletableFuture}
+     * @throws Throwable if execution fails
+     */
     @SuppressWarnings("unchecked")
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Throwable {

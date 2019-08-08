@@ -27,6 +27,13 @@ public class TimeoutInterceptor implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
+    /**
+     * Intercepts and processes the {@link Timeout} annotation.
+     * 
+     * @param context the {@link InvocationContext}
+     * @return the method result
+     * @throws Exception if an error occurs
+     */
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Throwable {
         final Timeout timeout = context.getMethod().getAnnotation(Timeout.class);

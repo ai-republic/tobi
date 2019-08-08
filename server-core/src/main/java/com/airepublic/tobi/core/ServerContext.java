@@ -32,7 +32,7 @@ public class ServerContext implements IServerContext {
     private int workerCount;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final Map<SocketAddress, IServerSession> openSessions = new ConcurrentHashMap<>();
-    private final Map<Long, SessionContext> sessionContexts = new ConcurrentHashMap<>();
+    private final Map<String, SessionContext> sessionContexts = new ConcurrentHashMap<>();
     private final Set<IServerModule> modules = new HashSet<>();
 
 
@@ -98,16 +98,19 @@ public class ServerContext implements IServerContext {
     }
 
 
-    void addServerSession(final SocketAddress remoteAddress, final IServerSession session) {
+    @Override
+    public void addServerSession(final SocketAddress remoteAddress, final IServerSession session) {
         openSessions.put(remoteAddress, session);
     }
 
 
-    void removeServerSession(final IServerSession session) throws IOException {
+    @Override
+    public void removeServerSession(final IServerSession session) throws IOException {
         openSessions.remove(session.getChannel().getRemoteAddress());
     }
 
 
+    @Override
     public IServerSession getServerSession(final SocketAddress remoteAddress) {
         return openSessions.get(remoteAddress);
     }
@@ -119,19 +122,19 @@ public class ServerContext implements IServerContext {
 
 
     @Override
-    public void addSessionContext(final Long sessionId, final SessionContext sessionContext) {
+    public void addSessionContext(final String sessionId, final SessionContext sessionContext) {
         sessionContexts.put(sessionId, sessionContext);
     }
 
 
     @Override
-    public SessionContext getSessionContext(final Long sessionId) {
+    public SessionContext getSessionContext(final String sessionId) {
         return sessionContexts.get(sessionId);
     }
 
 
     @Override
-    public void removeSessionContext(final Long sessionId) {
+    public void removeSessionContext(final String sessionId) {
         sessionContexts.remove(sessionId);
     }
 

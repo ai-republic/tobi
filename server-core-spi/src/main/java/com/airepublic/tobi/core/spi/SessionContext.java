@@ -15,17 +15,17 @@ import com.airepublic.logging.java.SerializableLogger;
 public class SessionContext {
     private final static Logger LOG = new SerializableLogger(SessionContext.class.getName());
 
-    private final long sessionId;
+    private final String sessionId;
     private final Map<Contextual<Object>, Object> beans = new HashMap<>();
     private final Map<Contextual<Object>, CreationalContext<Object>> creationalContexts = new HashMap<>();
 
 
-    public SessionContext(final long sessionId) {
+    public SessionContext(final String sessionId) {
         this.sessionId = sessionId;
     }
 
 
-    public long getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

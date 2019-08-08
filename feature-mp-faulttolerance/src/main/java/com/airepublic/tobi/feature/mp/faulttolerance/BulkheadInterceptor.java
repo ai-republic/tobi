@@ -34,6 +34,13 @@ public class BulkheadInterceptor implements Serializable {
     private final Map<Object, ThreadPoolExecutor> forkJoinPools = new HashMap<>();
 
 
+    /**
+     * Intercepts the {@link Bulkhead} annotation.
+     * 
+     * @param context the {@link InvocationContext}
+     * @return the result of the method
+     * @throws Throwable if execution fails
+     */
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Throwable {
         final Bulkhead bulkhead = context.getMethod().getAnnotation(Bulkhead.class);

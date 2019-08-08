@@ -2,7 +2,7 @@ import javax.ws.rs.ext.ContextResolver;
 
 import com.airepublic.tobi.core.spi.IServicePlugin;
 import com.airepublic.tobi.plugin.http.jaxrs.resteasy.ObjectMapperContextResolver;
-import com.airepublic.tobi.plugin.http.jaxrs.resteasy.RestEasyPlugin;
+import com.airepublic.tobi.plugin.http.jaxrs.resteasy.ResteasyPlugin;
 
 module com.airepublic.tobi.plugin.http.jaxrs.resteasy {
     exports com.airepublic.tobi.plugin.http.jaxrs.resteasy;
@@ -31,7 +31,7 @@ module com.airepublic.tobi.plugin.http.jaxrs.resteasy {
     requires org.jboss.logging;
     requires java.naming;
 
-    provides IServicePlugin with RestEasyPlugin;
+    provides IServicePlugin with ResteasyPlugin;
     provides ContextResolver with ObjectMapperContextResolver;
 
     opens com.airepublic.tobi.plugin.http.jaxrs.resteasy;

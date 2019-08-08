@@ -22,6 +22,9 @@ public class ConfigBuilderImpl implements ConfigBuilder {
     private final List<Converter<?>> discoveredConverters;
 
 
+    /**
+     * Constructor.
+     */
     @SuppressWarnings("rawtypes")
     public ConfigBuilderImpl() {
         config.setClassLoader(Thread.currentThread().getContextClassLoader());

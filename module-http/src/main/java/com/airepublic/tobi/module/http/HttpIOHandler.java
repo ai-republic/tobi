@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 
+import javax.inject.Inject;
+
 import com.airepublic.http.common.Headers;
 import com.airepublic.http.common.HttpResponse;
 import com.airepublic.http.common.HttpStatus;
@@ -13,32 +15,23 @@ import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Request;
 
+/**
+ * A default {@link IIOHandler} implementation for HTTP which will return a 404.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class HttpIOHandler implements IIOHandler {
     private static final long serialVersionUID = 1L;
+    @Inject
     private IServerSession session;
 
 
     /**
-     * Gets the current {@link IServerSession}.
-     * 
-     * @return the {@link IServerSession}
-     */
-    @Override
-    public IServerSession getSession() {
-        return session;
-    }
-
-
-    @Override
-    public void setSession(final IServerSession session) {
-        this.session = session;
-    }
-
-
-    /**
-     * The default implementation will just send a {@link ChannelAction#CLOSE_INPUT}.
+     * The default implementation will just return a {@link ChannelAction#CLOSE_INPUT}.
      * 
      * @param request the {@link Request} read from the incoming stream
+     * @return {@link ChannelAction#CLOSE_INPUT}
      * @throws IOException if something goes wrong during processing
      */
     @Override

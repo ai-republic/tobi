@@ -11,15 +11,29 @@ import javax.enterprise.inject.spi.AnnotatedField;
 import javax.enterprise.inject.spi.AnnotatedMethod;
 import javax.enterprise.inject.spi.AnnotatedType;
 
+/**
+ * Decorates the annotated type with another annotation. This is to break the restriction if an
+ * annotation is only declared for, i.e. type scope.
+ * 
+ * @author Torsten Oltmanns
+ *
+ * @param <X> the type of the original annotation
+ * @param <A> the type of the annotation used to decorate the occurrence
+ */
 public class AnnotatedTypeDecorator<X, A extends Annotation> implements AnnotatedType<X> {
-
     private final AnnotatedType<X> decoratedType;
     private final Class<A> annotationClass;
     private final Annotation decoratingAnnotation;
-
     private final Set<Annotation> annotations;
 
 
+    /**
+     * Constructor.
+     * 
+     * @param decoratedType the {@link AnnotatedType} of the original annotation
+     * @param annotationClass the annotation used to decorate the occurrence
+     * @param decoratingAnnotation the annotation literal used to decorate the occurrence
+     */
     public AnnotatedTypeDecorator(final AnnotatedType<X> decoratedType, final Class<A> annotationClass, final Annotation decoratingAnnotation) {
         this.decoratedType = decoratedType;
         this.annotationClass = annotationClass;

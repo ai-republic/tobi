@@ -39,26 +39,36 @@ import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.module.http.HttpChannelEncoder;
 
-public class RestEasyIOHandler implements IIOHandler {
+/**
+ * The {@link IIOHandler} implementation for JAX-RS using resteasy.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
+public class ResteasyIOHandler implements IIOHandler {
     private static final long serialVersionUID = 1L;
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
     @Inject
     private IServerContext serverContext;
-    private RestEasyHttpContextBuilder contextBuilder;
+    private ResteasyHttpContextBuilder contextBuilder;
     private String contextPath;
     private HttpResponse response;
     private Request request;
+    @Inject
     private IServerSession session;
 
 
+    /**
+     * Initializes this handler.
+     */
     @PostConstruct
     public void init() {
-        if (serverContext.hasAttribute(RestEasyPlugin.CONTEXT_BUILDER)) {
-            contextBuilder = (RestEasyHttpContextBuilder) serverContext.getAttribute(RestEasyPlugin.CONTEXT_BUILDER);
+        if (serverContext.hasAttribute(ResteasyPlugin.CONTEXT_BUILDER)) {
+            contextBuilder = (ResteasyHttpContextBuilder) serverContext.getAttribute(ResteasyPlugin.CONTEXT_BUILDER);
         } else {
-            throw new IllegalStateException(RestEasyHttpContextBuilder.class.getSimpleName() + " has not been set in the server-context under JAX-RS key!");
+            throw new IllegalStateException(ResteasyHttpContextBuilder.class.getSimpleName() + " has not been set in the server-context under JAX-RS key!");
         }
 
         contextPath = contextBuilder.getPath();
@@ -69,6 +79,7 @@ public class RestEasyIOHandler implements IIOHandler {
      * The default implementation will just send a {@link ChannelAction#CLOSE_INPUT}.
      * 
      * @param request the {@link Request} read from the incoming stream
+     * @return the {@link ChannelAction#CLOSE_INPUT}
      * @throws IOException if something goes wrong during processing
      */
     @Override
@@ -93,28 +104,17 @@ public class RestEasyIOHandler implements IIOHandler {
     }
 
 
-    /**
-     * Gets the current {@link IServerSession}.
-     * 
-     * @return the {@link IServerSession}
-     */
-    @Override
-    public IServerSession getSession() {
-        return session;
-    }
-
-
-    @Override
-    public void setSession(final IServerSession session) {
-        this.session = session;
-    }
-
-
     @Override
     public void onSessionClose() {
     }
 
 
+    /**
+     * Determine the content-type of the content of the body.
+     * 
+     * @param body the body {@link ByteBuffer}
+     * @return the content-type
+     */
     private String determineContentType(final ByteBuffer body) {
         // TODO determine content type
         return "text/plain";
@@ -122,7 +122,7 @@ public class RestEasyIOHandler implements IIOHandler {
 
 
     /**
-     * The implementation should produce a {@link HttpResponse} according to the
+     * The implementation should produce a {@link HttpResponse} corresponding to the
      * {@link HttpRequest}.
      * 
      * @return a {@link HttpResponse}
@@ -143,8 +143,8 @@ public class RestEasyIOHandler implements IIOHandler {
                     final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
                     httpRequest.setBody(request.getPayload());
 
-                    final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, this);
-                    final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
+                    final ResteasyHttpResponseWrapper restEasyHttpResponse = new ResteasyHttpResponseWrapper(response, this);
+                    final ResteasyHttpRequestWrapper restEasyHttpRequest = new ResteasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
 
                     // add them to the context
                     ResteasyProviderFactory.getContextDataMap().put(org.jboss.resteasy.spi.HttpRequest.class, restEasyHttpRequest);
@@ -215,6 +215,11 @@ public class RestEasyIOHandler implements IIOHandler {
     }
 
 
+    /**
+     * Sets the {@link HttpResponse}.
+     * 
+     * @param response the {@link HttpResponse}
+     */
     public void setHttpResponse(final HttpResponse response) {
         this.response = response;
     }

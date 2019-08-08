@@ -11,12 +11,12 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 import com.airepublic.logging.java.SerializableLogger;
 import com.airepublic.tobi.core.spi.ICDIServiceProvider;
 
-public class Bootstrap {
-    private static final Logger LOG = new SerializableLogger(Level.INFO, Bootstrap.class.getName());
+public class Tobi {
+    private static final Logger LOG = new SerializableLogger(Level.INFO, Tobi.class.getName());
 
 
     private void startServer(final SeContainer cdiContainer) throws IOException {
-        final JavaServer javaServer = cdiContainer.select(JavaServer.class).get();
+        final TobiServer javaServer = cdiContainer.select(TobiServer.class).get();
         LOG.info("Booting microprofile-server ...");
         javaServer.start(cdiContainer);
 
@@ -42,10 +42,10 @@ public class Bootstrap {
                 cdiContainer = SeContainerInitializer.newInstance().initialize();
             }
 
-            new Bootstrap().startServer(cdiContainer);
+            new Tobi().startServer(cdiContainer);
         } catch (final Exception e) {
-            LOG.log(Level.SEVERE, "Failed to start server: ", e);
-            e.printStackTrace();
+            LOG.log(Level.SEVERE, "Failed to start Tobi server: ", e);
         }
     }
+
 }

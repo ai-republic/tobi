@@ -6,6 +6,12 @@ import com.airepublic.http.sse.api.SseConsumer;
 import com.airepublic.http.sse.api.SseEvent;
 import com.airepublic.http.sse.api.SseProducer;
 
+/**
+ * Example of SSE resource.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class SseSample {
     private final static String[] words = { "Hello", "world", "of", "SSE" };
     private int counter = 0;

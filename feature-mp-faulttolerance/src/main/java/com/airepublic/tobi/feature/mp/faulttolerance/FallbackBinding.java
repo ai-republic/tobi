@@ -7,6 +7,15 @@ import java.lang.annotation.Target;
 
 import javax.interceptor.InterceptorBinding;
 
+import org.eclipse.microprofile.faulttolerance.Fallback;
+
+/**
+ * Annotation used to decorate {@link Fallback} annotation occurrences due to it only being method
+ * scoped.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @InterceptorBinding

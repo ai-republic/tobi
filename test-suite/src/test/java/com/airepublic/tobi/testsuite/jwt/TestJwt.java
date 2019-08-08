@@ -1,4 +1,4 @@
-package com.airepublic.tobi.feature.mp.jwtauth;
+package com.airepublic.tobi.testsuite.jwt;
 
 import javax.annotation.security.DenyAll;
 import javax.annotation.security.PermitAll;
@@ -11,8 +11,10 @@ import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class Test {
+public class TestJwt {
     @Inject
     private JsonWebToken jwt;
     @Inject
@@ -38,11 +40,12 @@ public class Test {
     }
 
 
-    public static void main(final String[] args) {
+    @Test
+    public void testJwt() {
         final SeContainer container = SeContainerInitializer.newInstance().initialize();
-        final Test test = container.select(Test.class).get();
-        System.out.println(test.jwt);
-        System.out.println(test.value);
+        final TestJwt test = container.select(TestJwt.class).get();
+        Assertions.assertNotNull(test.jwt);
+        Assertions.assertNotNull(test.value);
     }
 
 }

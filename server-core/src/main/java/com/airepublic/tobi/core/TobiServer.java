@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -30,11 +31,10 @@ import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IServerModule;
-import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.IServicePlugin;
 
 @ApplicationScoped
-public class JavaServer {
+public class TobiServer {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
@@ -55,7 +55,7 @@ public class JavaServer {
                     Runtime.getRuntime().addShutdownHook(new Thread() {
                         @Override
                         public void run() {
-                            JavaServer.this.stop();
+                            TobiServer.this.stop();
                         }
                     });
 
@@ -238,21 +238,23 @@ public class JavaServer {
 
         try {
             final IServerModule module = moduleForKey.get(connectionKey);
-            IServerSession session = serverContext.getServerSession(channel.getRemoteAddress());
-
-            if (session == null) {
-                session = CDI.current().select(IServerSession.class).get();
-            }
-
             final IChannelProcessor processor = CDI.current().select(IChannelProcessor.class).get();
-            processor.prepare(session, module, channel, null);
-            module.accept(processor);
+
+            ForkJoinPool.commonPool().submit(() -> {
+                try {
+                    processor.prepare(module, channel, null);
+                    module.accept(processor);
+                    processor.run();
+                } catch (final IOException e) {
+                    logger.log(Level.SEVERE, "Error creating session", e);
+                }
+            });
 
             // final SessionContainer sc = CDI.current().select(SessionContainer.class).get();
             // sc.startSession(moduleForKey.get(connectionKey), () -> channel, new
             // SessionAttributes(), false);
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, "Error creating session", e);
+            logger.log(Level.SEVERE, "Error accepting socket!", e);
         } finally {
         }
     }

@@ -34,6 +34,12 @@ public class CircuitBreakerInterceptor implements Serializable {
         CLOSED, OPEN, CLOSING
     };
 
+    /**
+     * Context information for the open circuits.
+     * 
+     * @author Torsten Oltmanns
+     *
+     */
     class CircuitBreakerContext {
         private final AtomicReference<CircuitBreakerState> state = new AtomicReference<>(CircuitBreakerState.CLOSED);
         private final AtomicLong callCount = new AtomicLong(0L);
@@ -44,6 +50,13 @@ public class CircuitBreakerInterceptor implements Serializable {
     }
 
 
+    /**
+     * Intercepts the {@link CircuitBreaker} annotation.
+     * 
+     * @param context the {@link InvocationContext}
+     * @return the result of the method
+     * @throws Throwable if execution fails
+     */
     @AroundInvoke
     public Object intercept(final InvocationContext context) throws Throwable {
         Object result = null;
@@ -124,6 +137,12 @@ public class CircuitBreakerInterceptor implements Serializable {
     }
 
 
+    /**
+     * Checks if the circuit-breaker needs to change to the open state.
+     * 
+     * @param circuitBreaker the {@link CircuitBreaker}
+     * @param circuitBreakerContext the {@link CircuitBreakerContext}
+     */
     private void checkToOpenCircuit(final CircuitBreaker circuitBreaker, final CircuitBreakerContext circuitBreakerContext) {
         if (circuitBreakerContext.state.get() == CircuitBreakerState.CLOSED || circuitBreakerContext.state.get() == CircuitBreakerState.CLOSING) {
             if (circuitBreakerContext.callCount.get() >= circuitBreaker.requestVolumeThreshold()) {
@@ -135,6 +154,13 @@ public class CircuitBreakerInterceptor implements Serializable {
     }
 
 
+    /**
+     * Checks if the circuit-breaker can be changed to the closed state.
+     * 
+     * @param circuitBreaker the {@link CircuitBreaker}
+     * @param circuitBreakerContext the {@link CircuitBreakerContext}
+     * @param context the {@link InvocationContext}
+     */
     private void checkToCloseCircuit(final CircuitBreaker circuitBreaker, final CircuitBreakerContext circuitBreakerContext, final InvocationContext context) {
         // check if the circuit is ready to be fully closed
         if (circuitBreakerContext.state.get() == CircuitBreakerState.CLOSING && circuitBreakerContext.successCount.get() >= circuitBreaker.successThreshold()) {
@@ -144,6 +170,13 @@ public class CircuitBreakerInterceptor implements Serializable {
     }
 
 
+    /**
+     * Validates the if the field is below the minimum value.
+     * 
+     * @param field the field
+     * @param value the current value
+     * @param minValue the minimum value
+     */
     private void validate(final String field, final long value, final long minValue) {
         if (value < minValue) {
             throw new FaultToleranceDefinitionException(field + " must be >= " + minValue + "!");
@@ -151,6 +184,14 @@ public class CircuitBreakerInterceptor implements Serializable {
     }
 
 
+    /**
+     * Validates the if the field is between the minimum value and maximum value.
+     * 
+     * @param field the field
+     * @param value the current value
+     * @param minValue the minimum value
+     * @param maxValue the maximum value
+     */
     private void validateBetween(final String field, final double value, final double minValue, final double maxValue) {
         if (value < minValue || value > maxValue) {
             throw new FaultToleranceDefinitionException(field + " must be between " + minValue + " and " + maxValue + "!");

@@ -2,6 +2,7 @@ package com.airepublic.tobi.plugin.http.websocket;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
@@ -44,6 +45,12 @@ import com.airepublic.tobi.plugin.http.websocket.server.WsHttpUpgradeHandler;
 import com.airepublic.tobi.plugin.http.websocket.server.WsRemoteEndpointImplServer;
 import com.airepublic.tobi.plugin.http.websocket.server.WsServerContainer;
 
+/**
+ * The {@link IIOHandler} implementation for websocket IO.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class WebSocketIOHandler implements IIOHandler {
     private static final long serialVersionUID = 1L;
     @Inject
@@ -51,27 +58,19 @@ public class WebSocketIOHandler implements IIOHandler {
     private Logger logger;
     @Inject
     private IServerContext serverContext;
+    @Inject
     private IServerSession session;
     private static WsServerContainer webSocketContainer;
     private boolean handshakeDone = false;
     private ServerEndpointConfig serverEndpointConfig;
 
 
+    /**
+     * Initializes the websocket container.
+     */
     @PostConstruct
     public void init() {
         webSocketContainer = (WsServerContainer) serverContext.getAttribute("websocket.container");
-    }
-
-
-    @Override
-    public IServerSession getSession() {
-        return session;
-    }
-
-
-    @Override
-    public void setSession(final IServerSession session) {
-        this.session = session;
     }
 
 
@@ -108,6 +107,13 @@ public class WebSocketIOHandler implements IIOHandler {
     }
 
 
+    /**
+     * Perform the websocket upgrade handshake.
+     * 
+     * @param request the {@link HttpRequest}
+     * @throws IOException if the handshake fails
+     * @throws URISyntaxException if the request contains an invalid {@link URI}
+     */
     private void doHandshake(final HttpRequest request) throws IOException, URISyntaxException {
         final MappingResult<ServerEndpointConfig> mapping = webSocketContainer.getMapping().findMapping(request.getPath());
         serverEndpointConfig = mapping.getMappedObject();
@@ -117,12 +123,17 @@ public class WebSocketIOHandler implements IIOHandler {
         session.getChannel().write(response);
         handshakeDone = true;
 
-        session.getChannelProcessor().setChannelEncoder(new WebSocketEncoder(getSession()));
+        session.getChannelProcessor().setChannelEncoder(new WebSocketEncoder(session));
 
         initWebSocket(handler);
     }
 
 
+    /**
+     * Initializes the websocket after the upgrade.
+     * 
+     * @param handler the {@link WsHttpUpgradeHandler}
+     */
     public void initWebSocket(final WsHttpUpgradeHandler handler) {
         if (handler.getEp() == null) {
             throw new IllegalStateException("Upgrade handler not pre-initialized!");
@@ -186,6 +197,12 @@ public class WebSocketIOHandler implements IIOHandler {
     }
 
 
+    /**
+     * Creates a {@link Map} of the request query parameters.
+     * 
+     * @param query the request query part
+     * @return the query parameters map
+     */
     private Map<String, List<String>> parseQueryParams(String query) {
         if (query == null || query.isBlank()) {
             return Collections.emptyMap();
@@ -230,6 +247,13 @@ public class WebSocketIOHandler implements IIOHandler {
     }
 
 
+    /**
+     * Gets the {@link ServerEndpointConfig} from the specified annotated class.
+     * 
+     * @param pojoClass the class
+     * @return the {@link ServerEndpointConfig}
+     * @throws DeploymentException if the class is not annotated
+     */
     ServerEndpointConfig getAnnotatedEndpointConfig(final Class<?> pojoClass) throws DeploymentException {
         try {
             final ServerEndpoint annotation = pojoClass.getAnnotation(ServerEndpoint.class);
@@ -264,8 +288,8 @@ public class WebSocketIOHandler implements IIOHandler {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
         if (handler != null) {
             ((CompletionHandler<Long, Void>) handler).completed(length, null);
@@ -275,14 +299,14 @@ public class WebSocketIOHandler implements IIOHandler {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
         if (handler != null) {
             ((CompletionHandler<Long, Void>) handler).failed(t, null);
         }
 
-        if (!getSession().getChannel().isOpen()) {
+        if (!session.getChannel().isOpen()) {
             return ChannelAction.CLOSE_ALL;
         }
         return ChannelAction.KEEP_OPEN;
@@ -304,54 +328,4 @@ public class WebSocketIOHandler implements IIOHandler {
     @Override
     public void onSessionClose() {
     }
-
-
-    public byte[] encode(final String mess) throws IOException {
-        final byte[] rawData = mess.getBytes();
-
-        int frameCount = 0;
-        final byte[] frame = new byte[10];
-
-        frame[0] = (byte) 129;
-
-        if (rawData.length <= 125) {
-            frame[1] = (byte) rawData.length;
-            frameCount = 2;
-        } else if (rawData.length >= 126 && rawData.length <= 65535) {
-            frame[1] = (byte) 126;
-            final int len = rawData.length;
-            frame[2] = (byte) (len >> 8 & (byte) 255);
-            frame[3] = (byte) (len & (byte) 255);
-            frameCount = 4;
-        } else {
-            frame[1] = (byte) 127;
-            final int len = rawData.length;
-            frame[2] = (byte) (len >> 56 & (byte) 255);
-            frame[3] = (byte) (len >> 48 & (byte) 255);
-            frame[4] = (byte) (len >> 40 & (byte) 255);
-            frame[5] = (byte) (len >> 32 & (byte) 255);
-            frame[6] = (byte) (len >> 24 & (byte) 255);
-            frame[7] = (byte) (len >> 16 & (byte) 255);
-            frame[8] = (byte) (len >> 8 & (byte) 255);
-            frame[9] = (byte) (len & (byte) 255);
-            frameCount = 10;
-        }
-
-        final int bLength = frameCount + rawData.length;
-
-        final byte[] reply = new byte[bLength];
-
-        int bLim = 0;
-        for (int i = 0; i < frameCount; i++) {
-            reply[bLim] = frame[i];
-            bLim++;
-        }
-        for (final byte element : rawData) {
-            reply[bLim] = element;
-            bLim++;
-        }
-
-        return reply;
-    }
-
 }

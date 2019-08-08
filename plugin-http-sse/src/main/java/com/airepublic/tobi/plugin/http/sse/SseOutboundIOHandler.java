@@ -25,11 +25,19 @@ import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.core.spi.SessionConstants;
 import com.airepublic.tobi.module.http.HttpChannelEncoder;
 
+/**
+ * The {@link IIOHandler} implementation for outbound SSE. It handles the IO for the object which
+ * has the method annotated with {@link SseProducer}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class SseOutboundIOHandler implements IIOHandler {
     private static final long serialVersionUID = 1L;
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
+    @Inject
     private IServerSession session;
     @Inject
     private SseService sseService;
@@ -39,18 +47,6 @@ public class SseOutboundIOHandler implements IIOHandler {
     private long delayInMs = 0L;
     private long times = 0L;
     private long maxTimes = -1L;
-
-
-    @Override
-    public IServerSession getSession() {
-        return session;
-    }
-
-
-    @Override
-    public void setSession(final IServerSession session) {
-        this.session = session;
-    }
 
 
     @Override
@@ -147,11 +143,21 @@ public class SseOutboundIOHandler implements IIOHandler {
     }
 
 
+    /**
+     * Sets the service method annotated with {@link SseProducer}.
+     * 
+     * @param serviceMethod the method annotated with {@link SseProducer}
+     */
     public void setServiceMethod(final Method serviceMethod) {
         this.serviceMethod = serviceMethod;
     }
 
 
+    /**
+     * Sets the object instance of the class with the {@link SseProducer} service method.
+     * 
+     * @param serviceObject the object instance
+     */
     public void setServiceObject(final Object serviceObject) {
         this.serviceObject = serviceObject;
     }

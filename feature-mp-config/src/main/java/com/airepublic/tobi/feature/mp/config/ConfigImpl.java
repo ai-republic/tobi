@@ -20,6 +20,12 @@ import org.eclipse.microprofile.config.spi.Converter;
 
 import com.airepublic.logging.java.SerializableLogger;
 
+/**
+ * Implementation of the Microprofile {@link Config} interface.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class ConfigImpl implements Config {
     private final static Logger LOG = new SerializableLogger(ConfigImpl.class.getName());
     private final Map<String, String> values = new ConcurrentHashMap<>();
@@ -28,6 +34,11 @@ public class ConfigImpl implements Config {
     private ClassLoader classLoader;
 
 
+    /**
+     * Create a new {@link Config}.
+     * 
+     * @return the created {@link Config}
+     */
     static ConfigImpl create() {
         return new ConfigImpl("");
     }
@@ -37,7 +48,7 @@ public class ConfigImpl implements Config {
      * Dummy constructor to prevent CDI finding multiple instances. Should be using create() or the
      * {@link ConfigPropertyProducer}.
      * 
-     * @param dummy
+     * @param dummy not used
      */
     private ConfigImpl(final String dummy) {
     }
@@ -51,16 +62,28 @@ public class ConfigImpl implements Config {
     }
 
 
+    /**
+     * Convert the specified value to the specified type. If the propertyValue is an array, each
+     * element in the array is converted.
+     * 
+     * @param <T> the type of object
+     * @param propertyValue the value
+     * @param propertyType the class of the return type
+     * @return the converted value
+     */
     @SuppressWarnings("unchecked")
-    public <T> T convert(final String propertyValue, final Class<T> propertyType) {
+    protected <T> T convert(final String propertyValue, final Class<T> propertyType) {
         if (propertyValue == null) {
             return null;
         }
 
+        // check if type is an array
         if (propertyType.isArray()) {
+            // then parse the values
             final List<String> propertyValues = parse(propertyValue);
             final List<T> convertedValues = new ArrayList<>();
 
+            // and convert each element
             for (final String value : propertyValues) {
                 final T convertedValue = convertSingleValue(value, propertyType);
 
@@ -75,11 +98,18 @@ public class ConfigImpl implements Config {
 
             return (T) convertedValues.toArray();
         } else {
+            // otherwise convert the value
             return convertSingleValue(propertyValue, propertyType);
         }
     }
 
 
+    /**
+     * Parses the speciied value to a list of values.
+     * 
+     * @param propertyValue the value
+     * @return the list of values
+     */
     protected List<String> parse(final String propertyValue) {
         final List<String> values = new ArrayList<>();
         final StringBuffer buf = new StringBuffer();
@@ -97,6 +127,14 @@ public class ConfigImpl implements Config {
     }
 
 
+    /**
+     * Converts the value to the specified type.
+     * 
+     * @param <T> the object type
+     * @param propertyValue the value
+     * @param propertyType the class of the type
+     * @return the converted value to the type
+     */
     @SuppressWarnings("unchecked")
     protected <T> T convertSingleValue(final String propertyValue, final Class<?> propertyType) {
         T convertedValue = null;
@@ -197,7 +235,12 @@ public class ConfigImpl implements Config {
     }
 
 
-    void addConfigSource(final ConfigSource configSource) {
+    /**
+     * Adds a {@link ConfigSource}.
+     * 
+     * @param configSource the {@link ConfigSource}
+     */
+    protected void addConfigSource(final ConfigSource configSource) {
         Objects.requireNonNull(configSource, "ConfigSource must not be null!");
 
         configSources.add(configSource);
@@ -206,7 +249,13 @@ public class ConfigImpl implements Config {
     }
 
 
-    public void addConverter(final Converter<?> converter, final int priority) {
+    /**
+     * Adds a {@link Converter} with the specified priority.
+     * 
+     * @param converter the {@link Converter}
+     * @param priority the priority to order the converters
+     */
+    protected void addConverter(final Converter<?> converter, final int priority) {
         Objects.requireNonNull(converter, "Converter must not be null!");
 
         try {
@@ -228,13 +277,23 @@ public class ConfigImpl implements Config {
     }
 
 
-    void setClassLoader(final ClassLoader classLoader) {
-        this.classLoader = classLoader;
+    /**
+     * Gets the {@link ClassLoader} for the {@link Config}.
+     * 
+     * @return classLoader the {@link ClassLoader}
+     */
+    protected ClassLoader getClassLoader() {
+        return classLoader;
     }
 
 
-    ClassLoader getClassLoader() {
-        return classLoader;
+    /**
+     * Sets the {@link ClassLoader} for the {@link Config}.
+     * 
+     * @param classLoader the {@link ClassLoader}
+     */
+    protected void setClassLoader(final ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 
 }

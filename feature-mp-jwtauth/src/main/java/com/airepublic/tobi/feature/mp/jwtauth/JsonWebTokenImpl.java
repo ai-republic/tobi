@@ -9,10 +9,22 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
+/**
+ * Implementation of the {@link JsonWebToken}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class JsonWebTokenImpl implements JsonWebToken {
     private final Claims claims;
 
 
+    /**
+     * Constructor.
+     * 
+     * @param jwt the JWT string
+     * @param secretKey the secret key
+     */
     public JsonWebTokenImpl(final String jwt, final String secretKey) {
         claims = Jwts.parser()
                 .setSigningKey(secretKey)
@@ -21,6 +33,12 @@ public class JsonWebTokenImpl implements JsonWebToken {
     }
 
 
+    /**
+     * Constructor.
+     * 
+     * @param jwt the JWT string
+     * @param secretKey the secret key
+     */
     public JsonWebTokenImpl(final String jwt, final byte[] secretKey) {
         claims = Jwts.parser()
                 .setSigningKey(secretKey)
@@ -29,6 +47,12 @@ public class JsonWebTokenImpl implements JsonWebToken {
     }
 
 
+    /**
+     * Constructor.
+     * 
+     * @param jwt the JWT string
+     * @param secretKey the secret key
+     */
     public JsonWebTokenImpl(final String jwt, final Key secretKey) {
 
         claims = Jwts.parser()
@@ -56,8 +80,8 @@ public class JsonWebTokenImpl implements JsonWebToken {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getClaim(final String claimName) {
         return (T) claims.get(claimName);
     }

@@ -15,10 +15,23 @@ import javax.interceptor.Interceptor;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefinitionException;
 
+/**
+ * A CDI {@link Extension} that performs checks for the occurrence of the {@link Asynchronous}
+ * annotation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class AsynchronousCheckExtension implements Extension {
     private Throwable t;
 
 
+    /**
+     * Checks the usage of the {@link Asynchronous} annotation.
+     * 
+     * @param event the {@link ProcessAnnotatedType} event
+     * @param bm the {@link BeanManager}
+     */
     void checkAsynchronousUse(@Observes @WithAnnotations(Asynchronous.class) final ProcessAnnotatedType<?> event, final BeanManager bm) {
         if (!event.getAnnotatedType().getJavaClass().isAnnotationPresent(Interceptor.class)) {
             if (event.getAnnotatedType().getJavaClass().isAnnotationPresent(Asynchronous.class)) {
@@ -36,6 +49,12 @@ public class AsynchronousCheckExtension implements Extension {
     }
 
 
+    /**
+     * Throws an exception after the deployment if the usage check failed.
+     * 
+     * @param event the {@link AfterDeploymentValidation} event
+     * @param bm the {@link BeanManager}
+     */
     void throwExceptionIfAsynchronousUseFails(@Observes final AfterDeploymentValidation event, final BeanManager bm) {
         if (t != null) {
             event.addDeploymentProblem(t);

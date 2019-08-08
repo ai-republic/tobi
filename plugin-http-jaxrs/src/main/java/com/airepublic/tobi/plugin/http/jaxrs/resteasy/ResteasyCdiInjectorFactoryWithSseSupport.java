@@ -11,8 +11,6 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.CDI;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 import org.jboss.resteasy.cdi.CdiConstructorInjector;
 import org.jboss.resteasy.cdi.CdiPropertyInjector;
@@ -31,6 +29,12 @@ import org.jboss.resteasy.spi.metadata.ResourceClass;
 import org.jboss.resteasy.spi.metadata.ResourceConstructor;
 import org.jboss.resteasy.spi.metadata.ResourceLocator;
 
+/**
+ * A customized {@link InjectorFactory} to use CDI and supporting SSE.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class ResteasyCdiInjectorFactoryWithSseSupport implements InjectorFactory {
     public static final String BEAN_MANAGER_ATTRIBUTE_PREFIX = "org.jboss.weld.environment.servlet.";
     private final BeanManager manager;
@@ -39,6 +43,9 @@ public class ResteasyCdiInjectorFactoryWithSseSupport implements InjectorFactory
     private final Map<Class<?>, Type> sessionBeanInterface;
 
 
+    /**
+     * Constructor.
+     */
     public ResteasyCdiInjectorFactoryWithSseSupport() {
         manager = lookupBeanManager();
         extension = lookupResteasyCdiExtension();
@@ -46,6 +53,11 @@ public class ResteasyCdiInjectorFactoryWithSseSupport implements InjectorFactory
     }
 
 
+    /**
+     * Constructor.
+     * 
+     * @param manager the {@link BeanManager}
+     */
     public ResteasyCdiInjectorFactoryWithSseSupport(final BeanManager manager) {
         this.manager = manager;
         extension = lookupResteasyCdiExtension();
@@ -99,6 +111,12 @@ public class ResteasyCdiInjectorFactoryWithSseSupport implements InjectorFactory
     }
 
 
+    /**
+     * Creates the {@link CdiConstructorInjector} for the specified class.
+     * 
+     * @param clazz the class
+     * @return the {@link CdiConstructorInjector} or null
+     */
     protected ConstructorInjector cdiConstructor(final Class<?> clazz) {
         if (!manager.getBeans(clazz).isEmpty()) {
             LogMessages.LOGGER.debug(Messages.MESSAGES.usingCdiConstructorInjector(clazz));
@@ -151,26 +169,12 @@ public class ResteasyCdiInjectorFactoryWithSseSupport implements InjectorFactory
 
 
     /**
-     * Do a lookup for BeanManager instance. JNDI and ServletContext is searched.
+     * Do a lookup for BeanManager instance.
      *
-     * @return BeanManager instance
+     * @return the {@link BeanManager}
      */
     protected BeanManager lookupBeanManager() {
         BeanManager beanManager = null;
-
-        // Do a lookup for BeanManager in JNDI (this is the only *portable* way)
-        beanManager = lookupBeanManagerInJndi("java:comp/BeanManager");
-        if (beanManager != null) {
-            LogMessages.LOGGER.debug(Messages.MESSAGES.foundBeanManagerAtJavaComp());
-            return beanManager;
-        }
-
-        // Do a lookup for BeanManager at an alternative JNDI location (workaround for WELDINT-19)
-        beanManager = lookupBeanManagerInJndi("java:app/BeanManager");
-        if (beanManager != null) {
-            LogMessages.LOGGER.debug(Messages.MESSAGES.foundBeanManagerAtJavaApp());
-            return beanManager;
-        }
 
         beanManager = lookupBeanManagerCDIUtil();
         if (beanManager != null) {
@@ -182,21 +186,11 @@ public class ResteasyCdiInjectorFactoryWithSseSupport implements InjectorFactory
     }
 
 
-    private BeanManager lookupBeanManagerInJndi(final String name) {
-        try {
-            final InitialContext ctx = new InitialContext();
-            LogMessages.LOGGER.debug(Messages.MESSAGES.doingALookupForBeanManager(name));
-            return (BeanManager) ctx.lookup(name);
-        } catch (final NamingException e) {
-            LogMessages.LOGGER.debug(Messages.MESSAGES.unableToObtainBeanManager(name));
-            return null;
-        } catch (final NoClassDefFoundError ncdfe) {
-            LogMessages.LOGGER.debug(Messages.MESSAGES.unableToPerformJNDILookups());
-            return null;
-        }
-    }
-
-
+    /**
+     * Looks up the BeanManager of the current CDI instance.
+     * 
+     * @return the {@link BeanManager}
+     */
     public static BeanManager lookupBeanManagerCDIUtil() {
         BeanManager bm = null;
         try {

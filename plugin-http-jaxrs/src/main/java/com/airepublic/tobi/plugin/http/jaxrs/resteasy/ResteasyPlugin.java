@@ -33,15 +33,21 @@ import com.airepublic.http.common.HttpResponse;
 import com.airepublic.http.common.HttpStatus;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
+import com.airepublic.reflections.Reflections;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
 import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.module.http.HttpChannelEncoder;
-import com.airepublic.reflections.Reflections;
 
-public class RestEasyPlugin implements IServicePlugin {
+/**
+ * The {@link IServicePlugin} implementation for JAX-RS using resteasy.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
+public class ResteasyPlugin implements IServicePlugin {
     public static final String CONTEXT_BUILDER = "http.jaxrs.resteasy.ContextBuilder";
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
@@ -49,7 +55,7 @@ public class RestEasyPlugin implements IServicePlugin {
     @Inject
     private IServerContext serverContext;
     private String contextPath;
-    private RestEasyHttpContextBuilder contextBuilder;
+    private ResteasyHttpContextBuilder contextBuilder;
 
 
     @Override
@@ -74,10 +80,10 @@ public class RestEasyPlugin implements IServicePlugin {
     public IIOHandler determineIoHandler(final Request request) {
         try {
             final HttpResponse response = new HttpResponse(HttpStatus.OK);
-            final RestEasyHttpResponseWrapper restEasyHttpResponse = new RestEasyHttpResponseWrapper(response, null);
+            final ResteasyHttpResponseWrapper restEasyHttpResponse = new ResteasyHttpResponseWrapper(response, null);
             final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
             httpRequest.setBody(request.getPayload());
-            final RestEasyHttpRequestWrapper restEasyHttpRequest = new RestEasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
+            final ResteasyHttpRequestWrapper restEasyHttpRequest = new ResteasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
             final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
 
             if (invoker != null) {
@@ -89,10 +95,10 @@ public class RestEasyPlugin implements IServicePlugin {
                 restEasyHttpRequest.setAttribute(ResourceMethodInvoker.class.getName(), methodInvoker);
 
                 try {
-                    final RestEasyIOHandler handler = CDI.current().select(RestEasyIOHandler.class).get();
+                    final ResteasyIOHandler handler = CDI.current().select(ResteasyIOHandler.class).get();
                     return handler;
                 } catch (final Exception e) {
-                    logger.log(Level.SEVERE, "Could not instantiate handler: " + RestEasyIOHandler.class, e);
+                    logger.log(Level.SEVERE, "Could not instantiate handler: " + ResteasyIOHandler.class, e);
                 }
             }
         } catch (final Exception e) {
@@ -105,7 +111,7 @@ public class RestEasyPlugin implements IServicePlugin {
     @Override
     public void initPlugin(final IServerModule module) {
 
-        contextBuilder = new RestEasyHttpContextBuilder();
+        contextBuilder = new ResteasyHttpContextBuilder();
         contextBuilder.getDeployment().setInjectorFactory(new CdiInjectorFactory(CDI.current().getBeanManager()));
         contextBuilder.getDeployment().setRegistry(new ResourceMethodRegistry(ResteasyProviderFactory.getInstance()));
         contextBuilder.getDeployment().getProviderClasses().add(ObjectMapperContextResolver.class.getName());
@@ -247,6 +253,13 @@ public class RestEasyPlugin implements IServicePlugin {
     }
 
 
+    /**
+     * Checks if the specified resource method represents a SSE producer or consumer.
+     * 
+     * @param resource the resource class
+     * @param method the resource method
+     * @return true if the method represents a SSE producer or consumer
+     */
     boolean isSseResource(final Class<?> resource, final Method method) {
         boolean sseMethodFound = false;
 

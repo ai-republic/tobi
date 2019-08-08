@@ -1,4 +1,4 @@
-package com.airepublic.tobi.javaserver.boot;
+package com.airepublic.tobi.example;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -13,16 +13,23 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import com.airepublic.logging.java.SerializableLogger;
+import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.feature.mp.jwtauth.ClaimsSet;
 import com.airepublic.tobi.feature.mp.jwtauth.JWTUtil;
 
+/**
+ * Example of JWT producer.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class Configuration {
     private final static Logger LOG = new SerializableLogger(Configuration.class.getName());
     private JsonWebToken jwt;
 
 
     @Produces
-    public JsonWebToken produce(final Config config) {
+    public JsonWebToken produce(final Config config, final IServerSession session) {
         final ClaimsSet claimSet = ClaimsSet.create("13", "Me", "AnySubject", "AnyUserPrincipalName", Set.of("AnyRole", "NoRole"), LocalDateTime.now(), LocalDateTime.now().plusHours(1));
         claimSet.add("Hello", "World");
 

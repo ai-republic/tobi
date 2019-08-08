@@ -4,7 +4,7 @@ import org.jboss.resteasy.plugins.server.embedded.SecurityDomain;
 import org.jboss.resteasy.spi.ResteasyConfiguration;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 
-public class RestEasyHttpContextBuilder {
+public class ResteasyHttpContextBuilder {
     protected ResteasyDeployment deployment = new ResteasyDeployment();
     protected String path = "/";
     protected SecurityDomain securityDomain;
@@ -54,7 +54,7 @@ public class RestEasyHttpContextBuilder {
 
 
     public void bind() {
-        final RestEasyHttpConfiguration config = new RestEasyHttpConfiguration();
+        final ResteasyHttpConfiguration config = new ResteasyHttpConfiguration();
         deployment.getDefaultContextObjects().put(ResteasyConfiguration.class, config);
 
         if (securityDomain != null) {

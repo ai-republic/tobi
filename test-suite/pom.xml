@@ -101,6 +101,11 @@
 			<artifactId>plugin-http-sse</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.tobi</groupId>
+			<artifactId>feature-cdi-weld</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

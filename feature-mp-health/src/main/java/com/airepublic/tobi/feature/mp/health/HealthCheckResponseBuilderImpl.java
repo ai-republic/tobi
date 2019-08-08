@@ -6,6 +6,12 @@ import java.util.Map;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 
+/**
+ * Builder implementing the {@link HealthCheckResponseBuilder}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 class HealthCheckResponseBuilderImpl extends HealthCheckResponseBuilder {
     private String name;
     private HealthCheckResponse.State state = HealthCheckResponse.State.DOWN;

@@ -7,6 +7,12 @@ import org.apache.webbeans.config.WebBeansFinder;
 
 import com.airepublic.tobi.core.spi.ICDIServiceProvider;
 
+/**
+ * CDI provider for OpenWebBeans.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class CDIServiceProviderImpl implements ICDIServiceProvider {
     private static SeContainer seContainer = null;
 

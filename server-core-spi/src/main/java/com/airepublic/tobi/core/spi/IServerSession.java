@@ -5,9 +5,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SocketChannel;
 
+import javax.enterprise.context.SessionScoped;
+
+@SessionScoped
 public interface IServerSession extends Serializable, AutoCloseable, SessionConstants {
 
     String getId();
+
+
+    void setId(String id);
 
 
     IChannelProcessor getChannelProcessor();

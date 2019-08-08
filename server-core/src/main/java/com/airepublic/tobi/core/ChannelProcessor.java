@@ -12,11 +12,13 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
 import com.airepublic.logging.java.LogLevel;
@@ -26,12 +28,22 @@ import com.airepublic.tobi.core.spi.IChannelEncoder;
 import com.airepublic.tobi.core.spi.IChannelEncoder.Status;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IIOHandler;
-import com.airepublic.tobi.core.spi.Request;
+import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
+import com.airepublic.tobi.core.spi.Request;
+import com.airepublic.tobi.core.spi.SessionContext;
 
+/**
+ * The {@link IChannelProcessor} implementation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class ChannelProcessor implements IChannelProcessor {
+    private static AtomicLong SESSION_ID_GENERATOR = new AtomicLong();
+
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
@@ -45,6 +57,8 @@ public class ChannelProcessor implements IChannelProcessor {
     private final Queue<Pair<ByteBuffer[], CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
     private IChannelEncoder channelEncoder;
     private IServerSession session;
+    @Inject
+    private IServerContext serverContext;
     @Inject
     private RequestScopedContext requestScopedContext;
     @Inject
@@ -63,14 +77,34 @@ public class ChannelProcessor implements IChannelProcessor {
      * @param channel the {@link SocketChannel}
      * @param ioHandler the {@link IIOHandler}
      * @param isSecure flag whether the channel is SSL encrypted
+     * @throws IOException if the channel is already closed
      */
     @Override
-    public void prepare(final IServerSession session, final IServerModule module, final SocketChannel channel, final IIOHandler ioHandler) {
+    public void prepare(final IServerModule module, final SocketChannel channel, final IIOHandler ioHandler) throws IOException {
+        session = serverContext.getServerSession(channel.getRemoteAddress());
+        SessionContext sessionContext = null;
+        String sessionId = null;
+
+        if (session != null) {
+            sessionId = session.getId();
+            sessionContext = serverContext.getSessionContext(sessionId);
+        } else {
+            sessionId = "" + SESSION_ID_GENERATOR.incrementAndGet();
+            sessionContext = new SessionContext(sessionId);
+        }
+
+        requestScopedContext.activate(new RequestContext(sessionId));
+        sessionScopedContext.activate(sessionContext);
+
+        if (session == null) {
+            session = CDI.current().select(IServerSession.class).get();
+            session.setId(sessionId);
+        }
+
         // reset
         closing.set(false);
         closed.set(false);
 
-        this.session = session;
         session.setChannelProcessor(this);
 
         this.module = module;
@@ -99,18 +133,8 @@ public class ChannelProcessor implements IChannelProcessor {
 
     @Override
     public void run() {
-        requestScopedContext.activate(new RequestContext(Long.valueOf(session.getId())));
 
-        // final Long sessionId = Long.valueOf(session.getId());
-        // final SessionContext sessionContext = serverContext.getSessionContext(sessionId);
-
-        // if (sessionContext == null) {
-        // sessionContext = new SessionContext(sessionId);
-        // serverContext.addSessionContext(sessionId, sessionContext);
-        // }
-        //
-        // sessionScopedContext.activate(sessionContext);
-        logger.info("Starting channel processing for module '" + module.getName() + "'");
+        logger.info("Starting channel processing for module '" + module.getName() + "' session #" + session.getId());
 
         while (getSelector().isOpen() && !closing.get() && !closed.get()) {
             try {
@@ -146,13 +170,17 @@ public class ChannelProcessor implements IChannelProcessor {
             }
         }
 
-        // sessionScopedContext.deactivate();
-        requestScopedContext.deactivate();
         close();
 
     }
 
 
+    /**
+     * Handles the specified {@link ChannelAction}.
+     * 
+     * @param action the {@link ChannelAction}
+     * @throws IOException if something goes wrong
+     */
     protected void handleAction(final ChannelAction action) throws IOException {
         final SocketChannel channel = getChannel();
 
@@ -176,6 +204,11 @@ public class ChannelProcessor implements IChannelProcessor {
     }
 
 
+    /**
+     * Handles reading from the connection.
+     * 
+     * @throws IOException if something goes wrong
+     */
     protected void handleRead() throws IOException {
         try {
             ChannelAction action = ChannelAction.KEEP_OPEN;
@@ -206,7 +239,7 @@ public class ChannelProcessor implements IChannelProcessor {
 
                     if (getIoHandler() == null) {
                         setIoHandler(module.determineIoHandler(request));
-                        logger.info("Using '" + getIoHandler() + "' to process: " + request);
+                        logger.info("Using '" + getIoHandler().getClass().getSimpleName() + "' to process session #" + session.getId());
                     }
 
                     if (len > 0) {
@@ -221,16 +254,17 @@ public class ChannelProcessor implements IChannelProcessor {
 
                     handleAction(action);
 
-                } else {
+                } else if (result.getValue1() == Status.NEED_MORE_DATA) {
                     // need more data to receive request
                     handleAction(ChannelAction.KEEP_OPEN);
+                } else if (result.getValue1() == Status.CLOSED) {
+                    handleAction(ChannelAction.CLOSE_ALL);
                 }
-
             } else {
                 handleAction(ChannelAction.CLOSE_ALL);
             }
         } catch (final Exception e) {
-            logger.log(Level.WARNING, "Exception during read processing. Closing input channel: " + e.getLocalizedMessage());
+            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing input channel: " + e.getLocalizedMessage());
 
             if (getIoHandler() != null) {
                 handleAction(getIoHandler().onReadError(e));
@@ -241,6 +275,11 @@ public class ChannelProcessor implements IChannelProcessor {
     }
 
 
+    /**
+     * Handles writing to the connection.
+     * 
+     * @throws IOException if something goes wrong
+     */
     protected void handleWrite() throws IOException {
         if (getIoHandler() == null) {
             handleAction(ChannelAction.CLOSE_ALL);
@@ -257,12 +296,17 @@ public class ChannelProcessor implements IChannelProcessor {
                 flush();
             }
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, "Exception during write processing in module " + module.getName() + ": ", e);
+            logger.log(Level.SEVERE, "Exception during write processing in module '" + module.getName() + "' session #" + session.getId() + ": ", e);
             handleAction(ChannelAction.CLOSE_ALL);
         }
     }
 
 
+    /**
+     * Flushes the write buffers to the connection.
+     * 
+     * @throws IOException if something goes wrong
+     */
     protected void flush() throws IOException {
         synchronized (closed) {
             if (!closed.get()) {
@@ -290,7 +334,7 @@ public class ChannelProcessor implements IChannelProcessor {
 
                             action = handler.writeSuccessful(pair.getValue2(), length);
                         } catch (final Throwable t) {
-                            logger.log(Level.SEVERE, "Error writing buffers in module " + module.getName() + ": " + t.getLocalizedMessage());
+                            logger.log(Level.SEVERE, "Error writing buffers in module '" + module.getName() + "' session #" + session.getId() + ": " + t.getLocalizedMessage());
                             action = handler.writeFailed(pair.getValue2(), t);
                         }
 
@@ -339,11 +383,21 @@ public class ChannelProcessor implements IChannelProcessor {
     }
 
 
+    /**
+     * Gets the next read buffer if available.
+     * 
+     * @return the next incoming {@link ByteBuffer} or null
+     */
     protected ByteBuffer getNextReadBuffer() {
         return in.poll();
     }
 
 
+    /**
+     * Gets the next write buffer if available.
+     * 
+     * @return the next outgoing {@link ByteBuffer} or null
+     */
     protected Pair<ByteBuffer[], CompletionHandler<?, ?>> getNextWriteBuffer() {
         if (out.size() > 0) {
             return out.poll();
@@ -355,6 +409,7 @@ public class ChannelProcessor implements IChannelProcessor {
 
     @Override
     public void close() {
+
         // flush all output
         try {
             flush();
@@ -364,7 +419,10 @@ public class ChannelProcessor implements IChannelProcessor {
 
         synchronized (closed) {
             if (closed.compareAndSet(false, true)) {
-                logger.info("Closing channel for module '" + module.getName() + "'!");
+                logger.info("Closing channel for module '" + module.getName() + "' session #" + session.getId() + " !");
+
+                sessionScopedContext.deactivate();
+                requestScopedContext.deactivate();
 
                 getChannel().keyFor(getSelector()).cancel();
 
@@ -415,6 +473,11 @@ public class ChannelProcessor implements IChannelProcessor {
     }
 
 
+    /**
+     * Sets the {@link SocketChannel} to process.
+     * 
+     * @param channel the {@link SocketChannel}
+     */
     void setChannel(final SocketChannel channel) {
         this.channel = channel;
     }
@@ -426,8 +489,12 @@ public class ChannelProcessor implements IChannelProcessor {
     }
 
 
+    /**
+     * Sets the {@link IIOHandler}.
+     * 
+     * @param ioHandler the {@link IIOHandler}
+     */
     protected void setIoHandler(final IIOHandler ioHandler) {
         this.ioHandler = ioHandler;
-        this.ioHandler.setSession(session);
     }
 }

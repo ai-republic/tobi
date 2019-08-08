@@ -12,20 +12,31 @@ import javax.enterprise.context.spi.CreationalContext;
 
 import com.airepublic.logging.java.SerializableLogger;
 
+/**
+ * The CDI request scoped context storage.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class RequestContext {
     private final static Logger LOG = new SerializableLogger(RequestContext.class.getName());
 
-    private final long sessionId;
+    private final String sessionId;
     private final Map<Contextual<Object>, Object> beans = new HashMap<>();
     private final Map<Contextual<Object>, CreationalContext<Object>> creationalContexts = new HashMap<>();
 
 
-    public RequestContext(final long sessionId) {
+    /**
+     * Constructor.
+     * 
+     * @param sessionId the session id
+     */
+    public RequestContext(final String sessionId) {
         this.sessionId = sessionId;
     }
 
 
-    public long getSessionId() {
+    public String getSessionId() {
         return sessionId;
     }
 

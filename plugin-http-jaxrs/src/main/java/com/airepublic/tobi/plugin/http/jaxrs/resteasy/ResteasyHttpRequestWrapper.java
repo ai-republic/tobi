@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.ws.rs.core.Application;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -18,13 +19,20 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.resteasy.core.SynchronousDispatcher;
 import org.jboss.resteasy.core.SynchronousExecutionContext;
 import org.jboss.resteasy.specimpl.ResteasyHttpHeaders;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyAsynchronousContext;
 import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.jboss.resteasy.util.PathHelper;
 
 import com.airepublic.http.common.HttpRequest;
 
-public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRequest {
+/**
+ * Wrapper for the {@link HttpRequest} as a {@link org.jboss.resteasy.spi.HttpRequest}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
+public class ResteasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRequest {
     private final HttpRequest request;
     private final String contextPath;
     private final ResteasyAsynchronousContext restEasyContext;
@@ -33,7 +41,15 @@ public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRe
     private ResteasyUriInfo uriInfo;
 
 
-    public RestEasyHttpRequestWrapper(final HttpRequest request, final org.jboss.resteasy.spi.HttpResponse response, final SynchronousDispatcher dispatcher, final String contextPath) {
+    /**
+     * Constructor.
+     * 
+     * @param request the {@link HttpRequest} to be wrapped
+     * @param response the {@link HttpResponse}
+     * @param dispatcher the {@link SynchronousDispatcher}
+     * @param contextPath the context path of the {@link Application}
+     */
+    public ResteasyHttpRequestWrapper(final HttpRequest request, final HttpResponse response, final SynchronousDispatcher dispatcher, final String contextPath) {
         this.request = request;
         this.contextPath = contextPath;
         restEasyContext = new SynchronousExecutionContext(dispatcher, this, response);
@@ -85,14 +101,20 @@ public class RestEasyHttpRequestWrapper implements org.jboss.resteasy.spi.HttpRe
     @Override
     public ResteasyUriInfo getUri() {
         if (uriInfo == null) {
-            uriInfo = extractUriInfo(request);
+            uriInfo = extractUriInfo();
         }
 
         return uriInfo;
     }
 
 
-    private ResteasyUriInfo extractUriInfo(final HttpRequest request) {
+    /**
+     * Extracts the {@link ResteasyUriInfo} from the {@link HttpRequest}.
+     * 
+     * @param request the {@link HttpRequest}
+     * @return the {@link ResteasyUriInfo}
+     */
+    private ResteasyUriInfo extractUriInfo() {
         URI absoluteURI;
         try {
             absoluteURI = request.getUri();

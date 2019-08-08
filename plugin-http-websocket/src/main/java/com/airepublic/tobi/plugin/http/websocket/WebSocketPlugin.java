@@ -1,6 +1,7 @@
 package com.airepublic.tobi.plugin.http.websocket;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,6 +21,7 @@ import com.airepublic.http.common.HttpRequest;
 import com.airepublic.http.common.pathmatcher.MappingResult;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
+import com.airepublic.reflections.Reflections;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
@@ -28,8 +30,13 @@ import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.module.http.HttpChannelEncoder;
 import com.airepublic.tobi.plugin.http.websocket.server.WsSci;
 import com.airepublic.tobi.plugin.http.websocket.server.WsServerContainer;
-import com.airepublic.reflections.Reflections;
 
+/**
+ * The {@link IServicePlugin} implementation for websocket.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class WebSocketPlugin implements IServicePlugin {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
@@ -99,6 +106,12 @@ public class WebSocketPlugin implements IServicePlugin {
     }
 
 
+    /**
+     * Finds the {@link IIOHandler} mapping for the specified path.
+     * 
+     * @param path the {@link URI} path
+     * @return the {@link IIOHandler} or null
+     */
     protected Class<? extends IIOHandler> findMapping(final String path) {
         if (webSocketContainer != null) {
             final MappingResult<ServerEndpointConfig> result = webSocketContainer.getMapping().findMapping(path);

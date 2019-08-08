@@ -1,7 +1,7 @@
 module com.airepublic.tobi.feature.cdi.weld {
     exports com.airepublic.tobi.feature.cdi.weld;
 
-    // requires com.airepublic.tobi.core.spi;
+    requires com.airepublic.tobi.core.spi;
 
     requires jakarta.enterprise.cdi.api;
     requires jakarta.inject;

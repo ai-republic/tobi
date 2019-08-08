@@ -13,10 +13,10 @@ import javax.inject.Inject;
 
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
-import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.Attributes;
+import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.SessionContext;
 
 public class SessionContainer {
@@ -33,7 +33,7 @@ public class SessionContainer {
     @Asynchronous
     public Future<ServerSession> startSession(final IServerModule module, final Supplier<SocketChannel> channelSupplier, final Attributes sessionAttributes, final boolean isClient) {
         ServerSession session = null;
-        final long sessionId = SESSION_ID_GENERATOR.incrementAndGet();
+        final String sessionId = "" + SESSION_ID_GENERATOR.incrementAndGet();
 
         try {
             logger.info("Starting session #" + sessionId + " for module " + module.getName());

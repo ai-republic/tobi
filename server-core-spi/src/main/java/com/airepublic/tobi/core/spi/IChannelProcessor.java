@@ -1,5 +1,6 @@
 package com.airepublic.tobi.core.spi;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.Selector;
@@ -7,7 +8,7 @@ import java.nio.channels.SocketChannel;
 
 public interface IChannelProcessor extends Runnable, AutoCloseable {
 
-    void prepare(IServerSession session, final IServerModule module, final SocketChannel channel, final IIOHandler ioHandler);
+    void prepare(final IServerModule module, final SocketChannel channel, final IIOHandler ioHandler) throws IOException;
 
 
     @Override

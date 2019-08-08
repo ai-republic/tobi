@@ -25,13 +25,19 @@ import com.airepublic.http.sse.api.SseConsumer;
 import com.airepublic.http.sse.api.SseProducer;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
+import com.airepublic.reflections.Reflections;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
 import com.airepublic.tobi.core.spi.Request;
 import com.airepublic.tobi.module.http.HttpChannelEncoder;
-import com.airepublic.reflections.Reflections;
 
+/**
+ * The {@link IServicePlugin} implementation for SSE.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @Named
 public class SsePlugin implements IServicePlugin {
     public static final String SSE_SERVICE_METHOD = "sse.service.method";
@@ -168,15 +174,24 @@ public class SsePlugin implements IServicePlugin {
     }
 
 
+    /**
+     * Opens the {@link SocketChannel} to a client.
+     * 
+     * @param uri
+     * @return
+     */
     static SocketChannel openChannel(final URI uri) {
+        // initialize port with default value
         int port = uri.getScheme().equals("https") ? 443 : 80;
         SocketChannel channel;
 
+        // check for a custom port
         if (uri.getPort() > 0) {
             port = uri.getPort();
         }
 
         try {
+            // connect to the client
             final SocketAddress remote = new InetSocketAddress(uri.getHost(), port);
             channel = SocketChannel.open();
             channel.setOption(StandardSocketOptions.SO_KEEPALIVE, true);

@@ -26,16 +26,37 @@ import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+/**
+ * Utility to create JWTs.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class JWTUtil {
     private final static Logger LOG = new SerializableLogger(JWTUtil.class.getName());
 
 
+    /**
+     * Creates a {@link JsonWebToken}.
+     * 
+     * @param keyFile the path to the secret-key file
+     * @param claims the {@link ClaimsSet}
+     * @return the {@link JsonWebToken}
+     * @throws IOException if private key could not be loaded
+     */
     public static JsonWebToken createJWT(final Path keyFile, final ClaimsSet claims) throws IOException {
         return createJWT(loadPrivateKey(keyFile), claims);
 
     }
 
 
+    /**
+     * Creates a {@link JsonWebToken}.
+     * 
+     * @param secretKey the bytes of the secret-key
+     * @param claims the {@link ClaimsSet}
+     * @return the {@link JsonWebToken}
+     */
     public static JsonWebToken createJWT(final byte[] secretKey, final ClaimsSet claims) {
         final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS512;
         final Key signingKey = new SecretKeySpec(secretKey, signatureAlgorithm.getJcaName());
@@ -44,6 +65,13 @@ public class JWTUtil {
     }
 
 
+    /**
+     * Creates a {@link JsonWebToken}.
+     * 
+     * @param signingKey the secret-key
+     * @param claims the {@link ClaimsSet}
+     * @return the {@link JsonWebToken}
+     */
     public static JsonWebToken createJWT(final Key signingKey, final ClaimsSet claims) {
         final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS512;
         final Date now = Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant());
@@ -60,6 +88,13 @@ public class JWTUtil {
     }
 
 
+    /**
+     * Loads the private key for the specified path.
+     * 
+     * @param keyFile the path to the secret-key file
+     * @return the {@link Key}
+     * @throws IOException
+     */
     private static Key loadPrivateKey(final Path keyFile) throws IOException {
         String privateKey;
         try {

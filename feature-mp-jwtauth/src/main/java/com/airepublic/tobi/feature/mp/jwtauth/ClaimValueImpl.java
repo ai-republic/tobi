@@ -3,17 +3,36 @@ package com.airepublic.tobi.feature.mp.jwtauth;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 
+/**
+ * Implementation of the JWT {@link ClaimValue}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ * @param <T> the claim value type
+ */
 public class ClaimValueImpl<T> implements ClaimValue<T> {
     private final String name;
     private final T value;
 
 
+    /**
+     * Constructor.
+     * 
+     * @param name the claim-name
+     * @param value the value
+     */
     public ClaimValueImpl(final String name, final T value) {
         this.name = name;
         this.value = value;
     }
 
 
+    /**
+     * Constructor.
+     * 
+     * @param claim the {@link Claims}
+     * @param value the value
+     */
     public ClaimValueImpl(final Claims claim, final T value) {
         this.name = claim.name();
         this.value = value;

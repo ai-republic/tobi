@@ -1,6 +1,9 @@
+import javax.enterprise.inject.spi.Extension;
+
 import com.airepublic.tobi.core.ChannelProcessor;
 import com.airepublic.tobi.core.ServerContext;
 import com.airepublic.tobi.core.ServerSession;
+import com.airepublic.tobi.core.SessionScopedExtension;
 import com.airepublic.tobi.core.spi.ICDIServiceProvider;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IServerContext;
@@ -31,4 +34,6 @@ module com.airepublic.tobi.core {
     provides IServerSession with ServerSession;
     provides IServerContext with ServerContext;
     provides IChannelProcessor with ChannelProcessor;
+
+    provides Extension with SessionScopedExtension;
 }
