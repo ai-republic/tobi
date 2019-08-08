@@ -110,7 +110,14 @@ workerCount=5
 host=localhost
 http.port=8080
 http.ssl.port=8443
+http.keystore.file=~/keystore.jks
+http.keystore.password=changeit
+http.truststore.file=~/cacerts.jks
+http.truststore.password=changeit
+
 ```
+_NOTE:_ `http.port`and `http.ssl.port` are the 2 properties needed to configure the HTTP/S module. In fact if you would like Tobi only to accept HTTPS you simply don't add the `http.port` property. See also the documentation on the HttpModule.
+
 Then just call:
 
 ```java

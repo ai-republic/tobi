@@ -60,13 +60,13 @@ public class HttpModule implements IServerModule {
     @ConfigProperty(name = SSL_PORT)
     private Integer sslPort;
     @Inject
-    @ConfigProperty(name = KEYSTORE_FILE, defaultValue = "D:/keystore.jks")
+    @ConfigProperty(name = KEYSTORE_FILE, defaultValue = "~/keystore.jks")
     private String keystoreFile;
     @Inject
     @ConfigProperty(name = KEYSTORE_PASSWORD, defaultValue = "changeit")
     private String keystorePassword;
     @Inject
-    @ConfigProperty(name = TRUSTSTORE_FILE, defaultValue = "D:/cacerts.jks")
+    @ConfigProperty(name = TRUSTSTORE_FILE, defaultValue = "~/cacerts.jks")
     private String truststoreFile;
     @Inject
     @ConfigProperty(name = TRUSTSTORE_PASSWORD, defaultValue = "changeit")
