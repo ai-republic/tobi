@@ -83,7 +83,7 @@ public class WebSocketPlugin implements IServicePlugin {
 
     @Override
     public IIOHandler determineIoHandler(final Request request) {
-        final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+        final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
         httpRequest.setBody(request.getPayload());
 
         final String path = httpRequest.getPath();

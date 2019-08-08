@@ -140,7 +140,7 @@ public class ResteasyIOHandler implements IIOHandler {
 
                 try {
                     // create the Resteasy request and response wrappers
-                    final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+                    final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
                     httpRequest.setBody(request.getPayload());
 
                     final ResteasyHttpResponseWrapper restEasyHttpResponse = new ResteasyHttpResponseWrapper(response, this);

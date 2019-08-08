@@ -2,7 +2,6 @@ package com.airepublic.tobi.example;
 
 import java.util.concurrent.TimeUnit;
 
-import com.airepublic.http.sse.api.SseConsumer;
 import com.airepublic.http.sse.api.SseEvent;
 import com.airepublic.http.sse.api.SseProducer;
 
@@ -23,7 +22,7 @@ public class SseSample {
     }
 
 
-    @SseConsumer("https://api.boerse-frankfurt.de:443/data/price_information?isin=US00724F1012&mic=XFRA")
+    // @SseConsumer("https://api.boerse-frankfurt.de:443/data/price_information?isin=US00724F1012&mic=XFRA")
     public void consumes(final SseEvent event) {
         System.out.println("received event: " + event);
     }

@@ -7,22 +7,38 @@ import java.util.concurrent.Future;
 
 import javax.enterprise.inject.se.SeContainerInitializer;
 
+import org.eclipse.microprofile.faulttolerance.Asynchronous;
+import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.jboss.weld.junit5.WeldSetup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for the {@link Bulkhead} annotation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @WeldSetup
 public class BulkheadTests {
     private BulkheadTestClass test;
 
 
+    /**
+     * Setup.
+     */
     @BeforeEach
     public void setUp() {
         test = SeContainerInitializer.newInstance().initialize().select(BulkheadTestClass.class).get();
     }
 
 
+    /**
+     * Test simple use of {@link Bulkhead} annotation.
+     * 
+     * @throws Exception if something fails
+     */
     @Test
     public void testBulkheadWithoutAsynchronous() throws Exception {
         final long startTime = System.currentTimeMillis();
@@ -38,6 +54,11 @@ public class BulkheadTests {
     }
 
 
+    /**
+     * Test use of {@link Bulkhead} annotation in combination with {@link Asynchronous}.
+     * 
+     * @throws Exception if something fails
+     */
     @Test
     public void testBulkheadWithAsynchronous() throws InterruptedException, ExecutionException {
         final long startTime = System.currentTimeMillis();

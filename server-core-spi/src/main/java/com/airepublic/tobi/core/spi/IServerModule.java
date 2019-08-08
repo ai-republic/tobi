@@ -46,6 +46,8 @@ public interface IServerModule extends Closeable {
 
     /**
      * Gets the registered {@link IServicePlugin}s.
+     * 
+     * @return the set of registered {@link IServicePlugin}s
      */
     Set<IServicePlugin> getServicePlugins();
 

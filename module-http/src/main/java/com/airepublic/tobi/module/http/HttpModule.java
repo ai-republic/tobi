@@ -25,7 +25,6 @@ import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
 import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.core.spi.SessionConstants;
 
 /**
  * The module for handling HTTP/S requests and responses. The module can be configured with
@@ -184,7 +183,7 @@ public class HttpModule implements IServerModule {
 
         if (handler == null) {
             handler = CDI.current().select(HttpIOHandler.class).get();
-            logger.info("No handler found for '" + request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE) + "'. Using default handler: " + handler.getClass().getSimpleName());
+            logger.info("No handler found for '" + request.getString(HttpChannelEncoder.REQUEST_LINE) + "'. Using default handler: " + handler.getClass().getSimpleName());
         }
 
         return handler;

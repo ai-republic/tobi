@@ -8,17 +8,28 @@ import java.util.logging.Logger;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
 
-import com.airepublic.logging.java.SerializableLogger;
 import com.airepublic.tobi.core.spi.ICDIServiceProvider;
 
+/**
+ * Bootstrap for the Tobi server.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class Tobi {
-    private static final Logger LOG = new SerializableLogger(Level.INFO, Tobi.class.getName());
+    private static final Logger LOG = Logger.getGlobal();
 
 
+    /**
+     * Starts the Tobi server with the specified {@link SeContainer}.
+     * 
+     * @param cdiContainer the {@link SeContainer}
+     * @throws IOException if something fails
+     */
     private void startServer(final SeContainer cdiContainer) throws IOException {
         final TobiServer javaServer = cdiContainer.select(TobiServer.class).get();
-        LOG.info("Booting microprofile-server ...");
-        javaServer.start(cdiContainer);
+        LOG.info("Booting Tobi-server ...");
+        javaServer.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -30,6 +41,11 @@ public class Tobi {
     }
 
 
+    /**
+     * Starts the Tobi server.
+     * 
+     * @throws IOException if something fails
+     */
     public static void start() throws IOException {
         try {
 

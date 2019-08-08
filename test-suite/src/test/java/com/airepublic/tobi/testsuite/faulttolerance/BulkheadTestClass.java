@@ -8,11 +8,22 @@ import java.util.concurrent.Future;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 
+/**
+ * Test class to test the use of the {@link Bulkhead} annotation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class BulkheadTestClass {
     int counter = 0;
     List<Long> callTimes = new ArrayList<>();
 
 
+    /**
+     * Simple method with {@link Bulkhead} annotation.
+     * 
+     * @return a string
+     */
     @Bulkhead(value = 2)
     public String bulkheadWithoutAsynchronous() {
         counter++;
@@ -27,6 +38,11 @@ public class BulkheadTestClass {
     }
 
 
+    /**
+     * Method with {@link Bulkhead} and {@link Asynchronous} annotations.
+     * 
+     * @return a {@link Future}
+     */
     @Bulkhead(value = 2, waitingTaskQueue = 10)
     @Asynchronous
     public Future<String> bulkheadWithAsynchronous() {

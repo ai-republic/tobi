@@ -49,7 +49,7 @@ public interface IIOHandler extends Serializable {
     /**
      * Called when a {@link ChannelAction#CLOSE_INPUT} has been processed.
      * 
-     * @throws IOException
+     * @throws IOException if something goes wrong
      */
     void handleClosedInput() throws IOException;
 

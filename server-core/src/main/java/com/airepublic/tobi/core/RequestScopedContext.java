@@ -7,8 +7,16 @@ import javax.enterprise.context.spi.AlterableContext;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
 
+import com.airepublic.tobi.core.spi.BeanContextStorage;
+
+/**
+ * The {@link RequestScoped} CDI context.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class RequestScopedContext implements AlterableContext {
-    private final static ThreadLocal<RequestContext> requestContext = new ThreadLocal<>();
+    private final static ThreadLocal<BeanContextStorage> requestContext = new ThreadLocal<>();
 
 
     @Override
@@ -17,10 +25,10 @@ public class RequestScopedContext implements AlterableContext {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual, final CreationalContext<T> creationalContext) {
-        validateSession();
+        validateContext();
 
         final T bean = contextual.create(creationalContext);
         requestContext.get().addBean((Contextual<Object>) contextual, (CreationalContext<Object>) creationalContext, bean);
@@ -30,22 +38,30 @@ public class RequestScopedContext implements AlterableContext {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual) {
-        validateSession();
+        validateContext();
         return (T) requestContext.get().getBean((Contextual<Object>) contextual);
     }
 
 
-    public void activate(final RequestContext requestContext) {
+    /**
+     * Activate this context.
+     * 
+     * @param requestContext the {@link BeanContextStorage}
+     */
+    public void activate(final BeanContextStorage requestContext) {
         RequestScopedContext.requestContext.set(requestContext);
-        validateSession();
+        validateContext();
     }
 
 
+    /**
+     * Deactivates this context and destroys all the associated beans.
+     */
     public void deactivate() {
-        validateSession();
+        validateContext();
 
         requestContext.get().destroy();
         requestContext.remove();
@@ -58,16 +74,19 @@ public class RequestScopedContext implements AlterableContext {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public void destroy(final Contextual<?> contextual) {
-        validateSession();
+        validateContext();
 
         requestContext.get().destroy((Contextual<Object>) contextual);
     }
 
 
-    private void validateSession() {
+    /**
+     * Validates this context.
+     */
+    private void validateContext() {
         if (requestContext.get() == null) {
             throw new IllegalStateException(getClass().getSimpleName() + " has not been activated!");
         }

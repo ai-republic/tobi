@@ -7,10 +7,16 @@ import javax.enterprise.context.spi.AlterableContext;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
 
-import com.airepublic.tobi.core.spi.SessionContext;
+import com.airepublic.tobi.core.spi.BeanContextStorage;
 
+/**
+ * The {@link SessionScoped} CDI context.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class SessionScopedContext implements AlterableContext {
-    private final static ThreadLocal<SessionContext> sessionContext = new ThreadLocal<>();
+    private final static ThreadLocal<BeanContextStorage> sessionContext = new ThreadLocal<>();
 
 
     @Override
@@ -22,7 +28,7 @@ public class SessionScopedContext implements AlterableContext {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual, final CreationalContext<T> creationalContext) {
-        validateSession();
+        validateContext();
 
         final T bean = contextual.create(creationalContext);
         sessionContext.get().addBean((Contextual<Object>) contextual, (CreationalContext<Object>) creationalContext, bean);
@@ -35,19 +41,27 @@ public class SessionScopedContext implements AlterableContext {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual) {
-        validateSession();
+        validateContext();
         return (T) sessionContext.get().getBean((Contextual<Object>) contextual);
     }
 
 
-    public void activate(final SessionContext sessionContext) {
+    /**
+     * Activate this context.
+     * 
+     * @param requestContext the {@link BeanContextStorage}
+     */
+    public void activate(final BeanContextStorage sessionContext) {
         SessionScopedContext.sessionContext.set(sessionContext);
-        validateSession();
+        validateContext();
     }
 
 
+    /**
+     * Deactivates this context and destroys all the associated beans.
+     */
     public void deactivate() {
-        validateSession();
+        validateContext();
 
         sessionContext.get().destroy();
         sessionContext.remove();
@@ -60,16 +74,19 @@ public class SessionScopedContext implements AlterableContext {
     }
 
 
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public void destroy(final Contextual<?> contextual) {
-        validateSession();
+        validateContext();
 
         sessionContext.get().destroy((Contextual<Object>) contextual);
     }
 
 
-    private void validateSession() {
+    /**
+     * Validates this context.
+     */
+    private void validateContext() {
         if (sessionContext.get() == null) {
             throw new IllegalStateException(getClass().getSimpleName() + " has not been activated!");
         }

@@ -10,11 +10,16 @@ import com.airepublic.tobi.core.spi.Attributes;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IServerSession;
 
+/**
+ * The server session which can store session relevant information.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @SessionScoped
-public class ServerSession implements IServerSession {
+public class ServerSession extends Attributes implements IServerSession {
     private static final long serialVersionUID = 1L;
     private String id;
-    private final Attributes attributes = new Attributes();
     private transient IChannelProcessor channelProcessor;
 
 
@@ -79,21 +84,4 @@ public class ServerSession implements IServerSession {
         }
     }
 
-
-    @Override
-    public void setAttribute(final String key, final Object value) {
-        attributes.set(key, value);
-    }
-
-
-    @Override
-    public <T> T getAttribute(final String key, final Class<T> type) {
-        return attributes.get(key, type);
-    }
-
-
-    @Override
-    public Attributes getSessionAttributes() {
-        return attributes;
-    }
 }

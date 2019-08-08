@@ -7,11 +7,23 @@ import java.util.List;
 
 import org.eclipse.microprofile.faulttolerance.Retry;
 
+/**
+ * Test class to test the use of the {@link Retry} annotation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class RetryTestClass {
     int counter = 0;
     List<Long> callTimes = new ArrayList<>();
 
 
+    /**
+     * Method to test the {@link Retry} annotation abortOn parameter.
+     * 
+     * @param throwable the exception to throw
+     * @throws Throwable the passed exception
+     */
     @Retry(abortOn = IOException.class)
     public void retryAbortOn(final Throwable throwable) throws Throwable {
         if (throwable != null) {
@@ -21,6 +33,9 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation delay parameter.
+     */
     @Retry(delay = 1000L, jitter = 0L)
     public void retryDelay() {
         counter++;
@@ -29,6 +44,9 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation delay with delayUnit parameter.
+     */
     @Retry(delay = 1L, delayUnit = ChronoUnit.SECONDS, jitter = 0L)
     public void retryDelayWithUnit() {
         counter++;
@@ -37,6 +55,9 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation delay with jitter parameter.
+     */
     @Retry(delay = 1L, delayUnit = ChronoUnit.SECONDS, jitter = 100L)
     public void retryDelayWithJitter() {
         counter++;
@@ -45,6 +66,9 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation delay with jitter and jitterDelayUnit parameter.
+     */
     @Retry(delay = 1L, delayUnit = ChronoUnit.SECONDS, jitter = 1L, jitterDelayUnit = ChronoUnit.SECONDS)
     public void retryDelayWithJitterWithUnit() {
         counter++;
@@ -53,6 +77,9 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation delay and maxDuration parameter.
+     */
     @Retry(delay = 400L, maxDuration = 1000L, jitter = 0L)
     public void retryMaxDuration() {
         counter++;
@@ -61,6 +88,10 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation delay and maxDuration with durationUnit
+     * parameter.
+     */
     @Retry(delay = 400L, maxDuration = 1L, durationUnit = ChronoUnit.SECONDS, jitter = 0L)
     public void retryMaxDurationWithUnit() {
         counter++;
@@ -69,6 +100,9 @@ public class RetryTestClass {
     }
 
 
+    /**
+     * Method to test the {@link Retry} annotation maxRetries parameter.
+     */
     @Retry(maxRetries = 2)
     public void retryMaxRetries() {
         counter++;

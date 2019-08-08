@@ -7,22 +7,37 @@ import java.util.concurrent.Future;
 
 import javax.enterprise.inject.se.SeContainerInitializer;
 
+import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.jboss.weld.junit5.WeldSetup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for the {@link Asynchronous} annotation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @WeldSetup
 public class AsynchronousTests {
     private AsynchronousTestClass test;
 
 
+    /**
+     * Setup.
+     */
     @BeforeEach
     public void setUp() {
         test = SeContainerInitializer.newInstance().initialize().select(AsynchronousTestClass.class).get();
     }
 
 
+    /**
+     * Test simple {@link Asynchronous} use.
+     * 
+     * @throws Exception if something fails
+     */
     @Test
     public void testAsynchronous() throws Exception {
         final CompletableFuture<String> result = test.asynchronous();
@@ -31,6 +46,11 @@ public class AsynchronousTests {
     }
 
 
+    /**
+     * Test {@link Asynchronous} use with exception on the {@link Future}.
+     * 
+     * @throws Exception if something fails
+     */
     @Test
     public void testAsynchronousWithExceptionOnFuture() {
         try {
@@ -46,6 +66,11 @@ public class AsynchronousTests {
     }
 
 
+    /**
+     * Test simple {@link Asynchronous} use with exception on the {@link CompletionStage}.
+     * 
+     * @throws Exception if something fails
+     */
     @Test
     public void testAsynchronousWithExceptionOnCompletionStage() {
         final CompletionStage<String> result = test.asynchronousWithExceptionOnCompletionStage();
@@ -60,6 +85,11 @@ public class AsynchronousTests {
     }
 
 
+    /**
+     * Test {@link Asynchronous} on class level.
+     * 
+     * @throws Exception if something fails
+     */
     @Test
     public void testAsynchronousOnClass() throws Exception {
         final CompletableFuture<String> result = test.asynchronousOnClass();

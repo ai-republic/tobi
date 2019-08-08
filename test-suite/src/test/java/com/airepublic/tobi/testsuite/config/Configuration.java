@@ -1,3 +1,4 @@
+package com.airepublic.tobi.testsuite.config;
 
 import java.io.IOException;
 import java.nio.file.Paths;

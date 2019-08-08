@@ -13,7 +13,6 @@ import com.airepublic.tobi.core.spi.IServicePlugin;
 
 module com.airepublic.tobi.core {
     exports com.airepublic.tobi.core;
-    exports com.airepublic.tobi.core.util;
 
     requires com.airepublic.tobi.core.spi;
     requires com.airepublic.tobi.feature.mp.config;

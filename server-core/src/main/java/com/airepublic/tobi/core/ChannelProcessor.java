@@ -23,6 +23,7 @@ import javax.inject.Inject;
 
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
+import com.airepublic.tobi.core.spi.BeanContextStorage;
 import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IChannelEncoder;
 import com.airepublic.tobi.core.spi.IChannelEncoder.Status;
@@ -33,7 +34,6 @@ import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
 import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.core.spi.SessionContext;
 
 /**
  * The {@link IChannelProcessor} implementation.
@@ -43,7 +43,6 @@ import com.airepublic.tobi.core.spi.SessionContext;
  */
 public class ChannelProcessor implements IChannelProcessor {
     private static AtomicLong SESSION_ID_GENERATOR = new AtomicLong();
-
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
@@ -65,6 +64,11 @@ public class ChannelProcessor implements IChannelProcessor {
     private SessionScopedContext sessionScopedContext;
 
 
+    /**
+     * Constructor.
+     * 
+     * @throws IOException if a {@link Selector} could not be opened
+     */
     public ChannelProcessor() throws IOException {
         selector = Selector.open();
     }
@@ -82,7 +86,7 @@ public class ChannelProcessor implements IChannelProcessor {
     @Override
     public void prepare(final IServerModule module, final SocketChannel channel, final IIOHandler ioHandler) throws IOException {
         session = serverContext.getServerSession(channel.getRemoteAddress());
-        SessionContext sessionContext = null;
+        BeanContextStorage sessionContext = null;
         String sessionId = null;
 
         if (session != null) {
@@ -90,15 +94,16 @@ public class ChannelProcessor implements IChannelProcessor {
             sessionContext = serverContext.getSessionContext(sessionId);
         } else {
             sessionId = "" + SESSION_ID_GENERATOR.incrementAndGet();
-            sessionContext = new SessionContext(sessionId);
+            sessionContext = new BeanContextStorage();
         }
 
-        requestScopedContext.activate(new RequestContext(sessionId));
+        requestScopedContext.activate(new BeanContextStorage());
         sessionScopedContext.activate(sessionContext);
 
         if (session == null) {
             session = CDI.current().select(IServerSession.class).get();
             session.setId(sessionId);
+            serverContext.addServerSession(channel.getRemoteAddress(), session);
         }
 
         // reset
@@ -166,7 +171,7 @@ public class ChannelProcessor implements IChannelProcessor {
                     }
                 }
             } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Error processing request!", e);
+                logger.log(Level.SEVERE, "Error processing request for session #" + session.getId(), e);
             }
         }
 
@@ -450,6 +455,14 @@ public class ChannelProcessor implements IChannelProcessor {
 
                 ioHandler.onSessionClose();
                 ioHandler = null;
+
+                session.close();
+                serverContext.removeSessionContext(session.getId());
+
+                try {
+                    serverContext.removeServerSession(session);
+                } catch (final IOException e) {
+                }
             }
         }
     }

@@ -4,22 +4,35 @@ import java.io.IOException;
 
 import javax.enterprise.inject.se.SeContainerInitializer;
 
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.jboss.weld.junit5.WeldSetup;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for the {@link CircuitBreaker} annotation.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @WeldSetup
 public class CircuitBreakerTests {
     private CircuitBreakerTestClass test;
 
 
+    /**
+     * Setup.
+     */
     @BeforeEach
     public void setUp() {
         test = SeContainerInitializer.newInstance().initialize().select(CircuitBreakerTestClass.class).get();
     }
 
 
+    /**
+     * Test if circuit opens after 2 failures.
+     */
     @Test
     public void testCircuitBreakerFailOn() {
         for (int i = 0; i < 3; i++) {
@@ -33,6 +46,9 @@ public class CircuitBreakerTests {
     }
 
 
+    /**
+     * Test if circuit opens after 2 failures and closes after another 2.
+     */
     @Test
     public void testCircuitBreakerSuccessThreshold() {
         // open the circuit by failing 2 times, the 3rd should be ignored
@@ -63,6 +79,10 @@ public class CircuitBreakerTests {
     }
 
 
+    /**
+     * Test if circuit opens after 2 failures and then one successful and another failure to keep it
+     * open, then it should close after another 2 successful and open again after 2 failures.
+     */
     @Test
     public void testCircuitBreakerRefailingSuccessThreshold() {
         // open the circuit by failing 2 times, the 3rd should be ignored

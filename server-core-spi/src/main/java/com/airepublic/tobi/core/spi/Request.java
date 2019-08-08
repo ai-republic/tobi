@@ -10,9 +10,8 @@ import java.nio.ByteBuffer;
  * @author Torsten Oltmanns
  *
  */
-public final class Request implements Serializable {
+public final class Request extends Attributes implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Attributes attributes;
     private ByteBuffer payload;
 
 
@@ -20,7 +19,6 @@ public final class Request implements Serializable {
      * Constructor.
      */
     public Request() {
-        attributes = new Attributes();
     }
 
 
@@ -31,7 +29,7 @@ public final class Request implements Serializable {
      * @param payload the payload
      */
     public Request(final Attributes attributes, final ByteBuffer payload) {
-        this.attributes = attributes;
+        super(attributes);
         this.payload = payload;
     }
 
@@ -43,26 +41,6 @@ public final class Request implements Serializable {
      */
     public Request(final ByteBuffer payload) {
         this.payload = payload;
-    }
-
-
-    /**
-     * Gets any {@link Attributes}, e.g. headers, etc. associated with the payload.
-     * 
-     * @return the {@link Attributes}
-     */
-    public Attributes getAttributes() {
-        return attributes;
-    }
-
-
-    /**
-     * Sets any {@link Attributes}, e.g. headers, etc. associated with the payload.
-     * 
-     * @param attributes the {@link Attributes}
-     */
-    public void setAttributes(final Attributes attributes) {
-        this.attributes = attributes;
     }
 
 

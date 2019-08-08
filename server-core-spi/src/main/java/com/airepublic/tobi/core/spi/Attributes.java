@@ -1,33 +1,81 @@
 package com.airepublic.tobi.core.spi;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Flexible attribute storage which can contain any type of objects registered under a string
+ * identifier.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 public class Attributes {
-    private final Map<String, Object> attributes = new HashMap<>();
+    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
 
 
+    /**
+     * Constructor.
+     */
     public Attributes() {
     }
 
 
+    /**
+     * Constructor.
+     * 
+     * @param copy {@link Attributes} which will be copied into this object
+     */
     public Attributes(final Attributes copy) {
         attributes.putAll(copy.attributes);
     }
 
 
-    public void set(final String key, final Object value) {
-        attributes.put(key, value);
+    /**
+     * Checks whether the key exists.
+     * 
+     * @param key the key
+     * @return true if the key exists, otherwise false
+     */
+    public boolean hasAttribute(final String key) {
+        return attributes.containsKey(key);
     }
 
 
-    public Object get(final String key) {
+    /**
+     * Sets a key/value pair.
+     * 
+     * @param key the key
+     * @param value the value
+     */
+    public void setAttribute(final String key, final Object value) {
+        if (value != null) {
+            attributes.put(key, value);
+        } else {
+            attributes.remove(key);
+        }
+    }
+
+
+    /**
+     * Gets the value for the specified key or null if the key or value does not exist
+     * 
+     * @param key the key
+     * @return the value or null
+     */
+    public Object getAttribute(final String key) {
         return attributes.get(key);
     }
 
 
+    /**
+     * Gets the string value for the specified key.
+     * 
+     * @param key the key
+     * @return the value or null if it does not exist
+     */
     public String getString(final String key) {
-        final Object value = get(key);
+        final Object value = getAttribute(key);
 
         if (value == null) {
             return null;
@@ -37,8 +85,14 @@ public class Attributes {
     }
 
 
+    /**
+     * Gets the integer value for the specified key.
+     * 
+     * @param key the key
+     * @return the value or null if it does not exist
+     */
     public Integer getInt(final String key) {
-        final Object value = get(key);
+        final Object value = getAttribute(key);
 
         if (value == null) {
             return null;
@@ -52,8 +106,14 @@ public class Attributes {
     }
 
 
+    /**
+     * Gets the boolean value for the specified key.
+     * 
+     * @param key the key
+     * @return the value or null if it does not exist
+     */
     public Boolean getBoolean(final String key) {
-        final Object value = get(key);
+        final Object value = getAttribute(key);
 
         if (value == null) {
             return null;
@@ -67,8 +127,15 @@ public class Attributes {
     }
 
 
-    public <T> T get(final String key, final Class<T> type) {
-        final Object value = get(key);
+    /**
+     * Gets the value for the specified key of the specified type.
+     * 
+     * @param key the key
+     * @param type the type of the value
+     * @return the value or null if it does not exist
+     */
+    public <T> T getAttribute(final String key, final Class<T> type) {
+        final Object value = getAttribute(key);
 
         if (value == null) {
             return null;

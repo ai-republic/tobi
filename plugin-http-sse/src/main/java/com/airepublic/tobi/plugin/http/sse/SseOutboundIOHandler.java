@@ -22,8 +22,8 @@ import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.core.spi.SessionConstants;
 import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.module.http.SessionConstants;
 
 /**
  * The {@link IIOHandler} implementation for outbound SSE. It handles the IO for the object which
@@ -54,7 +54,7 @@ public class SseOutboundIOHandler implements IIOHandler {
         if (isHandshakeRead.compareAndSet(false, true)) {
             try {
                 if (serviceMethod == null || serviceObject == null) {
-                    final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+                    final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
 
                     throw new IOException("URI path " + httpRequest.getPath() + " was not be mapped to a SSE method!");
                 }

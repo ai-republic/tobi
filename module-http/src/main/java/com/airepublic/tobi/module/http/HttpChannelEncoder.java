@@ -89,8 +89,8 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
             logger.log(Level.INFO, "Processing session #" + session.getId() + " HTTP request: " + request.getRequestLine());
 
             final Attributes attributes = new Attributes();
-            attributes.set(REQUEST_LINE, request.getRequestLine());
-            attributes.set(HEADERS, request.getHeaders());
+            attributes.setAttribute(REQUEST_LINE, request.getRequestLine());
+            attributes.setAttribute(HEADERS, request.getHeaders());
             final Request wrapped = new Request(attributes, request.getBody());
             return new Pair<>(Status.FULLY_READ, wrapped);
         }

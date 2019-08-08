@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 
@@ -33,6 +32,14 @@ import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
 
+/**
+ * The Tobi server implementation which will accept and process incoming connections. Initially it
+ * will scan for {@link IServerModule}s and {@link IServicePlugin}s and configure the server
+ * accordingly. Incoming connections will be processed by the {@link IChannelProcessor}.
+ * 
+ * @author Torsten Oltmanns
+ *
+ */
 @ApplicationScoped
 public class TobiServer {
     @Inject
@@ -47,7 +54,10 @@ public class TobiServer {
     private final Map<SelectionKey, ServerSocketChannel> serverSocketChannels = new HashMap<>();
 
 
-    private void init(final SeContainer cdiContainer) {
+    /**
+     * Initializes the Tobi server by looking up {@link IServerModule}s and {@link IServicePlugin}s.
+     */
+    private void init() {
         if (!initialized.get()) {
             synchronized (initialized) {
                 if (!initialized.get()) {
@@ -60,8 +70,6 @@ public class TobiServer {
                     });
 
                     try {
-                        // serverContext.setCdiContainer(cdiContainer);
-
                         selector = Selector.open();
                         final String host = serverContext.getHost();
                         final List<Integer> openPorts = new ArrayList<>();
@@ -121,7 +129,6 @@ public class TobiServer {
                                     }
                                 }
 
-                                serverContext.addModule(module);
                                 module.getServicePlugins().forEach(plugin -> plugin.initPlugin(module));
                             } catch (final Exception e) {
                                 throw new RuntimeException(e);
@@ -140,21 +147,20 @@ public class TobiServer {
     }
 
 
-    public void start(final SeContainer cdiContainer) throws IOException {
+    /**
+     * Starts the server.
+     * 
+     * @throws IOException if starting fails
+     */
+    public void start() throws IOException {
         if (!initialized.get()) {
             synchronized (initialized) {
                 if (!initialized.get()) {
-                    init(cdiContainer);
+                    init();
                 }
             }
         }
 
-        run();
-    }
-
-
-    @Asynchronous
-    protected Future<Void> run() throws IOException {
         if (!running.get()) {
             synchronized (running) {
                 if (!running.get()) {
@@ -163,34 +169,46 @@ public class TobiServer {
                     throw new IOException(getClass().getSimpleName() + " is already running!");
                 }
             }
+
+            run();
         }
+    }
 
-        while (running.get()) {
-            selector.select();
-            final Set<SelectionKey> selectedKeys = selector.selectedKeys();
-            final Iterator<SelectionKey> it = selectedKeys.iterator();
 
-            while (it.hasNext()) {
-                final SelectionKey connectionKey = it.next();
-                it.remove();
+    @Asynchronous
+    Future<?> run() throws IOException {
 
-                if (!connectionKey.isValid()) {
-                    continue;
+        try {
+            while (running.get()) {
+                selector.select();
+                final Set<SelectionKey> selectedKeys = selector.selectedKeys();
+                final Iterator<SelectionKey> it = selectedKeys.iterator();
+
+                while (it.hasNext()) {
+                    final SelectionKey connectionKey = it.next();
+                    it.remove();
+
+                    if (!connectionKey.isValid()) {
+                        continue;
+                    }
+
+                    if (connectionKey.isAcceptable()) {
+                        accept(connectionKey);
+                    }
+
                 }
-
-                if (connectionKey.isAcceptable()) {
-                    accept(connectionKey);
-                }
-
             }
+        } finally {
+            stop();
         }
-
-        stop();
 
         return null;
     }
 
 
+    /**
+     * Stops the server.
+     */
     public void stop() {
         if (running.get()) {
             synchronized (running) {
@@ -223,8 +241,14 @@ public class TobiServer {
     }
 
 
+    /**
+     * Accepts the connection for the specified {@link SelectionKey}.
+     * 
+     * @param connectionKey the {@link SelectionKey}
+     * @throws IOException if something goes wrong
+     */
     void accept(final SelectionKey connectionKey) throws IOException {
-        if (!shouldConnect(connectionKey)) {
+        if (!shouldAllowConnect(connectionKey)) {
             connectionKey.cancel();
             throw new IOException("Should not connect!");
         }
@@ -249,10 +273,6 @@ public class TobiServer {
                     logger.log(Level.SEVERE, "Error creating session", e);
                 }
             });
-
-            // final SessionContainer sc = CDI.current().select(SessionContainer.class).get();
-            // sc.startSession(moduleForKey.get(connectionKey), () -> channel, new
-            // SessionAttributes(), false);
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Error accepting socket!", e);
         } finally {
@@ -260,7 +280,13 @@ public class TobiServer {
     }
 
 
-    boolean shouldConnect(final SelectionKey connectionKey) {
+    /**
+     * Verifies whether the connection should be allowed.
+     * 
+     * @param connectionKey the {@link SelectionKey} for the connection
+     * @return true if if should be allowed
+     */
+    boolean shouldAllowConnect(final SelectionKey connectionKey) {
         return true;
     }
 

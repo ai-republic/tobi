@@ -1,4 +1,4 @@
-package com.airepublic.tobi.core;
+package com.airepublic.tobi.core.spi;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,50 +13,54 @@ import javax.enterprise.context.spi.CreationalContext;
 import com.airepublic.logging.java.SerializableLogger;
 
 /**
- * The CDI request scoped context storage.
+ * The CDI context bean storage.
  * 
  * @author Torsten Oltmanns
  *
  */
-public class RequestContext {
-    private final static Logger LOG = new SerializableLogger(RequestContext.class.getName());
-
-    private final String sessionId;
+public class BeanContextStorage {
+    private final static Logger LOG = new SerializableLogger(BeanContextStorage.class.getName());
     private final Map<Contextual<Object>, Object> beans = new HashMap<>();
     private final Map<Contextual<Object>, CreationalContext<Object>> creationalContexts = new HashMap<>();
 
 
     /**
-     * Constructor.
+     * Gets the bean associated with the {@link Contextual}.
      * 
-     * @param sessionId the session id
+     * @param contextual the {@link Contextual}
+     * @return the bean instance
      */
-    public RequestContext(final String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-
     public Object getBean(final Contextual<Object> contextual) {
         return beans.get(contextual);
     }
 
 
+    /**
+     * Adds a bean associated with the {@link Contextual} and {@link CreationalContext}.
+     * 
+     * @param contextual the {@link Contextual}
+     * @param creationalContext the {@link CreationalContext}
+     * @param bean the bean instance
+     */
     public void addBean(final Contextual<Object> contextual, final CreationalContext<Object> creationalContext, final Object bean) {
         beans.put(contextual, bean);
         creationalContexts.put(contextual, creationalContext);
     }
 
 
+    /**
+     * Gets all registered {@link Contextual}s.
+     * 
+     * @return the set of all {@link Contextual}s
+     */
     public Set<Contextual<Object>> getContextuals() {
         return new HashSet<>(beans.keySet());
     }
 
 
+    /**
+     * Destroys this context bean storage and destroys all beans associated with this context.
+     */
     public void destroy() {
         getContextuals().forEach(c -> destroy(c));
         beans.clear();
@@ -64,7 +68,12 @@ public class RequestContext {
     }
 
 
-    protected void destroy(final Contextual<Object> contextual) {
+    /**
+     * Destroys the bean associated with the {@link Contextual}.
+     * 
+     * @param contextual the {@link Contextual}
+     */
+    public void destroy(final Contextual<Object> contextual) {
         try {
 
             final CreationalContext<Object> creationalContext = creationalContexts.remove(contextual);

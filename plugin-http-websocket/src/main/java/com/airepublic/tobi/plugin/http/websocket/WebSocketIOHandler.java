@@ -81,7 +81,7 @@ public class WebSocketIOHandler implements IIOHandler {
         // check if handshake request has been fully received and handshake has been processed
         if (!handshakeDone) {
             try {
-                final HttpRequest httpRequest = new HttpRequest(request.getAttributes().getString(HttpChannelEncoder.REQUEST_LINE), request.getAttributes().get(HttpChannelEncoder.HEADERS, Headers.class));
+                final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
                 httpRequest.setBody(request.getPayload());
                 doHandshake(httpRequest);
             } catch (final Exception e) {
@@ -316,6 +316,11 @@ public class WebSocketIOHandler implements IIOHandler {
     @Override
     public ChannelAction onReadError(final Throwable t) {
         logger.log(Level.SEVERE, "Error not handled!", t);
+
+        if (!session.getChannel().isOpen()) {
+            return ChannelAction.CLOSE_ALL;
+        }
+
         return ChannelAction.KEEP_OPEN;
     }
 

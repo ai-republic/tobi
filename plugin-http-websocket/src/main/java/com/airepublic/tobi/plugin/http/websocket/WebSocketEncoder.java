@@ -10,7 +10,7 @@ import com.airepublic.tobi.core.spi.IChannelEncoder;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
 import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.core.spi.SessionConstants;
+import com.airepublic.tobi.module.http.SessionConstants;
 
 /**
  * The {@link IChannelEncoder} implementation for the websocket requests/responses supporting SSL.
