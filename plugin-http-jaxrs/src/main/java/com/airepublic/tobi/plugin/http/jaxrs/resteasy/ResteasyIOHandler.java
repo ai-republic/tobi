@@ -91,7 +91,7 @@ public class ResteasyIOHandler implements IIOHandler {
 
     /**
      * The default implementation tries to generate a {@link HttpResponse} by calling
-     * {@link AbstractHttpIOHandler#getHttpResponse()} and writing the header- and body
+     * {@link ResteasyIOHandler#getHttpResponse()} and writing the header- and body
      * {@link ByteBuffer} to the write-buffer-queue.
      * 
      * @throws IOException if something goes wrong during producing the {@link HttpResponse}

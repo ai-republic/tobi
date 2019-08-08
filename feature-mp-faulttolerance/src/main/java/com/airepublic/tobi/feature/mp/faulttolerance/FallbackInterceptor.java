@@ -16,7 +16,8 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Implementation to intercept {@link Fallback} annotations.
  * 
- * @see {@link Fallback} annotation for details on the specified mechanism
+ * See {@link Fallback} annotation for details on the specified mechanism
+ * 
  * @author Torsten Oltmanns
  *
  */

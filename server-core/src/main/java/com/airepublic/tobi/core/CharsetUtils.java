@@ -44,6 +44,7 @@ public class CharsetUtils {
     /**
      * Gets the string as UTF-8 encoded bytes.
      * 
+     * @param s the string
      * @return the string as UTF-8 encoded bytes
      */
     public static byte[] utf8Bytes(final String s) {
@@ -58,6 +59,7 @@ public class CharsetUtils {
     /**
      * Gets the string as ASCII encoded bytes.
      * 
+     * @param s the string
      * @return the string as ASCII encoded bytes
      */
     public static byte[] asciiBytes(final String s) {

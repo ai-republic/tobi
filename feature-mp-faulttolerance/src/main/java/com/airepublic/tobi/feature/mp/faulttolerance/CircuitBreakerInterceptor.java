@@ -20,7 +20,8 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Implementation to intercept {@link CircuitBreaker} annotations.
  * 
- * @see {@link CircuitBreaker} annotation for details on the specified mechanism
+ * See {@link CircuitBreaker} annotation for details on the specified mechanism
+ * 
  * @author Torsten Oltmanns
  *
  */

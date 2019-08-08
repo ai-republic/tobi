@@ -64,9 +64,8 @@ public class UpgradeUtil {
      * section 8.2 implies such a limitation and RFC 6455 section 4.1 requires that a WebSocket
      * Upgrade uses GET.
      * 
-     * @param request The request to check if it is an HTTP upgrade request for a WebSocket
-     *        connection
-     * @param response The response associated with the request
+     * @param method the HTTP method used
+     * @param reqHeaders the headers
      * @return <code>true</code> if the request includes a HTTP Upgrade request for the WebSocket
      *         protocol, otherwise <code>false</code>
      */

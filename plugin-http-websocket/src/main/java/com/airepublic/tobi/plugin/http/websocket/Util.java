@@ -54,36 +54,35 @@ import com.airepublic.tobi.plugin.http.websocket.pojo.PojoMessageHandlerWholeTex
 import com.airepublic.tobi.plugin.http.websocket.util.res.StringManager;
 
 /**
- * Utility class for internal use only within the
- * {@link com.airepublic.tobi.module.websocket.tomcat.websocket} package.
+ * Utility class for internal use only within this package.
  */
 public class Util {
 
     private static final StringManager sm = StringManager.getManager(Util.class);
-    private static final Queue<SecureRandom> randoms =
-            new ConcurrentLinkedQueue<>();
+    private static final Queue<SecureRandom> randoms = new ConcurrentLinkedQueue<>();
+
 
     private Util() {
         // Hide default constructor
     }
 
 
-    static boolean isControl(byte opCode) {
+    static boolean isControl(final byte opCode) {
         return (opCode & 0x08) != 0;
     }
 
 
-    static boolean isText(byte opCode) {
+    static boolean isText(final byte opCode) {
         return opCode == Constants.OPCODE_TEXT;
     }
 
 
-    static boolean isContinuation(byte opCode) {
+    static boolean isContinuation(final byte opCode) {
         return opCode == Constants.OPCODE_CONTINUATION;
     }
 
 
-    static CloseCode getCloseCode(int code) {
+    static CloseCode getCloseCode(final int code) {
         if (code > 2999 && code < 5000) {
             return CloseCodes.getCloseCode(code);
         }
@@ -149,14 +148,14 @@ public class Util {
         if (sr == null) {
             try {
                 sr = SecureRandom.getInstance("SHA1PRNG");
-            } catch (NoSuchAlgorithmException e) {
+            } catch (final NoSuchAlgorithmException e) {
                 // Fall back to platform default
                 sr = new SecureRandom();
             }
         }
 
         // Generate the mask
-        byte[] result = new byte[4];
+        final byte[] result = new byte[4];
         sr.nextBytes(result);
 
         // Put the SecureRandom back in the poll
@@ -166,33 +165,33 @@ public class Util {
     }
 
 
-    static Class<?> getMessageType(MessageHandler listener) {
+    static Class<?> getMessageType(final MessageHandler listener) {
         return Util.getGenericType(MessageHandler.class,
                 listener.getClass()).getClazz();
     }
 
 
-    private static Class<?> getDecoderType(Class<? extends Decoder> decoder) {
+    private static Class<?> getDecoderType(final Class<? extends Decoder> decoder) {
         return Util.getGenericType(Decoder.class, decoder).getClazz();
     }
 
 
-    static Class<?> getEncoderType(Class<? extends Encoder> encoder) {
+    static Class<?> getEncoderType(final Class<? extends Encoder> encoder) {
         return Util.getGenericType(Encoder.class, encoder).getClazz();
     }
 
 
-    private static <T> TypeResult getGenericType(Class<T> type,
-            Class<? extends T> clazz) {
+    private static <T> TypeResult getGenericType(final Class<T> type,
+            final Class<? extends T> clazz) {
 
         // Look to see if this class implements the interface of interest
 
         // Get all the interfaces
-        Type[] interfaces = clazz.getGenericInterfaces();
-        for (Type iface : interfaces) {
+        final Type[] interfaces = clazz.getGenericInterfaces();
+        for (final Type iface : interfaces) {
             // Only need to check interfaces that use generics
             if (iface instanceof ParameterizedType) {
-                ParameterizedType pi = (ParameterizedType) iface;
+                final ParameterizedType pi = (ParameterizedType) iface;
                 // Look for the interface of interest
                 if (pi.getRawType() instanceof Class) {
                     if (type.isAssignableFrom((Class<?>) pi.getRawType())) {
@@ -205,15 +204,14 @@ public class Util {
 
         // Interface not found on this class. Look at the superclass.
         @SuppressWarnings("unchecked")
-        Class<? extends T> superClazz =
-                (Class<? extends T>) clazz.getSuperclass();
+        final Class<? extends T> superClazz = (Class<? extends T>) clazz.getSuperclass();
         if (superClazz == null) {
             // Finished looking up the class hierarchy without finding anything
             return null;
         }
 
         TypeResult superClassTypeResult = getGenericType(type, superClazz);
-        int dimension = superClassTypeResult.getDimension();
+        final int dimension = superClassTypeResult.getDimension();
         if (superClassTypeResult.getIndex() == -1 && dimension == 0) {
             // Superclass implements interface and defines explicit type for
             // the interface of interest
@@ -224,11 +222,9 @@ public class Util {
             // Superclass implements interface and defines unknown type for
             // the interface of interest
             // Map that unknown type to the generic types defined in this class
-            ParameterizedType superClassType =
-                    (ParameterizedType) clazz.getGenericSuperclass();
-            TypeResult result = getTypeParameter(clazz,
-                    superClassType.getActualTypeArguments()[
-                            superClassTypeResult.getIndex()]);
+            final ParameterizedType superClassType = (ParameterizedType) clazz.getGenericSuperclass();
+            final TypeResult result = getTypeParameter(clazz,
+                    superClassType.getActualTypeArguments()[superClassTypeResult.getIndex()]);
             result.incrementDimension(superClassTypeResult.getDimension());
             if (result.getClazz() != null && result.getDimension() > 0) {
                 superClassTypeResult = result;
@@ -238,7 +234,7 @@ public class Util {
         }
 
         if (superClassTypeResult.getDimension() > 0) {
-            StringBuilder className = new StringBuilder();
+            final StringBuilder className = new StringBuilder();
             for (int i = 0; i < dimension; i++) {
                 className.append('[');
             }
@@ -249,7 +245,7 @@ public class Util {
             Class<?> arrayClazz;
             try {
                 arrayClazz = Class.forName(className.toString());
-            } catch (ClassNotFoundException e) {
+            } catch (final ClassNotFoundException e) {
                 throw new IllegalArgumentException(e);
             }
 
@@ -262,21 +258,21 @@ public class Util {
 
 
     /*
-     * For a generic parameter, return either the Class used or if the type
-     * is unknown, the index for the type in definition of the class
+     * For a generic parameter, return either the Class used or if the type is unknown, the index
+     * for the type in definition of the class
      */
-    private static TypeResult getTypeParameter(Class<?> clazz, Type argType) {
+    private static TypeResult getTypeParameter(final Class<?> clazz, final Type argType) {
         if (argType instanceof Class<?>) {
             return new TypeResult((Class<?>) argType, -1, 0);
         } else if (argType instanceof ParameterizedType) {
-            return new TypeResult((Class<?>)((ParameterizedType) argType).getRawType(), -1, 0);
+            return new TypeResult((Class<?>) ((ParameterizedType) argType).getRawType(), -1, 0);
         } else if (argType instanceof GenericArrayType) {
-            Type arrayElementType = ((GenericArrayType) argType).getGenericComponentType();
-            TypeResult result = getTypeParameter(clazz, arrayElementType);
+            final Type arrayElementType = ((GenericArrayType) argType).getGenericComponentType();
+            final TypeResult result = getTypeParameter(clazz, arrayElementType);
             result.incrementDimension(1);
             return result;
         } else {
-            TypeVariable<?>[] tvs = clazz.getTypeParameters();
+            final TypeVariable<?>[] tvs = clazz.getTypeParameters();
             for (int i = 0; i < tvs.length; i++) {
                 if (tvs[i].equals(argType)) {
                     return new TypeResult(null, i, 0);
@@ -287,10 +283,10 @@ public class Util {
     }
 
 
-    public static boolean isPrimitive(Class<?> clazz) {
+    public static boolean isPrimitive(final Class<?> clazz) {
         if (clazz.isPrimitive()) {
             return true;
-        } else if(clazz.equals(Boolean.class) ||
+        } else if (clazz.equals(Boolean.class) ||
                 clazz.equals(Byte.class) ||
                 clazz.equals(Character.class) ||
                 clazz.equals(Double.class) ||
@@ -304,7 +300,7 @@ public class Util {
     }
 
 
-    public static Object coerceToType(Class<?> type, String value) {
+    public static Object coerceToType(final Class<?> type, final String value) {
         if (type.equals(String.class)) {
             return value;
         } else if (type.equals(boolean.class) || type.equals(Boolean.class)) {
@@ -331,24 +327,25 @@ public class Util {
 
 
     public static List<DecoderEntry> getDecoders(
-            List<Class<? extends Decoder>> decoderClazzes)
-                    throws DeploymentException{
+            final List<Class<? extends Decoder>> decoderClazzes)
+            throws DeploymentException {
 
-        List<DecoderEntry> result = new ArrayList<>();
+        final List<DecoderEntry> result = new ArrayList<>();
         if (decoderClazzes != null) {
-            for (Class<? extends Decoder> decoderClazz : decoderClazzes) {
+            for (final Class<? extends Decoder> decoderClazz : decoderClazzes) {
                 // Need to instantiate decoder to ensure it is valid and that
                 // deployment can be failed if it is not
                 @SuppressWarnings("unused")
                 Decoder instance;
                 try {
                     instance = decoderClazz.getConstructor().newInstance();
-                } catch (ReflectiveOperationException e) {
+                } catch (final ReflectiveOperationException e) {
                     throw new DeploymentException(
                             sm.getString("pojoMethodMapping.invalidDecoder",
-                                    decoderClazz.getName()), e);
+                                    decoderClazz.getName()),
+                            e);
                 }
-                DecoderEntry entry = new DecoderEntry(
+                final DecoderEntry entry = new DecoderEntry(
                         Util.getDecoderType(decoderClazz), decoderClazz);
                 result.add(entry);
             }
@@ -358,46 +355,43 @@ public class Util {
     }
 
 
-    static Set<MessageHandlerResult> getMessageHandlers(Class<?> target,
-            MessageHandler listener, EndpointConfig endpointConfig,
-            Session session) {
+    static Set<MessageHandlerResult> getMessageHandlers(final Class<?> target,
+            final MessageHandler listener, final EndpointConfig endpointConfig,
+            final Session session) {
 
         // Will never be more than 2 types
-        Set<MessageHandlerResult> results = new HashSet<>(2);
+        final Set<MessageHandlerResult> results = new HashSet<>(2);
 
         // Simple cases - handlers already accepts one of the types expected by
         // the frame handling code
         if (String.class.isAssignableFrom(target)) {
-            MessageHandlerResult result =
-                    new MessageHandlerResult(listener,
-                            MessageHandlerResultType.TEXT);
+            final MessageHandlerResult result = new MessageHandlerResult(listener,
+                    MessageHandlerResultType.TEXT);
             results.add(result);
         } else if (ByteBuffer.class.isAssignableFrom(target)) {
-            MessageHandlerResult result =
-                    new MessageHandlerResult(listener,
-                            MessageHandlerResultType.BINARY);
+            final MessageHandlerResult result = new MessageHandlerResult(listener,
+                    MessageHandlerResultType.BINARY);
             results.add(result);
         } else if (PongMessage.class.isAssignableFrom(target)) {
-            MessageHandlerResult result =
-                    new MessageHandlerResult(listener,
-                            MessageHandlerResultType.PONG);
+            final MessageHandlerResult result = new MessageHandlerResult(listener,
+                    MessageHandlerResultType.PONG);
             results.add(result);
-        // Handler needs wrapping and optional decoder to convert it to one of
-        // the types expected by the frame handling code
+            // Handler needs wrapping and optional decoder to convert it to one of
+            // the types expected by the frame handling code
         } else if (byte[].class.isAssignableFrom(target)) {
-            boolean whole = MessageHandler.Whole.class.isAssignableFrom(listener.getClass());
-            MessageHandlerResult result = new MessageHandlerResult(
+            final boolean whole = MessageHandler.Whole.class.isAssignableFrom(listener.getClass());
+            final MessageHandlerResult result = new MessageHandlerResult(
                     whole ? new PojoMessageHandlerWholeBinary(listener,
-                                    getOnMessageMethod(listener), session,
-                                    endpointConfig, matchDecoders(target, endpointConfig, true),
-                                    new Object[1], 0, true, -1, false, -1) :
-                            new PojoMessageHandlerPartialBinary(listener,
+                            getOnMessageMethod(listener), session,
+                            endpointConfig, matchDecoders(target, endpointConfig, true),
+                            new Object[1], 0, true, -1, false, -1)
+                            : new PojoMessageHandlerPartialBinary(listener,
                                     getOnMessagePartialMethod(listener), session,
                                     new Object[2], 0, true, 1, -1, -1),
                     MessageHandlerResultType.BINARY);
             results.add(result);
         } else if (InputStream.class.isAssignableFrom(target)) {
-            MessageHandlerResult result = new MessageHandlerResult(
+            final MessageHandlerResult result = new MessageHandlerResult(
                     new PojoMessageHandlerWholeBinary(listener,
                             getOnMessageMethod(listener), session,
                             endpointConfig, matchDecoders(target, endpointConfig, true),
@@ -405,7 +399,7 @@ public class Util {
                     MessageHandlerResultType.BINARY);
             results.add(result);
         } else if (Reader.class.isAssignableFrom(target)) {
-            MessageHandlerResult result = new MessageHandlerResult(
+            final MessageHandlerResult result = new MessageHandlerResult(
                     new PojoMessageHandlerWholeText(listener,
                             getOnMessageMethod(listener), session,
                             endpointConfig, matchDecoders(target, endpointConfig, false),
@@ -415,24 +409,24 @@ public class Util {
         } else {
             // Handler needs wrapping and requires decoder to convert it to one
             // of the types expected by the frame handling code
-            DecoderMatch decoderMatch = matchDecoders(target, endpointConfig);
-            Method m = getOnMessageMethod(listener);
+            final DecoderMatch decoderMatch = matchDecoders(target, endpointConfig);
+            final Method m = getOnMessageMethod(listener);
             if (decoderMatch.getBinaryDecoders().size() > 0) {
-                MessageHandlerResult result = new MessageHandlerResult(
+                final MessageHandlerResult result = new MessageHandlerResult(
                         new PojoMessageHandlerWholeBinary(listener, m, session,
                                 endpointConfig,
                                 decoderMatch.getBinaryDecoders(), new Object[1],
                                 0, false, -1, false, -1),
-                                MessageHandlerResultType.BINARY);
+                        MessageHandlerResultType.BINARY);
                 results.add(result);
             }
             if (decoderMatch.getTextDecoders().size() > 0) {
-                MessageHandlerResult result = new MessageHandlerResult(
+                final MessageHandlerResult result = new MessageHandlerResult(
                         new PojoMessageHandlerWholeText(listener, m, session,
                                 endpointConfig,
                                 decoderMatch.getTextDecoders(), new Object[1],
                                 0, false, -1, -1),
-                                MessageHandlerResultType.TEXT);
+                        MessageHandlerResultType.TEXT);
                 results.add(result);
             }
         }
@@ -445,9 +439,10 @@ public class Util {
         return results;
     }
 
-    private static List<Class<? extends Decoder>> matchDecoders(Class<?> target,
-            EndpointConfig endpointConfig, boolean binary) {
-        DecoderMatch decoderMatch = matchDecoders(target, endpointConfig);
+
+    private static List<Class<? extends Decoder>> matchDecoders(final Class<?> target,
+            final EndpointConfig endpointConfig, final boolean binary) {
+        final DecoderMatch decoderMatch = matchDecoders(target, endpointConfig);
         if (binary) {
             if (decoderMatch.getBinaryDecoders().size() > 0) {
                 return decoderMatch.getBinaryDecoders();
@@ -458,31 +453,32 @@ public class Util {
         return null;
     }
 
-    private static DecoderMatch matchDecoders(Class<?> target,
-            EndpointConfig endpointConfig) {
+
+    private static DecoderMatch matchDecoders(final Class<?> target,
+            final EndpointConfig endpointConfig) {
         DecoderMatch decoderMatch;
         try {
-            List<Class<? extends Decoder>> decoders =
-                    endpointConfig.getDecoders();
-            List<DecoderEntry> decoderEntries = getDecoders(decoders);
+            final List<Class<? extends Decoder>> decoders = endpointConfig.getDecoders();
+            final List<DecoderEntry> decoderEntries = getDecoders(decoders);
             decoderMatch = new DecoderMatch(target, decoderEntries);
-        } catch (DeploymentException e) {
+        } catch (final DeploymentException e) {
             throw new IllegalArgumentException(e);
         }
         return decoderMatch;
     }
 
-    public static void parseExtensionHeader(List<Extension> extensions,
-            String header) {
+
+    public static void parseExtensionHeader(final List<Extension> extensions,
+            final String header) {
         // The relevant ABNF for the Sec-WebSocket-Extensions is as follows:
-        //      extension-list = 1#extension
-        //      extension = extension-token *( ";" extension-param )
-        //      extension-token = registered-token
-        //      registered-token = token
-        //      extension-param = token [ "=" (token | quoted-string) ]
-        //             ; When using the quoted-string syntax variant, the value
-        //             ; after quoted-string unescaping MUST conform to the
-        //             ; 'token' ABNF.
+        // extension-list = 1#extension
+        // extension = extension-token *( ";" extension-param )
+        // extension-token = registered-token
+        // registered-token = token
+        // extension-param = token [ "=" (token | quoted-string) ]
+        // ; When using the quoted-string syntax variant, the value
+        // ; after quoted-string unescaping MUST conform to the
+        // ; 'token' ABNF.
         //
         // The limiting of parameter values to tokens or "quoted tokens" makes
         // the parsing of the header significantly simpler and allows a number
@@ -490,15 +486,15 @@ public class Util {
 
         // Step one, split the header into individual extensions using ',' as a
         // separator
-        String unparsedExtensions[] = header.split(",");
-        for (String unparsedExtension : unparsedExtensions) {
+        final String unparsedExtensions[] = header.split(",");
+        for (final String unparsedExtension : unparsedExtensions) {
             // Step two, split the extension into the registered name and
             // parameter/value pairs using ';' as a separator
-            String unparsedParameters[] = unparsedExtension.split(";");
-            WsExtension extension = new WsExtension(unparsedParameters[0].trim());
+            final String unparsedParameters[] = unparsedExtension.split(";");
+            final WsExtension extension = new WsExtension(unparsedParameters[0].trim());
 
             for (int i = 1; i < unparsedParameters.length; i++) {
-                int equalsPos = unparsedParameters[i].indexOf('=');
+                final int equalsPos = unparsedParameters[i].indexOf('=');
                 String name;
                 String value;
                 if (equalsPos == -1) {
@@ -507,7 +503,7 @@ public class Util {
                 } else {
                     name = unparsedParameters[i].substring(0, equalsPos).trim();
                     value = unparsedParameters[i].substring(equalsPos + 1).trim();
-                    int len = value.length();
+                    final int len = value.length();
                     if (len > 1) {
                         if (value.charAt(0) == '\"' && value.charAt(len - 1) == '\"') {
                             value = value.substring(1, value.length() - 1);
@@ -522,7 +518,7 @@ public class Util {
                 }
                 if (value != null &&
                         (value.indexOf(',') > -1 || value.indexOf(';') > -1 ||
-                        value.indexOf('\"') > -1 || value.indexOf('=') > -1)) {
+                                value.indexOf('\"') > -1 || value.indexOf('=') > -1)) {
                     throw new IllegalArgumentException(sm.getString("", value));
                 }
                 extension.addParameter(new WsExtensionParameter(name, value));
@@ -532,11 +528,11 @@ public class Util {
     }
 
 
-    private static boolean containsDelims(String input) {
+    private static boolean containsDelims(final String input) {
         if (input == null || input.length() == 0) {
             return false;
         }
-        for (char c : input.toCharArray()) {
+        for (final char c : input.toCharArray()) {
             switch (c) {
                 case ',':
                 case ';':
@@ -551,7 +547,8 @@ public class Util {
         return false;
     }
 
-    private static Method getOnMessageMethod(MessageHandler listener) {
+
+    private static Method getOnMessageMethod(final MessageHandler listener) {
         try {
             return listener.getClass().getMethod("onMessage", Object.class);
         } catch (NoSuchMethodException | SecurityException e) {
@@ -560,7 +557,8 @@ public class Util {
         }
     }
 
-    private static Method getOnMessagePartialMethod(MessageHandler listener) {
+
+    private static Method getOnMessagePartialMethod(final MessageHandler listener) {
         try {
             return listener.getClass().getMethod("onMessage", Object.class, Boolean.TYPE);
         } catch (NoSuchMethodException | SecurityException e) {
@@ -569,18 +567,16 @@ public class Util {
         }
     }
 
-
     public static class DecoderMatch {
 
-        private final List<Class<? extends Decoder>> textDecoders =
-                new ArrayList<>();
-        private final List<Class<? extends Decoder>> binaryDecoders =
-                new ArrayList<>();
+        private final List<Class<? extends Decoder>> textDecoders = new ArrayList<>();
+        private final List<Class<? extends Decoder>> binaryDecoders = new ArrayList<>();
         private final Class<?> target;
 
-        public DecoderMatch(Class<?> target, List<DecoderEntry> decoderEntries) {
+
+        public DecoderMatch(final Class<?> target, final List<DecoderEntry> decoderEntries) {
             this.target = target;
-            for (DecoderEntry decoderEntry : decoderEntries) {
+            for (final DecoderEntry decoderEntry : decoderEntries) {
                 if (decoderEntry.getClazz().isAssignableFrom(target)) {
                     if (Binary.class.isAssignableFrom(
                             decoderEntry.getDecoderClazz())) {
@@ -631,35 +627,39 @@ public class Util {
 
 
         public boolean hasMatches() {
-            return (textDecoders.size() > 0) || (binaryDecoders.size() > 0);
+            return textDecoders.size() > 0 || binaryDecoders.size() > 0;
         }
     }
-
 
     private static class TypeResult {
         private final Class<?> clazz;
         private final int index;
         private int dimension;
 
-        public TypeResult(Class<?> clazz, int index, int dimension) {
-            this.clazz= clazz;
+
+        public TypeResult(final Class<?> clazz, final int index, final int dimension) {
+            this.clazz = clazz;
             this.index = index;
             this.dimension = dimension;
         }
+
 
         public Class<?> getClazz() {
             return clazz;
         }
 
+
         public int getIndex() {
             return index;
         }
+
 
         public int getDimension() {
             return dimension;
         }
 
-        public void incrementDimension(int inc) {
+
+        public void incrementDimension(final int inc) {
             dimension += inc;
         }
     }

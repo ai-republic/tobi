@@ -77,10 +77,9 @@ public class ChannelProcessor implements IChannelProcessor {
     /**
      * Re-initializes the {@link ChannelProcessor} to be reused.
      * 
-     * @param module the {@link HttpModule}
+     * @param module the {@link IServerModule}
      * @param channel the {@link SocketChannel}
      * @param ioHandler the {@link IIOHandler}
-     * @param isSecure flag whether the channel is SSL encrypted
      * @throws IOException if the channel is already closed
      */
     @Override

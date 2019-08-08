@@ -89,8 +89,7 @@ public class WsServerContainer extends WsWebSocketContainer implements ServerCon
 
     /**
      * Published the provided endpoint implementation at the specified path with the specified
-     * configuration. {@link #WsServerContainer(ServletContext)} must be called before calling this
-     * method.
+     * configuration.
      *
      * @param sec The configuration to use when creating endpoint instances
      * @throws DeploymentException if the endpoint cannot be published as requested

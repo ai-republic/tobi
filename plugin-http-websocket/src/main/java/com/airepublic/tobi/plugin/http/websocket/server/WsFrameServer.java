@@ -32,7 +32,7 @@ import com.airepublic.tobi.plugin.http.websocket.util.res.StringManager;
 public class WsFrameServer extends WsFrameBase {
 
     private final Logger log = new SerializableLogger(WsFrameServer.class.getName()); // must not be
-                                                                                // static
+    // static
     private static final StringManager sm = StringManager.getManager(WsFrameServer.class);
 
     private final ClassLoader applicationClassLoader;
@@ -47,6 +47,7 @@ public class WsFrameServer extends WsFrameBase {
     /**
      * Called when there is data in the ServletInputStream to process.
      *
+     * @param buffer the received {@link ByteBuffer}
      * @throws IOException if an I/O error occurs while processing the available data
      */
     public void onDataAvailable(final ByteBuffer buffer) throws IOException {

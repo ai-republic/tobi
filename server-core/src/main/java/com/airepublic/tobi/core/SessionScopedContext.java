@@ -49,7 +49,7 @@ public class SessionScopedContext implements AlterableContext {
     /**
      * Activate this context.
      * 
-     * @param requestContext the {@link BeanContextStorage}
+     * @param sessionContext the {@link BeanContextStorage}
      */
     public void activate(final BeanContextStorage sessionContext) {
         SessionScopedContext.sessionContext.set(sessionContext);

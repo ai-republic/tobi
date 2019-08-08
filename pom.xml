@@ -175,7 +175,6 @@
 		<module>feature-cdi-owb</module>
 		<module>example</module>
 		<module>test-suite</module>
-		<module>test-tcks</module>
 	</modules>
 
 

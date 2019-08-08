@@ -18,7 +18,8 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Implementation to intercept {@link Asynchronous} annotations.
  * 
- * @see {@link Asynchronous} annotation for details on the specified mechanism
+ * See {@link Asynchronous} annotation for details on the specified mechanism
+ * 
  * @author Torsten Oltmanns
  *
  */

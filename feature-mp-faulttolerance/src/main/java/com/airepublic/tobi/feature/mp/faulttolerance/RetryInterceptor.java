@@ -15,7 +15,8 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Implementation to intercept {@link Retry} annotations.
  * 
- * @see {@link Retry} annotation for details on the specified mechanism
+ * See {@link Retry} annotation for details on the specified mechanism
+ * 
  * @author Torsten Oltmanns
  *
  */

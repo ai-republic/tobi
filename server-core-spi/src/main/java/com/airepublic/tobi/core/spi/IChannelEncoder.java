@@ -41,7 +41,7 @@ public interface IChannelEncoder {
      * @param buffer the {@link ByteBuffer}
      * @return a {@link Pair} of {@link Status} and {@link Request} giving information if the
      *         request was fully read
-     * @throws IOException
+     * @throws IOException if decoding fails
      */
     Pair<Status, Request> decode(ByteBuffer buffer) throws IOException;
 
@@ -51,7 +51,7 @@ public interface IChannelEncoder {
      * 
      * @param buffers the {@link ByteBuffer}s
      * @return the encoded {@link ByteBuffer}s
-     * @throws IOException
+     * @throws IOException if encoding fails
      */
     ByteBuffer[] encode(ByteBuffer... buffers) throws IOException;
 

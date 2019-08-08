@@ -17,7 +17,8 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Implementation to intercept {@link Timeout} annotations.
  * 
- * @see {@link Timeout} annotation for details on the specified mechanism
+ * See {@link Timeout} annotation for details on the specified mechanism
+ * 
  * @author Torsten Oltmanns
  *
  */

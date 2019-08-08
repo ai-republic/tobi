@@ -107,6 +107,7 @@ public interface IServerSession extends Serializable, AutoCloseable {
     /**
      * Gets the value for the specified key of the specified type.
      * 
+     * @param <T> the value type
      * @param key the key
      * @param type the type of the value
      * @return the value or null if it does not exist

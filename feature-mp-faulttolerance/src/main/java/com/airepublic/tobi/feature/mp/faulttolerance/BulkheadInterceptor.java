@@ -21,7 +21,8 @@ import org.eclipse.microprofile.faulttolerance.exceptions.FaultToleranceDefiniti
 /**
  * Implementation to intercept {@link Bulkhead} annotations.
  * 
- * @see {@link Bulkhead} annotation for details on the specified mechanism
+ * See {@link Bulkhead} annotation for details on the specified mechanism
+ * 
  * @author Torsten Oltmanns
  *
  */

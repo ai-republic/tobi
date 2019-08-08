@@ -3,7 +3,6 @@ package com.airepublic.tobi.feature.mp.health;
 import javax.json.JsonObject;
 
 import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponse.State;
 
 /**
  * Wrapper to receive Json responses.
@@ -36,7 +35,7 @@ public class HealthCheckJson {
 
 
     /**
-     * Returns true if the response has the status {@link State.DOWN}.
+     * Returns true if the response has the status {@link HealthCheckResponse.State#DOWN}.
      * 
      * @return true if down
      */

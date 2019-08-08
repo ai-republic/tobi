@@ -25,11 +25,12 @@ public interface IIOHandler extends Serializable {
 
 
     /**
-     * Called when the outgoing stream is ready to write data.<br/>
-     * NOTE: outgoing {@link ByteBuffer}s can be queued to the {@link IServerSession}
+     * Called when the outgoing stream is ready to write data.
+     * <p>
+     * <b>NOTE:</b> outgoing {@link ByteBuffer}s can be queued to the {@link IServerSession}
      * write-buffer-queue.
+     * </p>
      * 
-     * @param session the {@link IServerSession}
      * @throws IOException if producing data fails
      */
     void produce() throws IOException;
@@ -37,7 +38,7 @@ public interface IIOHandler extends Serializable {
 
     /**
      * This method is called by the {@link IChannelProcessor} if there is an exception while reading
-     * from the incoming stream. In this case {@link IIOHandler#consume(ByteBuffer)} will not be
+     * from the incoming stream. In this case {@link IIOHandler#consume(Request)} will not be
      * called.
      * 
      * @param t the exception that occurred
@@ -70,6 +71,7 @@ public interface IIOHandler extends Serializable {
      * 
      * @param handler the {@link CompletionHandler} that should be invoked with
      *        {@link CompletionHandler#failed(Throwable, Object)}
+     * @param t the exception that occurred
      * @return the {@link ChannelAction} that should be performed
      */
     ChannelAction writeFailed(CompletionHandler<?, ?> handler, Throwable t);
