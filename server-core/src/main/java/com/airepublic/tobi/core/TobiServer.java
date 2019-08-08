@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,8 +22,6 @@ import java.util.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
-
-import org.eclipse.microprofile.faulttolerance.Asynchronous;
 
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
@@ -169,14 +166,7 @@ public class TobiServer {
                     throw new IOException(getClass().getSimpleName() + " is already running!");
                 }
             }
-
-            run();
         }
-    }
-
-
-    @Asynchronous
-    Future<?> run() throws IOException {
 
         try {
             while (running.get()) {
@@ -201,8 +191,6 @@ public class TobiServer {
         } finally {
             stop();
         }
-
-        return null;
     }
 
 
