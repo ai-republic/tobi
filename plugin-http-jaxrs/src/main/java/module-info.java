@@ -8,8 +8,7 @@ module com.airepublic.tobi.plugin.http.jaxrs.resteasy {
     exports com.airepublic.tobi.plugin.http.jaxrs.resteasy;
 
     requires transitive com.airepublic.tobi.core.spi;
-    requires transitive com.airepublic.http.common;
-    requires com.airepublic.tobi.module.http;
+    requires transitive com.airepublic.tobi.module.http;
     requires com.airepublic.tobi.feature.mp.config;
     requires com.airepublic.logging.java;
     requires com.airepublic.reflections;

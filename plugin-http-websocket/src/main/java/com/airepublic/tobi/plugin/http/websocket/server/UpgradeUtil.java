@@ -18,7 +18,6 @@ package com.airepublic.tobi.plugin.http.websocket.server;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -35,6 +34,9 @@ import javax.websocket.Extension;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.ServerEndpointConfig;
 
+import com.airepublic.http.common.Headers;
+import com.airepublic.http.common.HttpStatus;
+import com.airepublic.tobi.module.http.HttpResponse;
 import com.airepublic.tobi.plugin.http.websocket.Constants;
 import com.airepublic.tobi.plugin.http.websocket.Transformation;
 import com.airepublic.tobi.plugin.http.websocket.TransformationFactory;
@@ -75,7 +77,7 @@ public class UpgradeUtil {
     }
 
 
-    public static ByteBuffer doUpgrade(final WsServerContainer sc, final URI requestUri, final Map<String, List<String>> reqHeaders, final Principal userPrincipal, final ServerEndpointConfig sec, final Map<String, String> pathParams, final WsHttpUpgradeHandler handler) throws IOException {
+    public static HttpResponse doUpgrade(final WsServerContainer sc, final URI requestUri, final Map<String, List<String>> reqHeaders, final Principal userPrincipal, final ServerEndpointConfig sec, final Map<String, String> pathParams, final WsHttpUpgradeHandler handler) throws IOException {
 
         // Validate the rest of the headers and reject the request if that
         // validation fails
@@ -323,22 +325,8 @@ public class UpgradeUtil {
     }
 
 
-    static ByteBuffer createResponse(final int statusCode, final String statusDesc, final Map<String, List<String>> headers) {
-        final StringBuffer str = new StringBuffer();
-        str.append("HTTP/1.1 " + statusCode + " " + statusDesc + "\r\n");
-
-        if (headers != null) {
-            final StringBuffer headerBuf = headers.entrySet().stream().map(entry -> {
-                final StringBuffer buf = new StringBuffer();
-                entry.getValue().stream().forEach(value -> buf.append(entry.getKey() + ": " + value + "\r\n"));
-                return buf;
-            }).collect(StringBuffer::new, StringBuffer::append, StringBuffer::append);
-
-            str.append(headerBuf);
-            str.append("\r\n");
-        }
-
-        return ByteBuffer.wrap(str.toString().getBytes());
+    static HttpResponse createResponse(final int statusCode, final String statusDesc, final Map<String, List<String>> headers) {
+        return new HttpResponse(HttpStatus.forCode(statusCode), new Headers(headers));
     }
 
 }

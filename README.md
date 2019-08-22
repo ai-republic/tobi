@@ -102,8 +102,9 @@ To add other features to use in your project just add the appropriate dependency
 ```
 
 
-### Starting the Tobi server
-In your projects META-INF folder you will need to place a `microprofile-config.properties` file and configure the port parameters like this:
+### Configuration
+Configuration can be done in 2 ways. 
+Either you place a `microprofile-config.properties` file in your projects META-INF folder and configure the port parameters like this (recommended):
 
 ```properties
 workerCount=5
@@ -114,9 +115,12 @@ http.keystore.file=~/keystore.jks
 http.keystore.password=changeit
 http.truststore.file=~/cacerts.jks
 http.truststore.password=changeit
-
 ```
-_NOTE:_ `http.port`and `http.ssl.port` are the 2 properties needed to configure the HTTP/S module. In fact if you would like Tobi only to accept HTTPS you simply don't add the `http.port` property. See also the documentation on the HttpModule.
+_NOTE:_ All properties starting with `http.` belong to the HTTP/S module . `http.port` and `http.ssl.port` are the ports under which the HTTP/S module will be servicing. In fact if you would like Tobi only to accept HTTPS you simply don't add the `http.port` property. See also the documentation on the HttpModule.
+
+Another way to configure these properties is to pass them as system properties on startup.
+
+### Starting the Tobi server
 
 Then just call:
 

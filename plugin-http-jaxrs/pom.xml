@@ -57,11 +57,7 @@
 			<artifactId>reflections</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-		<dependency>
-			<groupId>com.ai-republic</groupId>
-			<artifactId>http-common</artifactId>
-			<version>1.0.0</version>
-		</dependency>
+
 
 		<!-- REST API -->
 		<dependency>

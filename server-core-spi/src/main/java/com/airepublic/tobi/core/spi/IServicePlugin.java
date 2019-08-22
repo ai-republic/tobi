@@ -37,12 +37,12 @@ public interface IServicePlugin extends AutoCloseable {
 
     /**
      * Tries to determine if this plugin provides a {@link IIOHandler} which can handle the
-     * {@link Request}.
+     * {@link IRequest}.
      *
-     * @param request the {@link Request}
+     * @param request the {@link IRequest}
      * @return the {@link IIOHandler}
      */
-    IIOHandler determineIoHandler(Request request);
+    IIOHandler determineIoHandler(IRequest request);
 
 
     /**

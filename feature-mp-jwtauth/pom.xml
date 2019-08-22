@@ -23,6 +23,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.ai-republic.tobi</groupId>
+			<artifactId>module-http</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.ai-republic.tobi</groupId>
 			<artifactId>feature-mp-config</artifactId>
 			<version>${project.version}</version>
 		</dependency>

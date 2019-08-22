@@ -16,8 +16,6 @@ import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpRequest;
 import com.airepublic.http.sse.api.ISseRegistry;
 import com.airepublic.http.sse.api.ISseService;
 import com.airepublic.http.sse.api.ProducerEntry;
@@ -27,10 +25,10 @@ import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.reflections.Reflections;
 import com.airepublic.tobi.core.spi.IIOHandler;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
-import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.module.http.HttpRequest;
 
 /**
  * The {@link IServicePlugin} implementation for SSE.
@@ -72,12 +70,10 @@ public class SsePlugin implements IServicePlugin {
 
 
     @Override
-    public IIOHandler determineIoHandler(final Request request) {
+    public IIOHandler determineIoHandler(final IRequest request) {
 
         final Class<? extends IIOHandler> handlerClass = null;
-        final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
-        httpRequest.setBody(request.getPayload());
-
+        final HttpRequest httpRequest = (HttpRequest) request;
         final String path = httpRequest.getPath();
         final ProducerEntry producerEntry = sseRegistry.getSseProducer(path);
 

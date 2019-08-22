@@ -1,4 +1,4 @@
-package com.airepublic.tobi.example;
+package com.airepublic.tobi.example.resource;
 
 import java.util.concurrent.TimeUnit;
 

@@ -16,18 +16,16 @@ import javax.websocket.server.ServerEndpointConfig;
 
 import org.eclipse.microprofile.config.Config;
 
-import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpRequest;
 import com.airepublic.http.common.pathmatcher.MappingResult;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.reflections.Reflections;
 import com.airepublic.tobi.core.spi.IIOHandler;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
-import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.module.http.HttpRequest;
 import com.airepublic.tobi.plugin.http.websocket.server.WsSci;
 import com.airepublic.tobi.plugin.http.websocket.server.WsServerContainer;
 
@@ -82,10 +80,8 @@ public class WebSocketPlugin implements IServicePlugin {
 
 
     @Override
-    public IIOHandler determineIoHandler(final Request request) {
-        final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
-        httpRequest.setBody(request.getPayload());
-
+    public IIOHandler determineIoHandler(final IRequest request) {
+        final HttpRequest httpRequest = (HttpRequest) request;
         final String path = httpRequest.getPath();
 
         if (path == null) {

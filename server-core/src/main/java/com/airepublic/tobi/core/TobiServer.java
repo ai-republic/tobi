@@ -250,6 +250,7 @@ public class TobiServer {
 
         try {
             final IServerModule module = moduleForKey.get(connectionKey);
+
             final IChannelProcessor processor = CDI.current().select(IChannelProcessor.class).get();
 
             ForkJoinPool.commonPool().submit(() -> {

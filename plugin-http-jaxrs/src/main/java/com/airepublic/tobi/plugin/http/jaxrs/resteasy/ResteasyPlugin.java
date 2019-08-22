@@ -27,19 +27,17 @@ import org.jboss.resteasy.spi.metadata.DefaultResourceClass;
 import org.jboss.resteasy.spi.metadata.DefaultResourceMethod;
 import org.jboss.resteasy.spi.metadata.ResourceClass;
 
-import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpRequest;
-import com.airepublic.http.common.HttpResponse;
 import com.airepublic.http.common.HttpStatus;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.reflections.Reflections;
 import com.airepublic.tobi.core.spi.IIOHandler;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServicePlugin;
-import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.module.http.HttpRequest;
+import com.airepublic.tobi.module.http.HttpResponse;
 
 /**
  * The {@link IServicePlugin} implementation for JAX-RS using resteasy.
@@ -77,12 +75,11 @@ public class ResteasyPlugin implements IServicePlugin {
 
 
     @Override
-    public IIOHandler determineIoHandler(final Request request) {
+    public IIOHandler determineIoHandler(final IRequest request) {
         try {
             final HttpResponse response = new HttpResponse(HttpStatus.OK);
             final ResteasyHttpResponseWrapper restEasyHttpResponse = new ResteasyHttpResponseWrapper(response, null);
-            final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
-            httpRequest.setBody(request.getPayload());
+            final HttpRequest httpRequest = (HttpRequest) request;
             final ResteasyHttpRequestWrapper restEasyHttpRequest = new ResteasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
             final ResourceInvoker invoker = ((ResourceMethodRegistry) contextBuilder.getDeployment().getRegistry()).getResourceInvoker(restEasyHttpRequest);
 
@@ -115,6 +112,7 @@ public class ResteasyPlugin implements IServicePlugin {
         contextBuilder.getDeployment().setInjectorFactory(new CdiInjectorFactory(CDI.current().getBeanManager()));
         contextBuilder.getDeployment().setRegistry(new ResourceMethodRegistry(ResteasyProviderFactory.getInstance()));
         contextBuilder.getDeployment().getProviderClasses().add(ObjectMapperContextResolver.class.getName());
+        contextBuilder.getDeployment().getProviderClasses().add(SecurityExceptionMapper.class.getName());
 
         logger.info("Searching for JAX-RS applications...");
         final Set<Class<?>> resourceClasses = new HashSet<>();

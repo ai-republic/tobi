@@ -3,7 +3,6 @@ package com.airepublic.tobi.plugin.http.jaxrs.resteasy;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
-import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,18 +25,14 @@ import org.jboss.resteasy.spi.metadata.DefaultResourceClass;
 import org.jboss.resteasy.spi.metadata.DefaultResourceMethod;
 import org.jboss.resteasy.spi.metadata.ResourceClass;
 
-import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpRequest;
-import com.airepublic.http.common.HttpResponse;
 import com.airepublic.http.common.HttpStatus;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
-import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerContext;
-import com.airepublic.tobi.core.spi.IServerSession;
-import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.core.spi.Pair;
+import com.airepublic.tobi.module.http.AbstractHttpIOHandler;
+import com.airepublic.tobi.module.http.HttpResponse;
 
 /**
  * The {@link IIOHandler} implementation for JAX-RS using resteasy.
@@ -45,7 +40,7 @@ import com.airepublic.tobi.module.http.HttpChannelEncoder;
  * @author Torsten Oltmanns
  *
  */
-public class ResteasyIOHandler implements IIOHandler {
+public class ResteasyIOHandler extends AbstractHttpIOHandler {
     private static final long serialVersionUID = 1L;
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
@@ -55,9 +50,6 @@ public class ResteasyIOHandler implements IIOHandler {
     private ResteasyHttpContextBuilder contextBuilder;
     private String contextPath;
     private HttpResponse response;
-    private Request request;
-    @Inject
-    private IServerSession session;
 
 
     /**
@@ -76,40 +68,6 @@ public class ResteasyIOHandler implements IIOHandler {
 
 
     /**
-     * The default implementation will just send a {@link ChannelAction#CLOSE_INPUT}.
-     * 
-     * @param request the {@link Request} read from the incoming stream
-     * @return the {@link ChannelAction#CLOSE_INPUT}
-     * @throws IOException if something goes wrong during processing
-     */
-    @Override
-    public ChannelAction consume(final Request request) throws IOException {
-        this.request = request;
-        return ChannelAction.CLOSE_INPUT;
-    }
-
-
-    /**
-     * The default implementation tries to generate a {@link HttpResponse} by calling
-     * {@link ResteasyIOHandler#getHttpResponse()} and writing the header- and body
-     * {@link ByteBuffer} to the write-buffer-queue.
-     * 
-     * @throws IOException if something goes wrong during producing the {@link HttpResponse}
-     */
-    @Override
-    public void produce() throws IOException {
-        final HttpResponse response = getHttpResponse();
-
-        session.getChannelProcessor().addToWriteBuffer(response.getHeaderBuffer(), response.getBody());
-    }
-
-
-    @Override
-    public void onSessionClose() {
-    }
-
-
-    /**
      * Determine the content-type of the content of the body.
      * 
      * @param body the body {@link ByteBuffer}
@@ -121,13 +79,8 @@ public class ResteasyIOHandler implements IIOHandler {
     }
 
 
-    /**
-     * The implementation should produce a {@link HttpResponse} corresponding to the
-     * {@link HttpRequest}.
-     * 
-     * @return a {@link HttpResponse}
-     */
-    public HttpResponse getHttpResponse() {
+    @Override
+    public Pair<HttpResponse, CompletionHandler<?, ?>> getHttpResponse() throws IOException {
         if (response == null) {
             try {
                 final ResteasyProviderFactory defaultInstance = ResteasyProviderFactory.getInstance();
@@ -139,12 +92,8 @@ public class ResteasyIOHandler implements IIOHandler {
                 response = new HttpResponse(HttpStatus.OK);
 
                 try {
-                    // create the Resteasy request and response wrappers
-                    final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
-                    httpRequest.setBody(request.getPayload());
-
                     final ResteasyHttpResponseWrapper restEasyHttpResponse = new ResteasyHttpResponseWrapper(response, this);
-                    final ResteasyHttpRequestWrapper restEasyHttpRequest = new ResteasyHttpRequestWrapper(httpRequest, restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
+                    final ResteasyHttpRequestWrapper restEasyHttpRequest = new ResteasyHttpRequestWrapper(getHttpRequest(), restEasyHttpResponse, (SynchronousDispatcher) contextBuilder.getDeployment().getDispatcher(), contextPath);
 
                     // add them to the context
                     ResteasyProviderFactory.getContextDataMap().put(org.jboss.resteasy.spi.HttpRequest.class, restEasyHttpRequest);
@@ -159,7 +108,7 @@ public class ResteasyIOHandler implements IIOHandler {
                     if (invoker != null) {
                         restEasyHttpRequest.setAttribute(invoker.getClass().getName(), invoker);
 
-                        // TODO set path parameters and query parameters on resteasyrequest uriinfo
+                        // set path parameters and query parameters on resteasyrequest uriinfo
                         ParamsParser.parse(restEasyHttpRequest, invoker.getMethod(), contextBuilder.getPath());
 
                         final ResourceClass resourceClass = new DefaultResourceClass(invoker.getMethod().getDeclaringClass(), restEasyHttpRequest.getUri().getPath());
@@ -191,7 +140,7 @@ public class ResteasyIOHandler implements IIOHandler {
                     buffer.get(bytes);
                     buffer.reset();
 
-                    logger.info(httpRequest.getRequestLine() + " -> " + new String(bytes));
+                    logger.info(getHttpRequest().getRequestLine() + " -> " + response + " body: " + new String(bytes));
 
                 } catch (final Exception ex) {
                     logger.log(Level.SEVERE, "Error submitting JAX-RS response!", ex);
@@ -211,7 +160,7 @@ public class ResteasyIOHandler implements IIOHandler {
             }
         }
 
-        return response;
+        return new Pair<>(response, null);
     }
 
 
@@ -223,56 +172,4 @@ public class ResteasyIOHandler implements IIOHandler {
     public void setHttpResponse(final HttpResponse response) {
         this.response = response;
     }
-
-
-    /**
-     * The default implementation ignores the {@link CompletionHandler} and signals to close the
-     * connection.
-     * 
-     * @param handler a handler (ignored)
-     * @param length the amount of bytes written
-     * @return {@link ChannelAction#CLOSE_ALL}
-     */
-    @Override
-    public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
-        return ChannelAction.CLOSE_ALL;
-    }
-
-
-    /**
-     * The default implementation ignores the {@link CompletionHandler} and signals to close the
-     * connection.
-     * 
-     * @param handler a handler (ignored)
-     * @param t the exception
-     * @return {@link ChannelAction#CLOSE_ALL}
-     */
-    @Override
-    public ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
-        return ChannelAction.CLOSE_ALL;
-    }
-
-
-    /**
-     * The default implementation signals to close the connection.
-     * 
-     * @param t the exception
-     * @return {@link ChannelAction#CLOSE_ALL}
-     */
-    @Override
-    public ChannelAction onReadError(final Throwable t) {
-        return ChannelAction.CLOSE_ALL;
-    }
-
-
-    /**
-     * The default implementation will tell the connection that it is ready to write.
-     * 
-     * @throws IOException if something goes wrong
-     */
-    @Override
-    public void handleClosedInput() throws IOException {
-        session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOpsOr(SelectionKey.OP_WRITE);
-    }
-
 }

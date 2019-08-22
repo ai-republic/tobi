@@ -37,6 +37,16 @@ public interface IServerModule extends Closeable {
 
 
     /**
+     * Checks whether the {@link IServerSession} or {@link IRequest} is authorized.
+     * 
+     * @param session the {@link IServerSession}
+     * @throws SecurityException if the request is not authorized
+     * @throws IOException if the request is invalid
+     */
+    void checkAuthorization(IServerSession session) throws SecurityException, IOException;
+
+
+    /**
      * Adds a {@link IServicePlugin} which must match the protocol of this module.
      * 
      * @param featurePlugin the {@link IServicePlugin}
@@ -63,13 +73,13 @@ public interface IServerModule extends Closeable {
 
 
     /**
-     * Tries to determine which registered {@link IIOHandler} can handle the {@link Request}.
+     * Tries to determine which registered {@link IIOHandler} can handle the {@link IRequest}.
      *
-     * @param request the {@link Request}
+     * @param request the {@link IRequest}
      * @return the {@link IIOHandler}
      * @throws IOException if something goes wrong
      */
-    IIOHandler determineIoHandler(Request request) throws IOException;
+    IIOHandler determineIoHandler(IRequest request) throws IOException;
 
 
     /**

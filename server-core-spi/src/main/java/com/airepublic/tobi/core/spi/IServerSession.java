@@ -1,9 +1,8 @@
 package com.airepublic.tobi.core.spi;
 
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.channels.CompletionHandler;
 import java.nio.channels.SocketChannel;
+import java.security.Principal;
 
 import javax.enterprise.context.SessionScoped;
 
@@ -57,30 +56,61 @@ public interface IServerSession extends Serializable, AutoCloseable {
 
 
     /**
-     * Add the {@link ByteBuffer}s to the read queue.
+     * Gets the {@link Principal} for this session.
      * 
-     * @param buffer the {@link ByteBuffer}s
+     * @return the {@link Principal}
      */
-    void addToReadBuffer(ByteBuffer... buffer);
+    Principal getPrincipal();
 
 
     /**
-     * Add the {@link ByteBuffer}s to the write queue.
+     * Sets the {@link Principal} for this session.
      * 
-     * @param buffer the {@link ByteBuffer}s
+     * @param principal the {@link Principal}
      */
-    void addToWriteBuffer(ByteBuffer... buffer);
+    void setPrincipal(Principal principal);
 
 
     /**
-     * Add the {@link ByteBuffer}s to the write queue and use the specified
-     * {@link CompletionHandler} to notify any interested.
+     * Gets the current {@link IRequest}.
      * 
-     * @param handler the {@link CompletionHandler}
-     * @param buffer the {@link ByteBuffer}s
+     * @return the current {@link IRequest}
      */
-    void addToWriteBuffer(CompletionHandler<?, ?> handler, ByteBuffer... buffer);
+    IRequest getRequest();
 
+
+    /**
+     * Sets the current {@link IRequest}.
+     * 
+     * @param request the current {@link IRequest}
+     */
+    void setRequest(IRequest request);
+
+
+    // /**
+    // * Add the {@link ByteBuffer}s to the read queue.
+    // *
+    // * @param buffer the {@link ByteBuffer}s
+    // */
+    // void addToReadBuffer(ByteBuffer... buffer);
+    //
+    //
+    // /**
+    // * Add the {@link ByteBuffer}s to the write queue.
+    // *
+    // * @param buffer the {@link ByteBuffer}s
+    // */
+    // void addToWriteBuffer(ByteBuffer... buffer);
+    //
+    //
+    // /**
+    // * Add the {@link ByteBuffer}s to the write queue and use the specified
+    // * {@link CompletionHandler} to notify any interested.
+    // *
+    // * @param handler the {@link CompletionHandler}
+    // * @param buffer the {@link ByteBuffer}s
+    // */
+    // void addToWriteBuffer(CompletionHandler<?, ?> handler, ByteBuffer... buffer);
 
     @Override
     void close();

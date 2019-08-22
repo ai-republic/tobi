@@ -1,4 +1,4 @@
-package com.airepublic.tobi.example;
+package com.airepublic.tobi.example.resource;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +22,7 @@ public class RestApplication extends Application {
      * Constructor.
      */
     public RestApplication() {
-        classes.add(Service.class);
+        classes.add(JaxRsSample.class);
         classes.add(SseSample.class);
     }
 

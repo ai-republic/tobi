@@ -9,21 +9,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.inject.Inject;
-import javax.net.ssl.SSLEngine;
 
-import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.sse.api.ISseService;
 import com.airepublic.http.sse.api.SseEvent;
 import com.airepublic.http.sse.api.SseProducer;
-import com.airepublic.http.sse.impl.SseService;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IServerSession;
-import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.module.http.HttpChannelEncoder;
-import com.airepublic.tobi.module.http.SessionConstants;
+import com.airepublic.tobi.core.spi.Pair;
+import com.airepublic.tobi.module.http.AbstractHttpIOHandler;
+import com.airepublic.tobi.module.http.HttpRequest;
+import com.airepublic.tobi.module.http.HttpResponse;
 
 /**
  * The {@link IIOHandler} implementation for outbound SSE. It handles the IO for the object which
@@ -32,7 +30,7 @@ import com.airepublic.tobi.module.http.SessionConstants;
  * @author Torsten Oltmanns
  *
  */
-public class SseOutboundIOHandler implements IIOHandler {
+public class SseOutboundIOHandler extends AbstractHttpIOHandler {
     private static final long serialVersionUID = 1L;
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
@@ -40,7 +38,7 @@ public class SseOutboundIOHandler implements IIOHandler {
     @Inject
     private IServerSession session;
     @Inject
-    private SseService sseService;
+    private ISseService sseService;
     private final AtomicBoolean isHandshakeRead = new AtomicBoolean(false);
     private Object serviceObject;
     private Method serviceMethod;
@@ -50,52 +48,45 @@ public class SseOutboundIOHandler implements IIOHandler {
 
 
     @Override
-    public ChannelAction consume(final Request request) throws IOException {
+    public Pair<HttpResponse, CompletionHandler<?, ?>> getHttpResponse() throws IOException {
         if (isHandshakeRead.compareAndSet(false, true)) {
-            try {
-                if (serviceMethod == null || serviceObject == null) {
-                    final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
+            if (serviceMethod == null || serviceObject == null) {
+                final HttpRequest httpRequest = getHttpRequest();
 
-                    throw new IOException("URI path " + httpRequest.getPath() + " was not be mapped to a SSE method!");
-                }
-
-                if (serviceMethod.isAnnotationPresent(SseProducer.class)) {
-                    final SseProducer annotation = serviceMethod.getAnnotation(SseProducer.class);
-                    delayInMs = annotation.unit().toMillis(annotation.delay());
-                    maxTimes = annotation.maxTimes();
-                }
-
-                final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_SSL_ENGINE, SSLEngine.class);
-
-                // respond to the handshake request
-                sseService.sendHandshakeResponse(session.getChannel(), sslEngine);
-
-                // register to produce events only
-                session.getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);
-
-                // close input channel
-                return ChannelAction.CLOSE_INPUT;
-            } catch (final Exception e) {
-                throw new IOException("Error in request URI syntax!", e);
+                throw new RuntimeException("URI path " + httpRequest.getPath() + " was not be mapped to a SSE method!");
             }
+
+            if (serviceMethod.isAnnotationPresent(SseProducer.class)) {
+                final SseProducer annotation = serviceMethod.getAnnotation(SseProducer.class);
+                delayInMs = annotation.unit().toMillis(annotation.delay());
+                maxTimes = annotation.maxTimes();
+            }
+
+            // respond to the handshake request
+            final com.airepublic.http.common.HttpResponse sseResponse = sseService.getHandshakeResponse();
+            final HttpResponse response = new HttpResponse()
+                    .withBody(sseResponse.getBody())
+                    .withHeaders(sseResponse.getHeaders())
+                    .withScheme(sseResponse.getScheme())
+                    .withVersion(sseResponse.getVersion())
+                    .withStatus(sseResponse.getStatus());
+
+            // the response has already been send by the sseService
+            return new Pair<>(response, null);
         }
 
-        throw new IllegalCallerException("Input should be closed for any further calls!");
-
-    }
-
-
-    @Override
-    public void produce() throws IOException {
         try {
             final Object result = serviceMethod.invoke(serviceObject, new Object[0]);
 
             if (result instanceof SseEvent) {
                 final SseEvent event = (SseEvent) result;
-                session.addToWriteBuffer(sseService.encode(event));
+
+                return new Pair<>(new HttpResponse().withBody(sseService.encode(event)), null);
+            } else {
+                return null;
             }
         } catch (final Exception e) {
-            logger.log(Level.SEVERE, "Could not invoke SSE outbound producer method: " + serviceMethod, e);
+            throw new IOException("Could not invoke SSE outbound producer method: " + serviceMethod, e);
         }
     }
 
@@ -103,11 +94,6 @@ public class SseOutboundIOHandler implements IIOHandler {
     @Override
     public ChannelAction onReadError(final Throwable t) {
         return ChannelAction.CLOSE_INPUT;
-    }
-
-
-    @Override
-    public void handleClosedInput() throws IOException {
     }
 
 
@@ -129,17 +115,6 @@ public class SseOutboundIOHandler implements IIOHandler {
         } else {
             return ChannelAction.CLOSE_ALL;
         }
-    }
-
-
-    @Override
-    public ChannelAction writeFailed(final CompletionHandler<?, ?> handler, final Throwable t) {
-        return ChannelAction.CLOSE_ALL;
-    }
-
-
-    @Override
-    public void onSessionClose() {
     }
 
 

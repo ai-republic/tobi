@@ -1,4 +1,4 @@
-package com.airepublic.tobi.client;
+package com.airepublic.tobi.example.resource.websocket.client;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -18,6 +18,9 @@ import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
+
+import com.airepublic.http.common.Headers;
 
 /**
  * A websocket client to connect to the server.
@@ -79,7 +82,9 @@ public class WebSocketClientEndpoint {
             client.setStopTimeout(Integer.MAX_VALUE);
             System.out.printf("Connecting to : %s%n", echoUri);
             client.start();
-            final Future<org.eclipse.jetty.websocket.api.Session> session = client.connect(endpoint, echoUri);
+            final ClientUpgradeRequest request = new ClientUpgradeRequest();
+            request.setHeader(Headers.AUTHORIZATION, "Basic " + org.jboss.resteasy.util.Base64.encodeBytes("defaut:test".getBytes()));
+            final Future<org.eclipse.jetty.websocket.api.Session> session = client.connect(endpoint, echoUri, request);
             final org.eclipse.jetty.websocket.api.Session wsSession = session.get(30, TimeUnit.MINUTES);
             wsSession.getRemote().sendString("Hello");
 

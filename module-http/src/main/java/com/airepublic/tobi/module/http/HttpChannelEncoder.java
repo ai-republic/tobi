@@ -11,15 +11,14 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import com.airepublic.http.common.AsyncHttpReader;
-import com.airepublic.http.common.HttpRequest;
 import com.airepublic.http.common.SslSupport;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.Attributes;
 import com.airepublic.tobi.core.spi.IChannelEncoder;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
-import com.airepublic.tobi.core.spi.Request;
 
 /**
  * Encodes/Decodes {@link ByteBuffer} of incoming/outgoing HTTP responses/requests. This includes
@@ -73,7 +72,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
 
 
     @Override
-    public Pair<Status, Request> decode(ByteBuffer buffer) throws IOException {
+    public Pair<Status, IRequest> decode(ByteBuffer buffer) throws IOException {
         if (isSecure) {
             buffer = SslSupport.unwrap(sslEngine, channel, buffer);
         }
@@ -83,7 +82,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
         }
 
         if (httpReader.receiveBuffer(buffer)) {
-            final HttpRequest request = httpReader.getHttpRequest();
+            final com.airepublic.http.common.HttpRequest request = httpReader.getHttpRequest();
             httpReader.clear();
 
             logger.log(Level.INFO, "Processing session #" + session.getId() + " HTTP request: " + request.getRequestLine());
@@ -91,7 +90,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
             final Attributes attributes = new Attributes();
             attributes.setAttribute(REQUEST_LINE, request.getRequestLine());
             attributes.setAttribute(HEADERS, request.getHeaders());
-            final Request wrapped = new Request(attributes, request.getBody());
+            final IRequest wrapped = new HttpRequest(session, request.getRequestLine(), request.getHeaders(), request.getBody());
             return new Pair<>(Status.FULLY_READ, wrapped);
         }
 

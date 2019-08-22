@@ -53,6 +53,21 @@ public class JWTUtil {
     /**
      * Creates a {@link JsonWebToken}.
      * 
+     * @param secretKey the String secret-key
+     * @param claims the {@link ClaimsSet}
+     * @return the {@link JsonWebToken}
+     */
+    public static JsonWebToken createJWT(final String secretKey, final ClaimsSet claims) {
+        final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS512;
+        final Key signingKey = new SecretKeySpec(secretKey.getBytes(), signatureAlgorithm.getJcaName());
+
+        return createJWT(signingKey, claims);
+    }
+
+
+    /**
+     * Creates a {@link JsonWebToken}.
+     * 
      * @param secretKey the bytes of the secret-key
      * @param claims the {@link ClaimsSet}
      * @return the {@link JsonWebToken}

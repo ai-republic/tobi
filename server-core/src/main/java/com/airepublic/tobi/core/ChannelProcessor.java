@@ -7,16 +7,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
@@ -29,11 +24,12 @@ import com.airepublic.tobi.core.spi.IChannelEncoder;
 import com.airepublic.tobi.core.spi.IChannelEncoder.Status;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IIOHandler;
+import com.airepublic.tobi.core.spi.IRequest;
+import com.airepublic.tobi.core.spi.IResponse;
 import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
-import com.airepublic.tobi.core.spi.Request;
 
 /**
  * The {@link IChannelProcessor} implementation.
@@ -52,8 +48,6 @@ public class ChannelProcessor implements IChannelProcessor {
     private IIOHandler ioHandler;
     private final AtomicBoolean closing = new AtomicBoolean(false);
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final Queue<ByteBuffer> in = new ConcurrentLinkedQueue<>();
-    private final Queue<Pair<ByteBuffer[], CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
     private IChannelEncoder channelEncoder;
     private IServerSession session;
     @Inject
@@ -229,17 +223,20 @@ public class ChannelProcessor implements IChannelProcessor {
                     return;
                 }
 
-                // buffer.mark();
-                // final byte[] bytes = new byte[buffer.remaining()];
-                // buffer.get(bytes);
-                // logger.info("read raw --> " + new String(bytes));
-                // buffer.reset();
+                buffer.mark();
+                final byte[] bytes = new byte[buffer.remaining()];
+                buffer.get(bytes);
+                logger.info("read raw --> " + new String(bytes));
+                buffer.reset();
                 // Thread.sleep(3000);
 
-                final Pair<Status, Request> result = channelEncoder.decode(buffer);
+                final Pair<Status, IRequest> result = channelEncoder.decode(buffer);
 
                 if (result.getValue1() == Status.FULLY_READ) {
-                    final Request request = result.getValue2();
+                    final IRequest request = result.getValue2();
+                    session.setRequest(request);
+
+                    module.checkAuthorization(session);
 
                     if (getIoHandler() == null) {
                         setIoHandler(module.determineIoHandler(request));
@@ -257,7 +254,6 @@ public class ChannelProcessor implements IChannelProcessor {
                     }
 
                     handleAction(action);
-
                 } else if (result.getValue1() == Status.NEED_MORE_DATA) {
                     // need more data to receive request
                     handleAction(ChannelAction.KEEP_OPEN);
@@ -267,6 +263,9 @@ public class ChannelProcessor implements IChannelProcessor {
             } else {
                 handleAction(ChannelAction.CLOSE_ALL);
             }
+        } catch (final SecurityException e) {
+            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing input channel: " + e.getLocalizedMessage());
+            handleAction(ChannelAction.CLOSE_ALL);
         } catch (final Exception e) {
             logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing input channel: " + e.getLocalizedMessage());
 
@@ -292,12 +291,12 @@ public class ChannelProcessor implements IChannelProcessor {
 
         try {
 
-            getIoHandler().produce();
+            final Pair<? extends IResponse, CompletionHandler<?, ?>> pair = getIoHandler().produce();
 
-            if (out.isEmpty()) {
-                getChannel().keyFor(getSelector()).interestOpsAnd(SelectionKey.OP_READ);
+            if (pair != null && pair.getValue1() != null) {
+                flush(pair);
             } else {
-                flush();
+                getChannel().keyFor(getSelector()).interestOps(SelectionKey.OP_READ);
             }
         } catch (final Exception e) {
             logger.log(Level.SEVERE, "Exception during write processing in module '" + module.getName() + "' session #" + session.getId() + ": ", e);
@@ -311,7 +310,7 @@ public class ChannelProcessor implements IChannelProcessor {
      * 
      * @throws IOException if something goes wrong
      */
-    protected void flush() throws IOException {
+    protected void flush(final Pair<? extends IResponse, CompletionHandler<?, ?>> pair) throws IOException {
         synchronized (closed) {
             if (!closed.get()) {
                 final IIOHandler handler = getIoHandler();
@@ -320,36 +319,40 @@ public class ChannelProcessor implements IChannelProcessor {
                     throw new IOException("Handler has not been initialized!");
                 }
 
-                Pair<ByteBuffer[], CompletionHandler<?, ?>> pair = getNextWriteBuffer();
+                // Pair<ByteBuffer[], CompletionHandler<?, ?>> pair = getNextWriteBuffer();
                 ChannelAction action = ChannelAction.KEEP_OPEN;
 
-                while (pair != null) {
-                    if (pair.getValue1() != null) {
-                        try {
-                            final SocketChannel channel = getChannel();
-                            ByteBuffer[] buffers = pair.getValue1();
-                            long length = -1;
+                if (pair.getValue1() != null) {
+                    try {
+                        final SocketChannel channel = getChannel();
+                        final IResponse response = pair.getValue1();
+                        ByteBuffer[] buffers = null;
 
-                            buffers = channelEncoder.encode(buffers);
-
-                            if (channel.isOpen()) {
-                                length = channel.write(buffers);
-                            }
-
-                            action = handler.writeSuccessful(pair.getValue2(), length);
-                        } catch (final Throwable t) {
-                            logger.log(Level.SEVERE, "Error writing buffers in module '" + module.getName() + "' session #" + session.getId() + ": " + t.getLocalizedMessage());
-                            action = handler.writeFailed(pair.getValue2(), t);
+                        if (response.getAttributesBuffer() != null && response.getPayload() != null) {
+                            buffers = new ByteBuffer[] { pair.getValue1().getAttributesBuffer(), pair.getValue1().getPayload() };
+                        } else if (response.getAttributesBuffer() != null) {
+                            buffers = new ByteBuffer[] { response.getAttributesBuffer() };
+                        } else if (response.getPayload() != null) {
+                            buffers = new ByteBuffer[] { response.getPayload() };
+                        } else {
+                            buffers = new ByteBuffer[] {};
                         }
 
-                        handleAction(action);
+                        long length = -1;
+
+                        buffers = channelEncoder.encode(buffers);
+
+                        if (channel.isOpen()) {
+                            length = channel.write(buffers);
+                        }
+
+                        action = handler.writeSuccessful(pair.getValue2(), length);
+                    } catch (final Throwable t) {
+                        logger.log(Level.SEVERE, "Error writing buffers in module '" + module.getName() + "' session #" + session.getId() + ": " + t.getLocalizedMessage());
+                        action = handler.writeFailed(pair.getValue2(), t);
                     }
 
-                    if (!closing.get() && !closed.get()) {
-                        pair = getNextWriteBuffer();
-                    } else {
-                        pair = null;
-                    }
+                    handleAction(action);
                 }
             }
         }
@@ -357,76 +360,32 @@ public class ChannelProcessor implements IChannelProcessor {
 
 
     @Override
-    public synchronized void addToReadBuffer(final ByteBuffer... buffer) {
-        Stream.of(buffer).forEach(in::add);
-    }
-
-
-    @Override
-    public synchronized void addToWriteBuffer(final ByteBuffer... buffer) {
-        addToWriteBuffer(null, buffer);
-    }
-
-
-    @Override
-    public synchronized void addToWriteBuffer(final CompletionHandler<?, ?> handler, final ByteBuffer... buffer) {
-        // remove all empty buffers
-        final List<ByteBuffer> filtered = Stream.of(buffer).filter(b -> b != null && b.limit() > 0).collect(Collectors.toList());
-
-        // if there are any left to add then add
-        if (filtered != null && !filtered.isEmpty()) {
-            final Pair<ByteBuffer[], CompletionHandler<?, ?>> pair = new Pair<>(filtered.toArray(new ByteBuffer[filtered.size()]), handler);
-            out.add(pair);
-        }
-
-        // if there are buffers in the out queue then wake up selector for writing
-        if (out.size() > 0) {
-            getChannel().keyFor(getSelector()).interestOpsOr(SelectionKey.OP_WRITE);
-            selector.wakeup();
-        }
-    }
-
-
-    /**
-     * Gets the next read buffer if available.
-     * 
-     * @return the next incoming {@link ByteBuffer} or null
-     */
-    protected ByteBuffer getNextReadBuffer() {
-        return in.poll();
-    }
-
-
-    /**
-     * Gets the next write buffer if available.
-     * 
-     * @return the next outgoing {@link ByteBuffer} or null
-     */
-    protected Pair<ByteBuffer[], CompletionHandler<?, ?>> getNextWriteBuffer() {
-        if (out.size() > 0) {
-            return out.poll();
-        }
-
-        return null;
-    }
-
-
-    @Override
     public void close() {
-
-        // flush all output
-        try {
-            flush();
-        } catch (final IOException e1) {
-            // ignore quietly
-        }
 
         synchronized (closed) {
             if (closed.compareAndSet(false, true)) {
                 logger.info("Closing channel for module '" + module.getName() + "' session #" + session.getId() + " !");
 
-                sessionScopedContext.deactivate();
-                requestScopedContext.deactivate();
+                session.close();
+                serverContext.removeSessionContext(session.getId());
+
+                try {
+                    serverContext.removeServerSession(session);
+                } catch (final IOException e) {
+                }
+
+                if (ioHandler != null) {
+                    ioHandler.onSessionClose();
+                    ioHandler = null;
+                }
+
+                if (sessionScopedContext.isActive()) {
+                    sessionScopedContext.deactivate();
+                }
+
+                if (requestScopedContext.isActive()) {
+                    requestScopedContext.deactivate();
+                }
 
                 getChannel().keyFor(getSelector()).cancel();
 
@@ -447,21 +406,10 @@ public class ChannelProcessor implements IChannelProcessor {
                 } catch (final IOException e) {
                 }
 
-                out.clear();
-                in.clear();
+                // out.clear();
+                // in.clear();
 
                 selector.wakeup();
-
-                ioHandler.onSessionClose();
-                ioHandler = null;
-
-                session.close();
-                serverContext.removeSessionContext(session.getId());
-
-                try {
-                    serverContext.removeServerSession(session);
-                } catch (final IOException e) {
-                }
             }
         }
     }

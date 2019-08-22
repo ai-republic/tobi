@@ -22,9 +22,10 @@ import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
 import com.airepublic.tobi.core.spi.IIOHandler;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerModule;
+import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.IServicePlugin;
-import com.airepublic.tobi.core.spi.Request;
 
 /**
  * The module for handling HTTP/S requests and responses. The module can be configured with
@@ -74,6 +75,8 @@ public class HttpModule implements IServerModule {
     private SSLContext clientSslContext;
     private SSLContext serverSslContext;
     private int readBufferSize = 16 * 1024;
+    @Inject
+    private IHttpAuthorizationProvider authorizationProvider;
 
 
     /**
@@ -90,7 +93,6 @@ public class HttpModule implements IServerModule {
         } catch (final IOException e) {
             throw new RuntimeException("Could not create SSL context:", e);
         }
-
     }
 
 
@@ -117,6 +119,14 @@ public class HttpModule implements IServerModule {
     @Override
     public String getProtocol() {
         return "HTTP";
+    }
+
+
+    @Override
+    public void checkAuthorization(final IServerSession session) throws SecurityException, IOException {
+        if (authorizationProvider != null) {
+            authorizationProvider.accept(session);
+        }
     }
 
 
@@ -153,6 +163,7 @@ public class HttpModule implements IServerModule {
 
         final HttpChannelEncoder channelEncoder = CDI.current().select(HttpChannelEncoder.class).get();
         channelEncoder.init(processor.getChannel(), getServerSslContext(), isSecure);
+
         processor.getSession().setAttribute(SessionConstants.SESSION_SSL_ENGINE, channelEncoder.getSslEngine());
         processor.setChannelEncoder(channelEncoder);
         processor.getChannel().getRemoteAddress();
@@ -178,12 +189,12 @@ public class HttpModule implements IServerModule {
 
 
     @Override
-    public IIOHandler determineIoHandler(final Request request) throws IOException {
+    public IIOHandler determineIoHandler(final IRequest request) throws IOException {
         IIOHandler handler = servicePlugins.stream().map(plugin -> plugin.determineIoHandler(request)).filter(plugin -> plugin != null).findFirst().orElse(null);
 
         if (handler == null) {
             handler = CDI.current().select(HttpIOHandler.class).get();
-            logger.info("No handler found for '" + request.getString(HttpChannelEncoder.REQUEST_LINE) + "'. Using default handler: " + handler.getClass().getSimpleName());
+            logger.info("No handler found for '" + ((HttpRequest) request).getRequestLine() + "'. Using default handler: " + handler.getClass().getSimpleName());
         }
 
         return handler;

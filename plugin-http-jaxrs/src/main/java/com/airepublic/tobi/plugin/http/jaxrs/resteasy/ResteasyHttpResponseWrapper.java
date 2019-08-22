@@ -10,8 +10,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NewCookie;
 
 import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpResponse;
 import com.airepublic.http.common.HttpStatus;
+import com.airepublic.tobi.module.http.HttpResponse;
 
 /**
  * The wrapper for the {@link HttpResponse} to a {@link org.jboss.resteasy.spi.HttpResponse}.

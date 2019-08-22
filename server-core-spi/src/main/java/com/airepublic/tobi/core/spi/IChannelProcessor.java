@@ -1,8 +1,6 @@
 package com.airepublic.tobi.core.spi;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.CompletionHandler;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
@@ -53,31 +51,30 @@ public interface IChannelProcessor extends Runnable, AutoCloseable {
     void setChannelEncoder(IChannelEncoder channelEncoder);
 
 
-    /**
-     * Add the {@link ByteBuffer}s to the read queue.
-     * 
-     * @param buffer the {@link ByteBuffer}s
-     */
-    void addToReadBuffer(ByteBuffer... buffer);
-
-
-    /**
-     * Add the {@link ByteBuffer}s to the write queue.
-     * 
-     * @param buffer the {@link ByteBuffer}s
-     */
-    void addToWriteBuffer(ByteBuffer... buffer);
-
-
-    /**
-     * Add the {@link ByteBuffer}s to the write queue and use the specified
-     * {@link CompletionHandler} to notify any interested.
-     * 
-     * @param handler the {@link CompletionHandler}
-     * @param buffer the {@link ByteBuffer}s
-     */
-    void addToWriteBuffer(CompletionHandler<?, ?> handler, ByteBuffer... buffer);
-
+    // /**
+    // * Add the {@link ByteBuffer}s to the read queue.
+    // *
+    // * @param buffer the {@link ByteBuffer}s
+    // */
+    // void addToReadBuffer(ByteBuffer... buffer);
+    //
+    //
+    // /**
+    // * Add the {@link ByteBuffer}s to the write queue.
+    // *
+    // * @param buffer the {@link ByteBuffer}s
+    // */
+    // void addToWriteBuffer(ByteBuffer... buffer);
+    //
+    //
+    // /**
+    // * Add the {@link ByteBuffer}s to the write queue and use the specified
+    // * {@link CompletionHandler} to notify any interested.
+    // *
+    // * @param handler the {@link CompletionHandler}
+    // * @param buffer the {@link ByteBuffer}s
+    // */
+    // void addToWriteBuffer(CompletionHandler<?, ?> handler, ByteBuffer... buffer);
 
     @Override
     void close();

@@ -1,4 +1,4 @@
-package com.airepublic.tobi.example;
+package com.airepublic.tobi.example.resource;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -34,7 +34,7 @@ import com.airepublic.logging.java.LoggerConfig;
  */
 @OpenAPIDefinition(info = @Info(title = "EchoServer", contact = @Contact(name = "Torsten Oltmanns"), version = "1.0"))
 @ServerEndpoint(value = "/ws")
-public class EchoServer {
+public class WebSocketSample {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
@@ -54,6 +54,7 @@ public class EchoServer {
     @OnMessage
     public String onMessage(final String message, final Session session) {
         logger.info("onMessage: " + message);
+        logger.info("AUTH: " + session.getUserPrincipal());
         if (message.equals("quit")) {
             try {
                 session.close(new CloseReason(CloseCodes.NORMAL_CLOSURE, "Game ended"));

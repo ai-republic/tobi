@@ -16,10 +16,10 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 public class ClaimProducer {
 
     /**
-     * Produces the {@link ClaimValue} of the JWT for {@link InjectionPoint}.
+     * Produces the {@link ClaimValue} of the {@link JsonWebToken} for {@link InjectionPoint}.
      * 
      * @param <T> the {@link ClaimValue} value type
-     * @param jwt the JWT
+     * @param jwt the {@link JsonWebToken}
      * @param ip the {@link InjectionPoint}
      * @return the {@link ClaimValue}
      */

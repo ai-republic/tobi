@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,13 +14,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import javax.websocket.DeploymentException;
 import javax.websocket.Session;
@@ -28,17 +33,19 @@ import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
 import javax.websocket.server.ServerEndpointConfig.Configurator;
 
-import com.airepublic.http.common.Headers;
-import com.airepublic.http.common.HttpRequest;
+import com.airepublic.http.common.BufferUtil;
 import com.airepublic.http.common.pathmatcher.MappingResult;
 import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IIOHandler;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerSession;
-import com.airepublic.tobi.core.spi.Request;
-import com.airepublic.tobi.module.http.HttpChannelEncoder;
+import com.airepublic.tobi.core.spi.Pair;
+import com.airepublic.tobi.module.http.AbstractHttpIOHandler;
+import com.airepublic.tobi.module.http.HttpRequest;
+import com.airepublic.tobi.module.http.HttpResponse;
 import com.airepublic.tobi.plugin.http.websocket.server.UpgradeUtil;
 import com.airepublic.tobi.plugin.http.websocket.server.WsFrameServer;
 import com.airepublic.tobi.plugin.http.websocket.server.WsHttpUpgradeHandler;
@@ -51,7 +58,7 @@ import com.airepublic.tobi.plugin.http.websocket.server.WsServerContainer;
  * @author Torsten Oltmanns
  *
  */
-public class WebSocketIOHandler implements IIOHandler {
+public class WebSocketIOHandler extends AbstractHttpIOHandler {
     private static final long serialVersionUID = 1L;
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
@@ -61,8 +68,11 @@ public class WebSocketIOHandler implements IIOHandler {
     @Inject
     private IServerSession session;
     private static WsServerContainer webSocketContainer;
-    private boolean handshakeDone = false;
+    private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
+    private final AtomicBoolean initWebSocketDone = new AtomicBoolean(false);
     private ServerEndpointConfig serverEndpointConfig;
+    private final WsHttpUpgradeHandler upgradeHandler = new WsHttpUpgradeHandler();
+    private final Queue<Pair<HttpResponse, CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
 
 
     /**
@@ -75,35 +85,57 @@ public class WebSocketIOHandler implements IIOHandler {
 
 
     @Override
-    public ChannelAction consume(final Request request) throws IOException {
-        ChannelAction action = ChannelAction.KEEP_OPEN;
+    public ChannelAction consume(final IRequest request) throws IOException {
+        super.consume(request);
 
         // check if handshake request has been fully received and handshake has been processed
-        if (!handshakeDone) {
-            try {
-                final HttpRequest httpRequest = new HttpRequest(request.getString(HttpChannelEncoder.REQUEST_LINE), request.getAttribute(HttpChannelEncoder.HEADERS, Headers.class));
-                httpRequest.setBody(request.getPayload());
-                doHandshake(httpRequest);
-            } catch (final Exception e) {
-                logger.log(Level.SEVERE, "Error performing websocket handshake!", e);
-                action = ChannelAction.CLOSE_ALL;
-            }
-        } else {
+        final HttpRequest httpRequest = getHttpRequest();
+
+        if (handshakeDone.get()) {
             try {
                 if (serverEndpointConfig != null) {
                     final Set<Session> sessions = webSocketContainer.getOpenSessions(serverEndpointConfig.getPath());
 
                     if (!sessions.isEmpty()) {
                         final WsSession wsSession = (WsSession) sessions.iterator().next();
-                        ((WsFrameServer) wsSession.getWsFrame()).onDataAvailable(request.getPayload());
+                        ((WsFrameServer) wsSession.getWsFrame()).onDataAvailable(httpRequest.getPayload());
                     }
                 }
             } catch (final Exception e) {
-                throw new IOException("Websocket request failed: " + request, e);
+                throw new IOException("Websocket request failed: " + httpRequest, e);
+            }
+        } else {
+            session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);
+            session.getChannelProcessor().getSelector().wakeup();
+        }
+
+        return ChannelAction.KEEP_OPEN;
+    }
+
+
+    @Override
+    protected Pair<HttpResponse, CompletionHandler<?, ?>> getHttpResponse() throws IOException {
+        final HttpRequest httpRequest = getHttpRequest();
+
+        if (!handshakeDone.get()) {
+            try {
+                final Pair<HttpResponse, CompletionHandler<?, ?>> result = new Pair<>(getHandshakeResponse(httpRequest), null);
+
+                if (initWebSocketDone.compareAndSet(false, true)) {
+                    initWebSocket(upgradeHandler);
+                }
+
+                return result;
+            } catch (final Exception e) {
+                throw new IOException("Error performing websocket handshake for request: " + httpRequest, e);
             }
         }
 
-        return action;
+        if (!out.isEmpty()) {
+            return out.poll();
+        }
+
+        return null;
     }
 
 
@@ -111,21 +143,24 @@ public class WebSocketIOHandler implements IIOHandler {
      * Perform the websocket upgrade handshake.
      * 
      * @param request the {@link HttpRequest}
+     * @return the {@link HttpResponse}
      * @throws IOException if the handshake fails
      * @throws URISyntaxException if the request contains an invalid {@link URI}
      */
-    private void doHandshake(final HttpRequest request) throws IOException, URISyntaxException {
-        final MappingResult<ServerEndpointConfig> mapping = webSocketContainer.getMapping().findMapping(request.getPath());
-        serverEndpointConfig = mapping.getMappedObject();
+    private HttpResponse getHandshakeResponse(final HttpRequest request) throws IOException, URISyntaxException {
+        if (handshakeDone.compareAndSet(false, true)) {
+            try {
+                final MappingResult<ServerEndpointConfig> mapping = webSocketContainer.getMapping().findMapping(request.getPath());
+                serverEndpointConfig = mapping.getMappedObject();
 
-        final WsHttpUpgradeHandler handler = new WsHttpUpgradeHandler();
-        final ByteBuffer response = UpgradeUtil.doUpgrade(webSocketContainer, request.getUri(), request.getHeaders(), request.getUserPrincipal(), serverEndpointConfig, mapping.getPathParams(), handler);
-        session.getChannel().write(response);
-        handshakeDone = true;
+                return UpgradeUtil.doUpgrade(webSocketContainer, request.getUri(), request.getHeaders(), request.getUserPrincipal(), serverEndpointConfig, mapping.getPathParams(), upgradeHandler);
+            } catch (final Exception e) {
+                handshakeDone.set(false);
+                throw e;
+            }
+        }
 
-        session.getChannelProcessor().setChannelEncoder(new WebSocketEncoder(session));
-
-        initWebSocket(handler);
+        return null;
     }
 
 
@@ -167,7 +202,15 @@ public class WebSocketIOHandler implements IIOHandler {
                             writeFailed(handler, e);
                         }
                     } else {
-                        session.addToWriteBuffer(handler, buffers);
+                        try {
+                            out.add(new Pair<>(new HttpResponse().withBody(BufferUtil.combineBuffers(buffers)), handler));
+
+                            session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOpsOr(SelectionKey.OP_WRITE);
+                            session.getChannelProcessor().getSelector().wakeup();
+
+                        } catch (final Exception e) {
+                            writeFailed(handler, e);
+                        }
                     }
                 }
 
@@ -284,13 +327,14 @@ public class WebSocketIOHandler implements IIOHandler {
 
 
     @Override
-    public void produce() throws IOException {
-    }
-
-
-    @Override
     @SuppressWarnings("unchecked")
     public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
+        if (handshakeDone.get() && !(session.getChannelProcessor().getChannelEncoder() instanceof WebSocketEncoder)) {
+            final WebSocketEncoder encoder = CDI.current().select(WebSocketEncoder.class).get();
+            session.getChannelProcessor().setChannelEncoder(encoder);
+            session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_READ);
+        }
+
         if (handler != null) {
             ((CompletionHandler<Long, Void>) handler).completed(length, null);
         }

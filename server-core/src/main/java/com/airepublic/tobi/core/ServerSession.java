@@ -1,13 +1,13 @@
 package com.airepublic.tobi.core;
 
-import java.nio.ByteBuffer;
-import java.nio.channels.CompletionHandler;
 import java.nio.channels.SocketChannel;
+import java.security.Principal;
 
 import javax.enterprise.context.SessionScoped;
 
 import com.airepublic.tobi.core.spi.Attributes;
 import com.airepublic.tobi.core.spi.IChannelProcessor;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerSession;
 
 /**
@@ -21,6 +21,8 @@ public class ServerSession extends Attributes implements IServerSession {
     private static final long serialVersionUID = 1L;
     private String id;
     private transient IChannelProcessor channelProcessor;
+    private Principal principal;
+    private IRequest request;
 
 
     @Override
@@ -54,28 +56,52 @@ public class ServerSession extends Attributes implements IServerSession {
 
 
     @Override
-    public void addToReadBuffer(final ByteBuffer... buffer) {
-        if (getChannelProcessor() != null) {
-            getChannelProcessor().addToReadBuffer(buffer);
-        }
+    public Principal getPrincipal() {
+        return principal;
     }
 
 
     @Override
-    public void addToWriteBuffer(final ByteBuffer... buffers) {
-        if (getChannelProcessor() != null) {
-            getChannelProcessor().addToWriteBuffer(buffers);
-        }
+    public void setPrincipal(final Principal principal) {
+        this.principal = principal;
     }
 
 
     @Override
-    public void addToWriteBuffer(final CompletionHandler<?, ?> handler, final ByteBuffer... buffers) {
-        if (getChannelProcessor() != null) {
-            getChannelProcessor().addToWriteBuffer(handler, buffers);
-        }
+    public IRequest getRequest() {
+        return request;
     }
 
+
+    @Override
+    public void setRequest(final IRequest request) {
+        this.request = request;
+    }
+
+
+    // @Override
+    // public void addToReadBuffer(final ByteBuffer... buffer) {
+    // if (getChannelProcessor() != null) {
+    // getChannelProcessor().addToReadBuffer(buffer);
+    // }
+    // }
+    //
+    //
+    // @Override
+    // public void addToWriteBuffer(final ByteBuffer... buffers) {
+    // if (getChannelProcessor() != null) {
+    // getChannelProcessor().addToWriteBuffer(buffers);
+    // }
+    // }
+    //
+    //
+    // @Override
+    // public void addToWriteBuffer(final CompletionHandler<?, ?> handler, final ByteBuffer...
+    // buffers) {
+    // if (getChannelProcessor() != null) {
+    // getChannelProcessor().addToWriteBuffer(handler, buffers);
+    // }
+    // }
 
     @Override
     public void close() {

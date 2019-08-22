@@ -1,6 +1,7 @@
 package com.airepublic.tobi.core.spi;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,6 +29,36 @@ public class Attributes {
      */
     public Attributes(final Attributes copy) {
         attributes.putAll(copy.attributes);
+    }
+
+
+    /**
+     * Returns a set of attribute keys.
+     * 
+     * @return the key set
+     */
+    public Set<String> keySet() {
+        return attributes.keySet();
+    }
+
+
+    /**
+     * Returns a set of attribute entries.
+     * 
+     * @return the entry set
+     */
+    public Set<Map.Entry<String, Object>> entrySet() {
+        return attributes.entrySet();
+    }
+
+
+    /**
+     * Adds all entries of the map.
+     * 
+     * @param attributes the attributes to add
+     */
+    public void addAll(final Map<String, Object> attributes) {
+        attributes.putAll(attributes);
     }
 
 

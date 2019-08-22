@@ -1,4 +1,4 @@
-package com.airepublic.tobi.javaserver.boot;
+package com.airepublic.tobi.example.boot;
 
 import java.io.IOException;
 

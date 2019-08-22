@@ -3,13 +3,15 @@ package com.airepublic.tobi.plugin.http.websocket;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import javax.inject.Inject;
 import javax.net.ssl.SSLEngine;
 
 import com.airepublic.http.common.SslSupport;
 import com.airepublic.tobi.core.spi.IChannelEncoder;
+import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
-import com.airepublic.tobi.core.spi.Request;
+import com.airepublic.tobi.module.http.HttpRequest;
 import com.airepublic.tobi.module.http.SessionConstants;
 
 /**
@@ -19,24 +21,15 @@ import com.airepublic.tobi.module.http.SessionConstants;
  *
  */
 public class WebSocketEncoder implements IChannelEncoder {
-    private final IServerSession session;
-
-
-    /**
-     * Constructor.
-     * 
-     * @param session the {@link IServerSession}
-     */
-    public WebSocketEncoder(final IServerSession session) {
-        this.session = session;
-    }
+    @Inject
+    private IServerSession session;
 
 
     @Override
-    public Pair<Status, Request> decode(final ByteBuffer buffer) throws IOException {
+    public Pair<Status, IRequest> decode(final ByteBuffer buffer) throws IOException {
         final SSLEngine sslEngine = session.getAttribute(SessionConstants.SESSION_SSL_ENGINE, SSLEngine.class);
         final ByteBuffer unwrappedBuffer = SslSupport.unwrap(sslEngine, session.getChannel(), buffer);
-        return new Pair<>(Status.FULLY_READ, new Request(unwrappedBuffer));
+        return new Pair<>(Status.FULLY_READ, new HttpRequest(session, null, null, unwrappedBuffer));
     }
 
 

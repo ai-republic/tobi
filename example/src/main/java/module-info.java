@@ -1,8 +1,12 @@
 import javax.ws.rs.sse.Sse;
 
+import com.airepublic.tobi.core.spi.IAuthenticationService;
+import com.airepublic.tobi.example.authentication.jwt.JWTAuthenticationService;
+
 module com.airepublic.tobi.sample {
-    exports com.airepublic.tobi.javaserver.boot;
-    exports com.airepublic.tobi.example;
+    exports com.airepublic.tobi.example.authentication.jwt;
+    exports com.airepublic.tobi.example.boot;
+    exports com.airepublic.tobi.example.resource;
 
     requires transitive com.airepublic.tobi.core;
     requires transitive com.airepublic.tobi.core.spi;
@@ -37,6 +41,10 @@ module com.airepublic.tobi.sample {
 
     uses Sse;
 
-    opens com.airepublic.tobi.example;
-    opens com.airepublic.tobi.client;
+    provides IAuthenticationService with JWTAuthenticationService;
+
+    opens com.airepublic.tobi.example.authentication.jwt;
+    opens com.airepublic.tobi.example.resource;
+    opens com.airepublic.tobi.example.resource.websocket.client;
+
 }

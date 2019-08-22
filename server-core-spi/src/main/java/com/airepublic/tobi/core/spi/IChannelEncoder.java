@@ -36,14 +36,14 @@ public interface IChannelEncoder {
 
 
     /**
-     * Decodes the incoming {@link ByteBuffer} to a {@link Request} object.
+     * Decodes the incoming {@link ByteBuffer} to a {@link IRequest} object.
      * 
      * @param buffer the {@link ByteBuffer}
-     * @return a {@link Pair} of {@link Status} and {@link Request} giving information if the
+     * @return a {@link Pair} of {@link Status} and {@link IRequest} giving information if the
      *         request was fully read
      * @throws IOException if decoding fails
      */
-    Pair<Status, Request> decode(ByteBuffer buffer) throws IOException;
+    Pair<Status, IRequest> decode(ByteBuffer buffer) throws IOException;
 
 
     /**

@@ -16,12 +16,12 @@ public interface IIOHandler extends Serializable {
     /**
      * Called whenever there is data available from the incoming stream.
      * 
-     * @param request the {@link Request} read from the incoming stream
+     * @param request the {@link IRequest} read from the incoming stream
      * @return the {@link ChannelAction} that should be performed after consuming this
-     *         {@link Request}
+     *         {@link IRequest}
      * @throws IOException if an exception occurs during processing the buffer
      */
-    ChannelAction consume(Request request) throws IOException;
+    ChannelAction consume(IRequest request) throws IOException;
 
 
     /**
@@ -33,12 +33,12 @@ public interface IIOHandler extends Serializable {
      * 
      * @throws IOException if producing data fails
      */
-    void produce() throws IOException;
+    Pair<? extends IResponse, CompletionHandler<?, ?>> produce() throws IOException;
 
 
     /**
      * This method is called by the {@link IChannelProcessor} if there is an exception while reading
-     * from the incoming stream. In this case {@link IIOHandler#consume(Request)} will not be
+     * from the incoming stream. In this case {@link IIOHandler#consume(IRequest)} will not be
      * called.
      * 
      * @param t the exception that occurred

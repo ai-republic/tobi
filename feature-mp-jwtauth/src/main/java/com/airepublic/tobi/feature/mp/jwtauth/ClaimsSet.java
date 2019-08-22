@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
@@ -28,7 +29,7 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
      * @param id the id
      * @param iss the issuer
      * @param sub the subject
-     * @param upn the upn
+     * @param upn the unique principal name
      * @param groups the groups
      * @param iat the issue date
      * @param exp the expiry date
@@ -55,7 +56,7 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
      * @param id the id
      * @param iss the issuer
      * @param sub the subject
-     * @param upn the upn
+     * @param upn the unique principal name
      * @param groups the groups
      * @param iat the issue date
      * @param exp the expiry date
@@ -68,6 +69,28 @@ public class ClaimsSet implements Iterable<ClaimValue<?>> {
         otherClaims.entrySet().forEach(e -> map.add(e.getKey(), e.getValue()));
 
         return map;
+    }
+
+
+    /**
+     * Creates a {@link ClaimsSet} based on the contents of the map. The map must contain at least
+     * the required claims.
+     * 
+     * @param claims the map with claims
+     * @return the {@link ClaimsSet}
+     */
+    public static ClaimsSet create(final Map<String, Object> claims) {
+        final String[] requiredNames = { Claims.jti.name(), Claims.iss.name(), Claims.sub.name(), Claims.iat.name(), Claims.exp.name(), Claims.upn.name(), Claims.groups.name() };
+
+        if (Stream.of(requiredNames).allMatch(claims::containsKey)) {
+            final ClaimsSet map = new ClaimsSet();
+            claims.entrySet().forEach(e -> map.add(e.getKey(), e.getValue()));
+
+            return map;
+        } else {
+            throw new IllegalArgumentException("Map does not contain required claims!");
+        }
+
     }
 
 
