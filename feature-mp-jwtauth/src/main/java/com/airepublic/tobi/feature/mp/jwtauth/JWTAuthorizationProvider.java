@@ -75,9 +75,15 @@ public class JWTAuthorizationProvider implements IHttpAuthorizationProvider {
             } else {
                 // otherwise this must be the authentication response after the handshake to
                 // authenticate
-                final String authentication = TextCodec.BASE64.decodeToString(authorization.substring("Basic ".length()));
+                // check the authorization method
+                final int idx = authorization.indexOf(' ');
+                String authentication = null;
 
-                if (!authentication.isBlank()) {
+                if (idx != -1) {
+                    authentication = TextCodec.BASE64.decodeToString(authorization.substring(idx + 1));
+                }
+
+                if (authentication != null && !authentication.isBlank()) {
                     // TODO get these from an authentication-service
                     final String[] usernamePassword = authentication.split(":");
 

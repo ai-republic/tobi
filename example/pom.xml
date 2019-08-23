@@ -95,6 +95,13 @@
 			<artifactId>feature-mp-opentracing</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.ai-republic.tobi</groupId>
+			<artifactId>feature-jpa-hibernate</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
 
 		<dependency>
 			<groupId>com.ai-republic</groupId>

@@ -264,16 +264,12 @@ public class ChannelProcessor implements IChannelProcessor {
                 handleAction(ChannelAction.CLOSE_ALL);
             }
         } catch (final SecurityException e) {
-            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing input channel: " + e.getLocalizedMessage());
+            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing connection: " + e.getLocalizedMessage());
             handleAction(ChannelAction.CLOSE_ALL);
         } catch (final Exception e) {
-            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing input channel: " + e.getLocalizedMessage());
+            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing connection: " + e.getLocalizedMessage());
 
-            if (getIoHandler() != null) {
-                handleAction(getIoHandler().onReadError(e));
-            } else {
-                handleAction(ChannelAction.CLOSE_ALL);
-            }
+            handleAction(ChannelAction.CLOSE_ALL);
         }
     }
 
