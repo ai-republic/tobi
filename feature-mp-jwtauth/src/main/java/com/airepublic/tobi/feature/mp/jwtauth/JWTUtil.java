@@ -110,7 +110,7 @@ public class JWTUtil {
      * @return the {@link Key}
      * @throws IOException
      */
-    private static Key loadPrivateKey(final Path keyFile) throws IOException {
+    public static Key loadPrivateKey(final Path keyFile) throws IOException {
         String privateKey;
         try {
             privateKey = Files.readString(keyFile);

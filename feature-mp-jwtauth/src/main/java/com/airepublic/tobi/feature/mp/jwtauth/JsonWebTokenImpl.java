@@ -1,5 +1,7 @@
 package com.airepublic.tobi.feature.mp.jwtauth;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.security.Key;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +33,18 @@ public class JsonWebTokenImpl implements JsonWebToken {
      * @param secretKey the secret key
      */
     public JsonWebTokenImpl(final String jwt, final String secretKey) {
+        refresh(jwt, secretKey);
+    }
+
+
+    /**
+     * Constructor.
+     * 
+     * @param jwt the JWT string
+     * @param secretKey the {@link Path} to the secret key pem file
+     * @throws IOException if the key could not be loaded
+     */
+    public JsonWebTokenImpl(final String jwt, final Path secretKey) throws IOException {
         refresh(jwt, secretKey);
     }
 
@@ -81,6 +95,22 @@ public class JsonWebTokenImpl implements JsonWebToken {
     void refresh(final String jwt, final byte[] secretKey) {
         final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS512;
         final Key signingKey = new SecretKeySpec(secretKey, signatureAlgorithm.getJcaName());
+
+        final JwtParser parser = Jwts.parser().setSigningKey(signingKey);
+        createClaims(parser, jwt);
+    }
+
+
+    /**
+     * Refresh the JWT.
+     * 
+     * @param jwt the JWT
+     * @param secretKey the {@link Path} to the secret key pem file
+     * @throws IOException if the key could not be loaded
+     */
+    void refresh(final String jwt, final Path secretKey) throws IOException {
+        final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS512;
+        final Key signingKey = JWTUtil.loadPrivateKey(secretKey);
 
         final JwtParser parser = Jwts.parser().setSigningKey(signingKey);
         createClaims(parser, jwt);

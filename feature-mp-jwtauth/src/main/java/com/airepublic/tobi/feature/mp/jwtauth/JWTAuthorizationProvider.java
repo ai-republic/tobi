@@ -1,6 +1,7 @@
 package com.airepublic.tobi.feature.mp.jwtauth;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -72,6 +73,31 @@ public class JWTAuthorizationProvider implements IHttpAuthorizationProvider {
                 } else {
                     throw new SecurityException("Session has a principal set, but its not a JWT!");
                 }
+            }
+
+            // check if the request holds a valid authorization which is not set in the request
+            // session
+            if (session.getPrincipal() == null && authorization.startsWith("Bearer ")) {
+                final String pemFile = config.getValue("jwt.pemfile", String.class);
+
+                if (pemFile != null) {
+                    final JsonWebToken jsonWebToken = new JsonWebTokenImpl(authorization.substring("Bearer ".length()), Paths.get(pemFile));
+                    session.setPrincipal(jsonWebToken);
+                    httpRequest.getHeaders().set(Headers.AUTHORIZATION, jsonWebToken.getRawToken());
+                    return jsonWebToken;
+                } else {
+                    final String secretKey = config.getValue("jwt.secretKey", String.class);
+
+                    if (secretKey != null) {
+                        final JsonWebToken jsonWebToken = new JsonWebTokenImpl(authorization.substring("Bearer ".length()), secretKey);
+                        session.setPrincipal(jsonWebToken);
+                        httpRequest.getHeaders().set(Headers.AUTHORIZATION, jsonWebToken.getRawToken());
+                        return jsonWebToken;
+                    } else {
+                        throw new IOException("Configuration is missing the JWT properties (jwt.pemfile or jwt.secretKey)!");
+                    }
+                }
+
             } else {
                 // otherwise this must be the authentication response after the handshake to
                 // authenticate
@@ -105,7 +131,7 @@ public class JWTAuthorizationProvider implements IHttpAuthorizationProvider {
                     final String pemFile = config.getValue("jwt.pemfile", String.class);
 
                     if (pemFile != null) {
-                        final JsonWebToken jsonWebToken = JWTUtil.createJWT(pemFile, claims);
+                        final JsonWebToken jsonWebToken = JWTUtil.createJWT(Paths.get(pemFile), claims);
                         session.setPrincipal(jsonWebToken);
                         httpRequest.getHeaders().set(Headers.AUTHORIZATION, jsonWebToken.getRawToken());
                         return jsonWebToken;
