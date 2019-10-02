@@ -87,6 +87,7 @@ public class ChannelProcessor implements IChannelProcessor {
         session = CDI.current().select(IServerSession.class).get();
         session.setId("" + SESSION_ID_GENERATOR.incrementAndGet());
         serverContext.addServerSession(session);
+        serverContext.addSessionContext(session.getId(), sessionContext);
 
         // reset
         closing.set(false);

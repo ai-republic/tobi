@@ -51,12 +51,14 @@ public class ResteasyIOHandler extends AbstractHttpIOHandler {
     private String contextPath;
     private HttpResponse response;
 
-
     /**
      * Initializes this handler.
      */
+    @Override
     @PostConstruct
     public void init() {
+        super.init();
+
         if (serverContext.hasAttribute(ResteasyPlugin.CONTEXT_BUILDER)) {
             contextBuilder = (ResteasyHttpContextBuilder) serverContext.getAttribute(ResteasyPlugin.CONTEXT_BUILDER);
         } else {

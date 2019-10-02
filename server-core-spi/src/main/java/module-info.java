@@ -12,4 +12,6 @@ module com.airepublic.tobi.core.spi {
 
     provides Extension with SessionScopedExtension;
 
+    opens com.airepublic.tobi.core.spi;
+
 }

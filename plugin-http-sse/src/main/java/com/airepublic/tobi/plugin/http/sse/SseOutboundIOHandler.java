@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.airepublic.http.sse.api.ISseService;
@@ -42,6 +43,16 @@ public class SseOutboundIOHandler extends AbstractHttpIOHandler {
     private long delayInMs = 0L;
     private long times = 0L;
     private long maxTimes = -1L;
+
+    /**
+     * Initializes the websocket container.
+     */
+    @Override
+    @PostConstruct
+    public void init() {
+        super.init();
+    }
+
 
     @Override
     public Pair<HttpResponse, CompletionHandler<?, ?>> getHttpResponse() throws IOException {

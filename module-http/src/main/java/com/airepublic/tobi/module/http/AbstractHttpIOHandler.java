@@ -5,10 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.nio.channels.SelectionKey;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.airepublic.http.common.HttpStatus;
 import com.airepublic.tobi.core.spi.ChannelAction;
+import com.airepublic.tobi.core.spi.ContextActivator;
 import com.airepublic.tobi.core.spi.IAuthenticationService;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IRequest;
@@ -31,6 +33,15 @@ public abstract class AbstractHttpIOHandler implements IIOHandler {
     @Inject
     private IAuthenticationService authorizationService;
     private HttpRequest request;
+    private String sessionId;
+    @Inject
+    private ContextActivator sessionActivator;
+
+    @PostConstruct
+    public void init() {
+        sessionId = session.getId();
+    }
+
 
     /**
      * The default implementation will just return a {@link ChannelAction#CLOSE_INPUT}.
@@ -155,6 +166,8 @@ public abstract class AbstractHttpIOHandler implements IIOHandler {
 
     @Override
     public IServerSession getSession() {
+        sessionActivator.activate(sessionId);
+
         return session;
     }
 }

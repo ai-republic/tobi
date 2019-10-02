@@ -74,8 +74,10 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
     /**
      * Initializes the websocket container.
      */
+    @Override
     @PostConstruct
     public void init() {
+        super.init();
         webSocketContainer = (WsServerContainer) serverContext.getAttribute("websocket.container");
     }
 
@@ -170,8 +172,6 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
             throw new IllegalStateException("Upgrade handler not pre-initialized!");
         }
 
-        final String httpSessionId = null;
-
         // Need to call onOpen using the web application's class loader
         // Create the frame using the application's class loader so it can pick
         // up application specific config from the ServerContainerImpl
@@ -220,7 +220,7 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
             };
 
             final HandshakeRequest handshakeRequest = handler.getHandshakeRequest();
-            final WsSession wsSession = new WsSession(handler.getEp(), wsRemoteEndpointServer, webSocketContainer, handshakeRequest.getRequestURI(), handshakeRequest.getParameterMap(), handshakeRequest.getQueryString(), handshakeRequest.getUserPrincipal(), httpSessionId, handler.getNegotiatedExtensions(), handler.getSubProtocol(), handler.getPathParameters(), handler.isSecure(),
+            final WsSession wsSession = new WsSession(handler.getEp(), wsRemoteEndpointServer, webSocketContainer, handshakeRequest.getRequestURI(), handshakeRequest.getParameterMap(), handshakeRequest.getQueryString(), handshakeRequest.getUserPrincipal(), getSession().getId(), handler.getNegotiatedExtensions(), handler.getSubProtocol(), handler.getPathParameters(), handler.isSecure(),
                     handler.getServerEndpointConfig());
             final WsFrameServer wsFrame = new WsFrameServer(wsSession, handler.getTransformation(), t.getContextClassLoader());
             // WsFrame adds the necessary final transformations. Copy the

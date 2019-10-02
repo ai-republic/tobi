@@ -39,7 +39,6 @@ public abstract class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBas
     private volatile long timeoutExpiry = -1;
     private volatile boolean close;
 
-
     public WsRemoteEndpointImplServer(final WsServerContainer serverContainer) {
         wsWriteTimeout = serverContainer.getTimeout();
     }
@@ -192,7 +191,6 @@ public abstract class WsRemoteEndpointImplServer extends WsRemoteEndpointImplBas
 
         private final SendHandler sh;
         private final Throwable t;
-
 
         private OnResultRunnable(final SendHandler sh, final Throwable t) {
             this.sh = sh;
