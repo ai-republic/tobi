@@ -1,1 +1,1 @@
-com.airepublic.tobi.core.SessionScopedExtension
+com.airepublic.tobi.core.spi.SessionScopedExtension

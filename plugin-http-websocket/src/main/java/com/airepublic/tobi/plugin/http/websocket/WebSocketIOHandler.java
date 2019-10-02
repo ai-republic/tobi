@@ -41,7 +41,6 @@ import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IIOHandler;
 import com.airepublic.tobi.core.spi.IRequest;
 import com.airepublic.tobi.core.spi.IServerContext;
-import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
 import com.airepublic.tobi.module.http.AbstractHttpIOHandler;
 import com.airepublic.tobi.module.http.HttpRequest;
@@ -65,15 +64,12 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
     private Logger logger;
     @Inject
     private IServerContext serverContext;
-    @Inject
-    private IServerSession session;
     private static WsServerContainer webSocketContainer;
     private final AtomicBoolean handshakeDone = new AtomicBoolean(false);
     private final AtomicBoolean initWebSocketDone = new AtomicBoolean(false);
     private ServerEndpointConfig serverEndpointConfig;
     private final WsHttpUpgradeHandler upgradeHandler = new WsHttpUpgradeHandler();
     private final Queue<Pair<HttpResponse, CompletionHandler<?, ?>>> out = new ConcurrentLinkedQueue<>();
-
 
     /**
      * Initializes the websocket container.
@@ -105,8 +101,8 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
                 throw new IOException("Websocket request failed: " + httpRequest, e);
             }
         } else {
-            session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);
-            session.getChannelProcessor().getSelector().wakeup();
+            getSession().getChannelProcessor().getChannel().keyFor(getSession().getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);
+            getSession().getChannelProcessor().getSelector().wakeup();
         }
 
         return ChannelAction.KEEP_OPEN;
@@ -188,9 +184,10 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
 
                 @Override
                 protected void write(final boolean block, final long timeout, final TimeUnit unit, final CompletionHandler<?, ?> handler, final ByteBuffer... buffers) {
+
                     if (block) {
                         try {
-                            final SocketChannel channel = session.getChannel();
+                            final SocketChannel channel = getSession().getChannel();
 
                             if (channel.isOpen()) {
                                 final long length = channel.write(buffers);
@@ -205,8 +202,8 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
                         try {
                             out.add(new Pair<>(new HttpResponse().withBody(BufferUtil.combineBuffers(buffers)), handler));
 
-                            session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOpsOr(SelectionKey.OP_WRITE);
-                            session.getChannelProcessor().getSelector().wakeup();
+                            getSession().getChannel().keyFor(getSession().getChannelProcessor().getSelector()).interestOpsOr(SelectionKey.OP_WRITE);
+                            getSession().getChannelProcessor().getSelector().wakeup();
 
                         } catch (final Exception e) {
                             writeFailed(handler, e);
@@ -218,7 +215,7 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
                 @Override
                 protected void doClose() {
                     super.doClose();
-                    session.close();
+                    getSession().close();
                 }
             };
 
@@ -329,10 +326,10 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
     @Override
     @SuppressWarnings("unchecked")
     public ChannelAction writeSuccessful(final CompletionHandler<?, ?> handler, final long length) {
-        if (handshakeDone.get() && !(session.getChannelProcessor().getChannelEncoder() instanceof WebSocketEncoder)) {
+        if (handshakeDone.get() && !(getSession().getChannelProcessor().getChannelEncoder() instanceof WebSocketEncoder)) {
             final WebSocketEncoder encoder = CDI.current().select(WebSocketEncoder.class).get();
-            session.getChannelProcessor().setChannelEncoder(encoder);
-            session.getChannelProcessor().getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_READ);
+            getSession().getChannelProcessor().setChannelEncoder(encoder);
+            getSession().getChannelProcessor().getChannel().keyFor(getSession().getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_READ);
         }
 
         if (handler != null) {
@@ -350,7 +347,7 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
             ((CompletionHandler<Long, Void>) handler).failed(t, null);
         }
 
-        if (!session.getChannel().isOpen()) {
+        if (getSession() == null || getSession().getChannel() == null || !getSession().getChannel().isOpen()) {
             return ChannelAction.CLOSE_ALL;
         }
         return ChannelAction.KEEP_OPEN;
@@ -361,7 +358,7 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
     public ChannelAction onReadError(final Throwable t) {
         logger.log(Level.SEVERE, "Error not handled!", t);
 
-        if (!session.getChannel().isOpen()) {
+        if (!getSession().getChannel().isOpen()) {
             return ChannelAction.CLOSE_ALL;
         }
 
@@ -373,8 +370,4 @@ public class WebSocketIOHandler extends AbstractHttpIOHandler {
     public void handleClosedInput() throws IOException {
     }
 
-
-    @Override
-    public void onSessionClose() {
-    }
 }

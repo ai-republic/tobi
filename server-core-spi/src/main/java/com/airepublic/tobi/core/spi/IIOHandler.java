@@ -79,7 +79,16 @@ public interface IIOHandler extends Serializable {
 
     /**
      * Called when session is about to be closed.
+     * 
+     * @param session the {@link IServerSession}
      */
-    void onSessionClose();
+    void onSessionClose(IServerSession session);
 
+
+    /**
+     * Gets the assigned {@link IServerSession}.
+     * 
+     * @return the {@link IServerSession}
+     */
+    IServerSession getSession();
 }

@@ -17,7 +17,6 @@ import com.airepublic.logging.java.LogLevel;
 import com.airepublic.logging.java.LoggerConfig;
 import com.airepublic.tobi.core.spi.ChannelAction;
 import com.airepublic.tobi.core.spi.IIOHandler;
-import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
 import com.airepublic.tobi.module.http.AbstractHttpIOHandler;
 import com.airepublic.tobi.module.http.HttpRequest;
@@ -36,8 +35,6 @@ public class SseOutboundIOHandler extends AbstractHttpIOHandler {
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
     @Inject
-    private IServerSession session;
-    @Inject
     private ISseService sseService;
     private final AtomicBoolean isHandshakeRead = new AtomicBoolean(false);
     private Object serviceObject;
@@ -45,7 +42,6 @@ public class SseOutboundIOHandler extends AbstractHttpIOHandler {
     private long delayInMs = 0L;
     private long times = 0L;
     private long maxTimes = -1L;
-
 
     @Override
     public Pair<HttpResponse, CompletionHandler<?, ?>> getHttpResponse() throws IOException {
@@ -105,8 +101,8 @@ public class SseOutboundIOHandler extends AbstractHttpIOHandler {
 
             try {
                 Thread.sleep(delayInMs);
-                session.getChannel().keyFor(session.getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);
-                session.getChannelProcessor().getSelector().wakeup();
+                getSession().getChannel().keyFor(getSession().getChannelProcessor().getSelector()).interestOps(SelectionKey.OP_WRITE);
+                getSession().getChannelProcessor().getSelector().wakeup();
                 return ChannelAction.CLOSE_INPUT;
             } catch (final InterruptedException e) {
                 logger.log(Level.WARNING, "SSE for outbound events was interrupted!", e);

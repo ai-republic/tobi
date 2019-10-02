@@ -12,7 +12,6 @@ import javax.enterprise.context.SessionScoped;
  * @author Torsten Oltmanns
  *
  */
-@SessionScoped
 public interface IAuthenticationService {
 
     /**

@@ -78,7 +78,6 @@ public class HttpModule implements IServerModule {
     @Inject
     private IHttpAuthorizationProvider authorizationProvider;
 
-
     /**
      * Initializes the {@link SSLContext}s.
      */
@@ -162,7 +161,7 @@ public class HttpModule implements IServerModule {
         }
 
         final HttpChannelEncoder channelEncoder = CDI.current().select(HttpChannelEncoder.class).get();
-        channelEncoder.init(processor.getChannel(), getServerSslContext(), isSecure);
+        channelEncoder.init(processor.getSession(), getServerSslContext(), isSecure);
 
         processor.getSession().setAttribute(SessionConstants.SESSION_SSL_ENGINE, channelEncoder.getSslEngine());
         processor.setChannelEncoder(channelEncoder);

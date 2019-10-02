@@ -24,7 +24,6 @@ public class ServerSession extends Attributes implements IServerSession {
     private Principal principal;
     private IRequest request;
 
-
     @Override
     public String getId() {
         return id;
@@ -78,7 +77,6 @@ public class ServerSession extends Attributes implements IServerSession {
         this.request = request;
     }
 
-
     // @Override
     // public void addToReadBuffer(final ByteBuffer... buffer) {
     // if (getChannelProcessor() != null) {
@@ -102,6 +100,7 @@ public class ServerSession extends Attributes implements IServerSession {
     // getChannelProcessor().addToWriteBuffer(handler, buffers);
     // }
     // }
+
 
     @Override
     public void close() {

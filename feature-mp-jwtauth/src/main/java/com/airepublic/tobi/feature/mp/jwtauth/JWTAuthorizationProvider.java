@@ -39,7 +39,6 @@ public class JWTAuthorizationProvider implements IHttpAuthorizationProvider {
     @Inject
     private IAuthenticationService authorizationService;
 
-
     @Override
     public void accept(final IServerSession session) throws IOException {
         produce(session);

@@ -1,7 +1,6 @@
 package com.airepublic.tobi.core;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,9 +31,8 @@ public class ServerContext extends Attributes implements IServerContext {
     @Inject
     @ConfigProperty(name = WORKER_COUNT, defaultValue = DEFAULT_WORKER_COUNT)
     private int workerCount;
-    private final Map<SocketAddress, IServerSession> openSessions = new ConcurrentHashMap<>();
+    private final Map<String, IServerSession> openSessions = new ConcurrentHashMap<>();
     private final Map<String, BeanContextStorage> sessionContexts = new ConcurrentHashMap<>();
-
 
     @Override
     public String getHost() {
@@ -49,8 +47,8 @@ public class ServerContext extends Attributes implements IServerContext {
 
 
     @Override
-    public void addServerSession(final SocketAddress remoteAddress, final IServerSession session) {
-        openSessions.put(remoteAddress, session);
+    public void addServerSession(final IServerSession session) {
+        openSessions.put(session.getId(), session);
     }
 
 
@@ -61,8 +59,8 @@ public class ServerContext extends Attributes implements IServerContext {
 
 
     @Override
-    public IServerSession getServerSession(final SocketAddress remoteAddress) {
-        return openSessions.get(remoteAddress);
+    public IServerSession getServerSession(final String sessionId) {
+        return openSessions.get(sessionId);
     }
 
 

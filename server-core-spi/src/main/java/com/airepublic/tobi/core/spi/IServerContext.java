@@ -1,7 +1,6 @@
 package com.airepublic.tobi.core.spi;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 
 /**
  * The context storage for the server information such as host, sessions and custom application
@@ -94,21 +93,20 @@ public interface IServerContext {
 
 
     /**
-     * Adds the {@link IServerSession} for the {@link SocketAddress}.
+     * Adds the {@link IServerSession}.
      * 
-     * @param remoteAddress the {@link SocketAddress}
      * @param session the {@link IServerSession}
      */
-    void addServerSession(final SocketAddress remoteAddress, final IServerSession session);
+    void addServerSession(final IServerSession session);
 
 
     /**
-     * Gets the {@link IServerSession} for the {@link SocketAddress}.
+     * Gets the {@link IServerSession} for the session id.
      * 
-     * @param remoteAddress the {@link SocketAddress}
+     * @param sessionId the session id
      * @return the {@link IServerSession}
      */
-    IServerSession getServerSession(final SocketAddress remoteAddress);
+    IServerSession getServerSession(final String sessionId);
 
 
     /**

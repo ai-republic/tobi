@@ -1,4 +1,4 @@
-package com.airepublic.tobi.core;
+package com.airepublic.tobi.core.spi;
 
 import java.lang.annotation.Annotation;
 
@@ -7,8 +7,6 @@ import javax.enterprise.context.spi.AlterableContext;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
 
-import com.airepublic.tobi.core.spi.BeanContextStorage;
-
 /**
  * The {@link RequestScoped} CDI context.
  * 
@@ -16,8 +14,7 @@ import com.airepublic.tobi.core.spi.BeanContextStorage;
  *
  */
 public class RequestScopedContext implements AlterableContext {
-    private final static ThreadLocal<BeanContextStorage> requestContext = new ThreadLocal<>();
-
+    private final static ThreadLocal<BeanContextStorage> sessionContext = new ThreadLocal<>();
 
     @Override
     public Class<? extends Annotation> getScope() {
@@ -31,7 +28,7 @@ public class RequestScopedContext implements AlterableContext {
         validateContext();
 
         final T bean = contextual.create(creationalContext);
-        requestContext.get().addBean((Contextual<Object>) contextual, (CreationalContext<Object>) creationalContext, bean);
+        sessionContext.get().addBean((Contextual<Object>) contextual, (CreationalContext<Object>) creationalContext, bean);
         creationalContext.push(bean);
 
         return bean;
@@ -42,17 +39,17 @@ public class RequestScopedContext implements AlterableContext {
     @SuppressWarnings("unchecked")
     public <T> T get(final Contextual<T> contextual) {
         validateContext();
-        return (T) requestContext.get().getBean((Contextual<Object>) contextual);
+        return (T) sessionContext.get().getBean((Contextual<Object>) contextual);
     }
 
 
     /**
      * Activate this context.
      * 
-     * @param requestContext the {@link BeanContextStorage}
+     * @param contextStore the {@link BeanContextStorage}
      */
-    public void activate(final BeanContextStorage requestContext) {
-        RequestScopedContext.requestContext.set(requestContext);
+    public void activate(final BeanContextStorage contextStore) {
+        sessionContext.set(contextStore);
         validateContext();
     }
 
@@ -63,14 +60,14 @@ public class RequestScopedContext implements AlterableContext {
     public void deactivate() {
         validateContext();
 
-        requestContext.get().destroy();
-        requestContext.remove();
+        sessionContext.get().destroy();
+        sessionContext.remove();
     }
 
 
     @Override
     public boolean isActive() {
-        return requestContext.get() != null;
+        return sessionContext.get() != null;
     }
 
 
@@ -79,7 +76,7 @@ public class RequestScopedContext implements AlterableContext {
     public void destroy(final Contextual<?> contextual) {
         validateContext();
 
-        requestContext.get().destroy((Contextual<Object>) contextual);
+        sessionContext.get().destroy((Contextual<Object>) contextual);
     }
 
 
@@ -87,7 +84,7 @@ public class RequestScopedContext implements AlterableContext {
      * Validates this context.
      */
     private void validateContext() {
-        if (requestContext.get() == null) {
+        if (sessionContext.get() == null) {
             throw new IllegalStateException(getClass().getSimpleName() + " has not been activated!");
         }
     }

@@ -50,7 +50,6 @@ public class TobiServer {
     private final Map<SelectionKey, IServerModule> moduleForKey = new HashMap<>();
     private final Map<SelectionKey, ServerSocketChannel> serverSocketChannels = new HashMap<>();
 
-
     /**
      * Initializes the Tobi server by looking up {@link IServerModule}s and {@link IServicePlugin}s.
      */
@@ -147,9 +146,10 @@ public class TobiServer {
     /**
      * Starts the server.
      * 
+     * @param runAfterStart a task to run after the server has started
      * @throws IOException if starting fails
      */
-    public void start() throws IOException {
+    public void start(final Runnable runAfterStart) throws IOException {
         if (!initialized.get()) {
             synchronized (initialized) {
                 if (!initialized.get()) {
@@ -166,6 +166,10 @@ public class TobiServer {
                     throw new IOException(getClass().getSimpleName() + " is already running!");
                 }
             }
+        }
+
+        if (runAfterStart != null) {
+            ForkJoinPool.commonPool().submit(runAfterStart);
         }
 
         try {

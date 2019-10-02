@@ -1,4 +1,4 @@
-package com.airepublic.tobi.core;
+package com.airepublic.tobi.core.spi;
 
 import java.lang.annotation.Annotation;
 
@@ -6,8 +6,6 @@ import javax.enterprise.context.SessionScoped;
 import javax.enterprise.context.spi.AlterableContext;
 import javax.enterprise.context.spi.Contextual;
 import javax.enterprise.context.spi.CreationalContext;
-
-import com.airepublic.tobi.core.spi.BeanContextStorage;
 
 /**
  * The {@link SessionScoped} CDI context.
@@ -17,7 +15,6 @@ import com.airepublic.tobi.core.spi.BeanContextStorage;
  */
 public class SessionScopedContext implements AlterableContext {
     private final static ThreadLocal<BeanContextStorage> sessionContext = new ThreadLocal<>();
-
 
     @Override
     public Class<? extends Annotation> getScope() {
@@ -49,10 +46,10 @@ public class SessionScopedContext implements AlterableContext {
     /**
      * Activate this context.
      * 
-     * @param sessionContext the {@link BeanContextStorage}
+     * @param contextStore the {@link BeanContextStorage}
      */
-    public void activate(final BeanContextStorage sessionContext) {
-        SessionScopedContext.sessionContext.set(sessionContext);
+    public void activate(final BeanContextStorage contextStore) {
+        sessionContext.set(contextStore);
         validateContext();
     }
 

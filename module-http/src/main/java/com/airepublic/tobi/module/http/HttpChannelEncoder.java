@@ -2,7 +2,6 @@ package com.airepublic.tobi.module.http;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,29 +33,26 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     @Inject
     @LoggerConfig(level = LogLevel.INFO)
     private Logger logger;
-    @Inject
-    private IServerSession session;
     private SSLEngine sslEngine;
     private boolean isSecure;
-    private SocketChannel channel;
+    private IServerSession session;
     private final AsyncHttpReader httpReader = new AsyncHttpReader();
 
-
     /**
-     * Initializes this encoder with the specified {@link SocketChannel} and {@link SSLContext}.
+     * Initializes this encoder with the specified {@link IServerSession} and {@link SSLContext}.
      * 
-     * @param channel the {@link SocketChannel}
+     * @param session the {@link IServerSession}
      * @param sslContext the {@link SSLContext}
      * @param isSecure whether the connection is secure
      * @throws IOException if SSL handshaking fails
      */
-    public void init(final SocketChannel channel, final SSLContext sslContext, final boolean isSecure) throws IOException {
-        this.channel = channel;
+    public void init(final IServerSession session, final SSLContext sslContext, final boolean isSecure) throws IOException {
+        this.session = session;
         this.isSecure = isSecure;
 
         // create SSL engine if necessary
         if (isSecure) {
-            sslEngine = SslSupport.serverSSLHandshake(sslContext, channel);
+            sslEngine = SslSupport.serverSSLHandshake(sslContext, session.getChannel());
         }
     }
 
@@ -74,7 +70,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     @Override
     public Pair<Status, IRequest> decode(ByteBuffer buffer) throws IOException {
         if (isSecure) {
-            buffer = SslSupport.unwrap(sslEngine, channel, buffer);
+            buffer = SslSupport.unwrap(sslEngine, session.getChannel(), buffer);
         }
 
         if (buffer == null) {
@@ -101,7 +97,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     @Override
     public ByteBuffer[] encode(ByteBuffer... buffers) throws IOException {
         if (isSecure) {
-            buffers = SslSupport.wrap(sslEngine, channel, buffers);
+            buffers = SslSupport.wrap(sslEngine, session.getChannel(), buffers);
         }
 
         return buffers;
@@ -112,7 +108,7 @@ public class HttpChannelEncoder implements AutoCloseable, IChannelEncoder {
     public void close() {
         if (sslEngine != null) {
             try {
-                SslSupport.closeConnection(channel, sslEngine);
+                SslSupport.closeConnection(session.getChannel(), sslEngine);
             } catch (final Exception e) {
             }
         }

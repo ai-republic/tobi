@@ -86,7 +86,6 @@ public interface IServerSession extends Serializable, AutoCloseable {
      */
     void setRequest(IRequest request);
 
-
     // /**
     // * Add the {@link ByteBuffer}s to the read queue.
     // *
@@ -111,6 +110,7 @@ public interface IServerSession extends Serializable, AutoCloseable {
     // * @param buffer the {@link ByteBuffer}s
     // */
     // void addToWriteBuffer(CompletionHandler<?, ?> handler, ByteBuffer... buffer);
+
 
     @Override
     void close();

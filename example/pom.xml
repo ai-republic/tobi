@@ -103,11 +103,6 @@
 		</dependency>
 		
 
-		<dependency>
-			<groupId>com.ai-republic</groupId>
-			<artifactId>logging-java</artifactId>
-			<version>1.0.0</version>
-		</dependency>
 <!-- 		<dependency> -->
 <!-- 			<groupId>com.ai-republic.microprofile</groupId> -->
 <!-- 			<artifactId>feature-mp-restclient</artifactId> -->

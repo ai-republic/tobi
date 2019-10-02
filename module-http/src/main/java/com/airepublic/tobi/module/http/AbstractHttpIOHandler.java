@@ -32,7 +32,6 @@ public abstract class AbstractHttpIOHandler implements IIOHandler {
     private IAuthenticationService authorizationService;
     private HttpRequest request;
 
-
     /**
      * The default implementation will just return a {@link ChannelAction#CLOSE_INPUT}.
      * 
@@ -149,7 +148,13 @@ public abstract class AbstractHttpIOHandler implements IIOHandler {
 
 
     @Override
-    public void onSessionClose() {
+    public void onSessionClose(final IServerSession session) {
+        this.session = null;
     }
 
+
+    @Override
+    public IServerSession getSession() {
+        return session;
+    }
 }

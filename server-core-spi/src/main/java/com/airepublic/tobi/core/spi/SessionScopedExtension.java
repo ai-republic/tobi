@@ -1,4 +1,4 @@
-package com.airepublic.tobi.core;
+package com.airepublic.tobi.core.spi;
 
 import javax.enterprise.context.SessionScoped;
 import javax.enterprise.event.Observes;

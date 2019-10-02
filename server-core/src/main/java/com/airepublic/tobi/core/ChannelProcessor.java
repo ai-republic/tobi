@@ -30,6 +30,8 @@ import com.airepublic.tobi.core.spi.IServerContext;
 import com.airepublic.tobi.core.spi.IServerModule;
 import com.airepublic.tobi.core.spi.IServerSession;
 import com.airepublic.tobi.core.spi.Pair;
+import com.airepublic.tobi.core.spi.RequestScopedContext;
+import com.airepublic.tobi.core.spi.SessionScopedContext;
 
 /**
  * The {@link IChannelProcessor} implementation.
@@ -50,13 +52,13 @@ public class ChannelProcessor implements IChannelProcessor {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private IChannelEncoder channelEncoder;
     private IServerSession session;
+    private String sessionId;
     @Inject
     private IServerContext serverContext;
     @Inject
     private RequestScopedContext requestScopedContext;
     @Inject
     private SessionScopedContext sessionScopedContext;
-
 
     /**
      * Constructor.
@@ -78,26 +80,13 @@ public class ChannelProcessor implements IChannelProcessor {
      */
     @Override
     public void prepare(final IServerModule module, final SocketChannel channel, final IIOHandler ioHandler) throws IOException {
-        session = serverContext.getServerSession(channel.getRemoteAddress());
-        BeanContextStorage sessionContext = null;
-        String sessionId = null;
-
-        if (session != null) {
-            sessionId = session.getId();
-            sessionContext = serverContext.getSessionContext(sessionId);
-        } else {
-            sessionId = "" + SESSION_ID_GENERATOR.incrementAndGet();
-            sessionContext = new BeanContextStorage();
-        }
-
+        final BeanContextStorage sessionContext = new BeanContextStorage();
         requestScopedContext.activate(new BeanContextStorage());
         sessionScopedContext.activate(sessionContext);
 
-        if (session == null) {
-            session = CDI.current().select(IServerSession.class).get();
-            session.setId(sessionId);
-            serverContext.addServerSession(channel.getRemoteAddress(), session);
-        }
+        session = CDI.current().select(IServerSession.class).get();
+        session.setId("" + SESSION_ID_GENERATOR.incrementAndGet());
+        serverContext.addServerSession(session);
 
         // reset
         closing.set(false);
@@ -264,10 +253,10 @@ public class ChannelProcessor implements IChannelProcessor {
                 handleAction(ChannelAction.CLOSE_ALL);
             }
         } catch (final SecurityException e) {
-            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing connection: " + e.getLocalizedMessage());
+            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing connection: " + e.getLocalizedMessage(), e);
             handleAction(ChannelAction.CLOSE_ALL);
         } catch (final Exception e) {
-            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing connection: " + e.getLocalizedMessage());
+            logger.log(Level.WARNING, "Exception during read processing in session #" + session.getId() + ". Closing connection: " + e.getLocalizedMessage(), e);
 
             handleAction(ChannelAction.CLOSE_ALL);
         }
@@ -363,7 +352,6 @@ public class ChannelProcessor implements IChannelProcessor {
                 logger.info("Closing channel for module '" + module.getName() + "' session #" + session.getId() + " !");
 
                 session.close();
-                serverContext.removeSessionContext(session.getId());
 
                 try {
                     serverContext.removeServerSession(session);
@@ -371,7 +359,7 @@ public class ChannelProcessor implements IChannelProcessor {
                 }
 
                 if (ioHandler != null) {
-                    ioHandler.onSessionClose();
+                    ioHandler.onSessionClose(session);
                     ioHandler = null;
                 }
 

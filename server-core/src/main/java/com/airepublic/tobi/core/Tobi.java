@@ -24,20 +24,21 @@ public class Tobi {
      * Starts the Tobi server with the specified {@link SeContainer}.
      * 
      * @param cdiContainer the {@link SeContainer}
+     * @param runAfterStart a task to run after the server has started
      * @throws IOException if something fails
      */
-    private void startServer(final SeContainer cdiContainer) throws IOException {
-        final TobiServer javaServer = cdiContainer.select(TobiServer.class).get();
-        LOG.info("Booting Tobi-server ...");
-        javaServer.start();
-
+    private void startServer(final SeContainer cdiContainer, final Runnable runAfterStart) throws IOException {
+        final TobiServer server = cdiContainer.select(TobiServer.class).get();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                javaServer.stop();
+                LOG.info("Shutting down Tobi-server ...");
+                server.stop();
             }
         });
 
+        LOG.info("Booting Tobi-server ...");
+        server.start(runAfterStart);
     }
 
 
@@ -47,6 +48,17 @@ public class Tobi {
      * @throws IOException if something fails
      */
     public static void start() throws IOException {
+        start(null);
+    }
+
+
+    /**
+     * Starts the Tobi server.
+     * 
+     * @param runAfterStart a task to run after the server has started
+     * @throws IOException if something fails
+     */
+    public static void start(final Runnable runAfterStart) throws IOException {
         try {
 
             final ServiceLoader<ICDIServiceProvider> providers = ServiceLoader.load(ICDIServiceProvider.class);
@@ -58,7 +70,7 @@ public class Tobi {
                 cdiContainer = SeContainerInitializer.newInstance().initialize();
             }
 
-            new Tobi().startServer(cdiContainer);
+            new Tobi().startServer(cdiContainer, runAfterStart);
         } catch (final Exception e) {
             LOG.log(Level.SEVERE, "Failed to start Tobi server: ", e);
         }

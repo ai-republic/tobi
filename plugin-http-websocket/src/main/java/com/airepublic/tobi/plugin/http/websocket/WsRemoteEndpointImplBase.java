@@ -82,7 +82,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
     private WsSession wsSession;
     private final List<EncoderEntry> encoderEntries = new ArrayList<>();
 
-
     public void setTransformation(final Transformation transformation) {
         this.transformation = transformation;
     }
@@ -182,11 +181,19 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
 
 
     public void sendString(final String text) throws IOException {
-        if (text == null) {
-            throw new IllegalArgumentException(sm.getString("wsRemoteEndpoint.nullData"));
+        synchronized (stateMachine) {
+            if (text == null) {
+                throw new IllegalArgumentException(sm.getString("wsRemoteEndpoint.nullData"));
+            }
+            stateMachine.textStart();
+            try {
+                sendMessageBlock(CharBuffer.wrap(text), true);
+            } catch (final Exception e) {
+                if (stateMachine.state != State.OPEN) {
+                    stateMachine.complete(true);
+                }
+            }
         }
-        stateMachine.textStart();
-        sendMessageBlock(CharBuffer.wrap(text), true);
     }
 
 
@@ -509,7 +516,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final WsRemoteEndpointImplBase endpoint;
         private final SendHandler handler;
 
-
         public EndMessageHandler(final WsRemoteEndpointImplBase endpoint,
                 final SendHandler handler) {
             this.endpoint = endpoint;
@@ -534,7 +540,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
 
         private final WsRemoteEndpointImplBase endpoint;
 
-
         public IntermediateMessageHandler(final WsRemoteEndpointImplBase endpoint) {
             this.endpoint = endpoint;
         }
@@ -545,7 +550,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
             endpoint.endMessage(null, result);
         }
     }
-
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void sendObject(final Object obj) throws IOException, EncodeException {
@@ -772,7 +776,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final WsRemoteEndpointImplBase endpoint;
         private volatile boolean isDone = false;
 
-
         public TextMessageSendHandler(final SendHandler handler, final CharBuffer message,
                 final boolean isLast, final CharsetEncoder encoder,
                 final ByteBuffer encoderBuffer, final WsRemoteEndpointImplBase endpoint) {
@@ -829,7 +832,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final boolean flushRequired;
         private final WsRemoteEndpointImplBase endpoint;
         private int maskIndex = 0;
-
 
         public OutputBufferSendHandler(final SendHandler completion,
                 final long blockingWriteTimeoutExpiry,
@@ -930,7 +932,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final ByteBuffer outputBuffer;
         private final SendHandler handler;
 
-
         public OutputBufferFlushSendHandler(final ByteBuffer outputBuffer, final SendHandler handler) {
             this.outputBuffer = outputBuffer;
             this.handler = handler;
@@ -953,7 +954,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final Object closeLock = new Object();
         private volatile boolean closed = false;
         private volatile boolean used = false;
-
 
         public WsOutputStream(final WsRemoteEndpointImplBase endpoint) {
             this.endpoint = endpoint;
@@ -1054,7 +1054,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private volatile boolean closed = false;
         private volatile boolean used = false;
 
-
         public WsWriter(final WsRemoteEndpointImplBase endpoint) {
             this.endpoint = endpoint;
         }
@@ -1135,7 +1134,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final Class<?> clazz;
         private final Encoder encoder;
 
-
         public EncoderEntry(final Class<?> clazz, final Encoder encoder) {
             this.clazz = clazz;
             this.encoder = encoder;
@@ -1158,7 +1156,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
 
     private static class StateMachine {
         private State state = State.OPEN;
-
 
         public synchronized void streamStart() {
             checkState(State.OPEN);
@@ -1240,7 +1237,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
         private final SendHandler handler;
         private final StateMachine stateMachine;
 
-
         public StateUpdateSendHandler(final SendHandler handler, final StateMachine stateMachine) {
             this.handler = handler;
             this.stateMachine = stateMachine;
@@ -1259,7 +1255,6 @@ public abstract class WsRemoteEndpointImplBase implements RemoteEndpoint {
     private static class BlockingSendHandler implements SendHandler {
 
         private SendResult sendResult = null;
-
 
         @Override
         public void onResult(final SendResult result) {
