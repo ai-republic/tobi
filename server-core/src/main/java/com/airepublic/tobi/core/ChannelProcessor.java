@@ -52,7 +52,6 @@ public class ChannelProcessor implements IChannelProcessor {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private IChannelEncoder channelEncoder;
     private IServerSession session;
-    private String sessionId;
     @Inject
     private IServerContext serverContext;
     @Inject
