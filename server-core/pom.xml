@@ -39,7 +39,6 @@
 		<dependency>
 			<groupId>com.ai-republic</groupId>
 			<artifactId>logging-java</artifactId>
-			<version>1.0.0</version>
 		</dependency>
 
 	</dependencies>
